@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Gusto · Amministrazione</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #FFF9F2; --surface: #FFFFFF; --fg: #2B2320; --muted: #6F625B; --line: #F0E4D8;
+  --accent: #DE4A1E; --accent-fg: #FFFFFF; --soft: #FFEBDD; --ok: #1F7A4D; --okbg: #E4F4EA; --bad: #B3261E; --badbg: #FDE8E6;
+  --f-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
+  --f-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.45; padding: 0 max(16px, env(safe-area-inset-left)) 60px; }
+.wrap { max-width: 880px; margin: 0 auto; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--f-display); margin: 0; line-height: 1.15; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; gap: 12px; }
+.logo { font-family: var(--f-display); font-weight: 700; font-size: 24px; letter-spacing: -0.02em; }
+.logo small { font-family: var(--f-body); font-weight: 500; font-size: 13px; color: var(--muted); margin-left: 8px; letter-spacing: 0; }
+.btn { background: var(--accent); color: var(--accent-fg); font-weight: 600; border-radius: 12px; padding: 10px 16px; }
+.btn.ghost { background: var(--soft); color: var(--fg); }
+.btn.sm { padding: 7px 12px; font-size: 14px; border-radius: 10px; }
+.btn.danger { background: var(--badbg); color: var(--bad); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+input[type=email], input[type=password], textarea { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%; }
+label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
+.login { max-width: 380px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 14px; }
+.msg { margin: 0; font-size: 14px; color: var(--muted); }
+.msg.err { color: var(--bad); }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 6px 0 18px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
+.stat b { display: block; font-family: var(--f-display); font-size: 26px; }
+.stat span { font-size: 13px; color: var(--muted); }
+.seg { display: flex; width: fit-content; max-width: 100%; background: var(--soft); border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 14px; }
+.seg button { padding: 8px 16px; border-radius: 9px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(60, 30, 10, .12); }
+.list { display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
+.row .info { min-width: 0; flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px; }
+.row .info b { font-size: 16px; }
+.row .info span { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 99px; padding: 2px 10px; background: var(--soft); color: var(--muted); }
+.chip.ok { background: var(--okbg); color: var(--ok); }
+.chip.bad { background: var(--badbg); color: var(--bad); }
+.empty { border: 1px dashed var(--line); border-radius: 16px; padding: 28px 18px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--fg); font-family: var(--f-display); font-size: 18px; margin-bottom: 4px; }
+.note { background: var(--soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
+.bg { position: fixed; inset: 0; background: rgba(20, 12, 8, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+.dlg { background: var(--bg); border-radius: 18px; padding: 20px; max-width: 520px; width: 100%; max-height: 86vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.chat { display: flex; flex-direction: column; gap: 8px; }
+.m { max-width: 85%; border-radius: 14px; padding: 8px 12px; background: var(--soft); align-self: flex-start; }
+.m.rep { background: var(--badbg); align-self: flex-end; }
+.m small { display: block; font-size: 12px; color: var(--muted); }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 20; }
+@media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><div class="logo">Gusto<small>Amministrazione</small></div><div id="who"></div></header>
+  <main id="app"></main>
+</div>
+<div id="layer"></div>
+<div id="toast" class="toast" hidden></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
+  var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) {}
+  var S = { user: null, admin: null, tab: 'pros', rtab: 'open', stats: null, pros: [], reports: [], busy: false, msg: '' };
+  var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function fdate(iso) { return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }); }
+  function fdt(iso) { return new Date(iso).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
+  function toast(t) { var e = document.getElementById('toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { e.hidden = true; }, 2400); }
+  function dlg(inner) { document.getElementById('layer').innerHTML = '<div class="bg" data-act="close"><div class="dlg" role="dialog" aria-modal="true">' + inner + '</div></div>'; }
+  function closeDlg() { document.getElementById('layer').innerHTML = ''; }
+
+  function viewLogin() {
+    return '<form class="login card" id="loginform" novalidate><h1 style="font-size:24px">Accedi</h1>' +
+      '<p class="msg">Area riservata agli amministratori di Gusto.</p>' +
+      '<label class="f" for="e">Email<input id="e" type="email" autocomplete="email" autocapitalize="none"></label>' +
+      '<label class="f" for="p">Password<input id="p" type="password" autocomplete="current-password"></label>' +
+      (S.msg ? '<p class="msg err" role="status">' + esc(S.msg) + '</p>' : '') +
+      '<button class="btn" type="submit"' + (S.busy ? ' disabled' : '') + '>Accedi</button></form>';
+  }
+  function viewDenied() {
+    return '<div class="card" style="max-width:460px;margin:40px auto 0"><h2>Accesso non consentito</h2><p class="msg" style="margin:10px 0 14px">L\'account ' + esc(S.user.email) + ' non è un amministratore.</p><button class="btn ghost" data-act="logout">Esci</button></div>';
+  }
+  function statsHTML() {
+    var st = S.stats; if (!st) return '';
+    return '<div class="stats"><div class="stat"><b>' + st.users + '</b><span>utenti</span></div><div class="stat"><b>' + st.pros + '</b><span>nutrizionisti</span></div><div class="stat"><b>' + st.pros_verified + '</b><span>verificati</span></div><div class="stat"><b>' + st.open_reports + '</b><span>segnalazioni aperte</span></div></div>';
+  }
+  function prosHTML() {
+    if (!S.pros.length) return '<div class="empty"><b>Nessun nutrizionista</b>Quando qualcuno si registra come nutrizionista compare qui, da verificare.</div>';
+    return '<p class="note">Controlla l\'iscrizione all\'albo prima di verificare. Solo i nutrizionisti verificati possono invitare clienti.</p><div class="list">' + S.pros.map(function (x) {
+      return '<div class="card"><div class="row"><div class="info"><b>' + esc(x.name || 'Senza nome') + '</b><span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + '</span><span>' +
+        (x.pro_verified ? '<span class="chip ok">Verificato</span>' : '<span class="chip">Da verificare</span>') + (x.suspended ? ' <span class="chip bad">Sospeso</span>' : '') + '</span></div>' +
+        '<div class="acts"><button class="btn sm' + (x.pro_verified ? ' ghost' : '') + '" data-act="ver" data-u="' + esc(x.user_id) + '" data-v="' + (x.pro_verified ? '0' : '1') + '">' + (x.pro_verified ? 'Revoca la verifica' : 'Verifica') + '</button>' +
+        '<button class="btn sm ' + (x.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="' + (x.suspended ? '0' : '1') + '">' + (x.suspended ? 'Riattiva' : 'Sospendi') + '</button></div></div></div>';
+    }).join('') + '</div>';
+  }
+  function reportsHTML() {
+    var seg = '<div class="seg" role="group" aria-label="Stato"><button data-act="rtab" data-v="open" aria-pressed="' + (S.rtab === 'open') + '">Aperte</button><button data-act="rtab" data-v="closed" aria-pressed="' + (S.rtab === 'closed') + '">Chiuse</button></div>';
+    if (!S.reports.length) return seg + '<div class="empty"><b>' + (S.rtab === 'open' ? 'Nessuna segnalazione aperta' : 'Nessuna segnalazione chiusa') + '</b>Le segnalazioni degli utenti compaiono qui.</div>';
+    return seg + '<div class="list">' + S.reports.map(function (r) {
+      return '<div class="card"><div class="row"><div class="info"><b>' + esc(r.reported_name || 'Senza nome') + '</b><span>' + esc(r.reported_email) + (r.reported_suspended ? ' · <span class="chip bad">Sospeso</span>' : '') + '</span>' +
+        '<span><span class="chip">' + esc(REASON[r.reason] || r.reason) + '</span> · segnalato da ' + esc(r.reporter_name || 'utente') + ' il ' + fdt(r.created_at) + '</span>' +
+        (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') + '</div>' +
+        '<div class="acts">' + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">Vedi la conversazione</button>' : '') +
+        '<button class="btn sm ' + (r.reported_suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-v="' + (r.reported_suspended ? '0' : '1') + '">' + (r.reported_suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
+        '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div></div>';
+    }).join('') + '</div>';
+  }
+  function viewDash() {
+    return statsHTML() + '<div class="seg" role="group" aria-label="Sezione"><button data-act="tab" data-v="pros" aria-pressed="' + (S.tab === 'pros') + '">Nutrizionisti</button><button data-act="tab" data-v="reports" aria-pressed="' + (S.tab === 'reports') + '">Segnalazioni' + (S.stats && S.stats.open_reports ? ' (' + S.stats.open_reports + ')' : '') + '</button></div>' +
+      (S.tab === 'pros' ? prosHTML() : reportsHTML());
+  }
+  function render() {
+    var app = document.getElementById('app'), who = document.getElementById('who');
+    who.innerHTML = S.user ? '<span class="msg" style="margin-right:10px">' + esc(S.user.email) + '</span><button class="btn ghost sm" data-act="logout">Esci</button>' : '';
+    app.innerHTML = !S.user ? viewLogin() : S.admin === null ? '<p class="msg" style="margin-top:30px">Un momento…</p>' : S.admin ? viewDash() : viewDenied();
+  }
+
+  function err(e) { toast(e && e.message && /non autorizzato/.test(e.message) ? 'Non sei autorizzato' : 'Operazione non riuscita'); }
+  function loadAll() {
+    return Promise.all([sb.rpc('admin_stats'), sb.rpc('admin_pros'), sb.rpc('admin_reports', { st: S.rtab })]).then(function (a) {
+      if (a[0].error) { err(a[0].error); return; }
+      S.stats = (a[0].data && a[0].data[0]) || a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; render();
+    });
+  }
+  function start(user) {
+    S.user = user; S.admin = null; render();
+    sb.from('profiles').select('is_admin').eq('id', user.id).maybeSingle().then(function (r) {
+      S.admin = !!(r.data && r.data.is_admin); render(); if (S.admin) loadAll();
+    });
+  }
+
+  document.addEventListener('submit', function (e) {
+    if (e.target.id !== 'loginform') return;
+    e.preventDefault(); if (S.busy || !sb) return;
+    var em = document.getElementById('e').value.trim(), pw = document.getElementById('p').value;
+    if (!em || !pw) { S.msg = 'Scrivi email e password.'; render(); return; }
+    S.busy = true; S.msg = ''; render();
+    sb.auth.signInWithPassword({ email: em, password: pw }).then(function (r) {
+      S.busy = false;
+      if (r.error) { S.msg = /invalid login/i.test(r.error.message) ? 'Email o password non corretti.' : 'Accesso non riuscito. Riprova.'; render(); return; }
+      start({ id: r.data.session.user.id, email: r.data.session.user.email });
+    }, function () { S.busy = false; S.msg = 'Connessione non riuscita.'; render(); });
+  });
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]'); if (!el) return;
+    var act = el.getAttribute('data-act');
+    if (act === 'close') { if (el.classList.contains('bg') && e.target !== el) return; closeDlg(); return; }
+    if (act === 'logout') { sb.auth.signOut().then(function () { S = { user: null, admin: null, tab: 'pros', rtab: 'open', stats: null, pros: [], reports: [], busy: false, msg: '' }; closeDlg(); render(); }); return; }
+    if (act === 'tab') { S.tab = el.getAttribute('data-v'); render(); return; }
+    if (act === 'rtab') { S.rtab = el.getAttribute('data-v'); sb.rpc('admin_reports', { st: S.rtab }).then(function (r) { S.reports = r.data || []; render(); }); return; }
+    if (act === 'ver') {
+      var u = el.getAttribute('data-u'), v = el.getAttribute('data-v') === '1';
+      sb.rpc('admin_set_pro_verified', { target: u, ok: v }).then(function (r) { if (r.error) { err(r.error); return; } toast(v ? 'Nutrizionista verificato' : 'Verifica revocata'); loadAll(); });
+      return;
+    }
+    if (act === 'susp') {
+      var su = el.getAttribute('data-u'), sn = el.getAttribute('data-n'), sv = el.getAttribute('data-v') === '1';
+      dlg('<h2>' + (sv ? 'Sospendere ' : 'Riattivare ') + esc(sn) + '?</h2><p class="msg">' + (sv ? 'L\'account non potrà più accedere e non sarà più visibile agli altri. Puoi riattivarlo quando vuoi.' : 'L\'account potrà accedere di nuovo e tornerà visibile.') + '</p>' +
+        '<div class="acts"><button class="btn' + (sv ? ' danger' : '') + '" data-act="suspyes" data-u="' + esc(su) + '" data-v="' + (sv ? '1' : '0') + '">' + (sv ? 'Sì, sospendi' : 'Sì, riattiva') + '</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'suspyes') {
+      var yu = el.getAttribute('data-u'), yv = el.getAttribute('data-v') === '1';
+      sb.rpc('admin_set_suspended', { target: yu, flag: yv }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } toast(yv ? 'Account sospeso' : 'Account riattivato'); loadAll(); });
+      return;
+    }
+    if (act === 'rset') {
+      var rid = parseInt(el.getAttribute('data-id'), 10), rv = el.getAttribute('data-v');
+      sb.rpc('admin_report_set', { rid: rid, new_status: rv }).then(function (r) { if (r.error) { err(r.error); return; } toast(rv === 'closed' ? 'Segnalazione chiusa' : 'Segnalazione riaperta'); loadAll(); });
+      return;
+    }
+    if (act === 'conv') {
+      var cid = parseInt(el.getAttribute('data-id'), 10);
+      sb.rpc('admin_report_messages', { rid: cid }).then(function (r) {
+        if (r.error) { err(r.error); return; }
+        var m = r.data || [];
+        dlg('<h2>Conversazione segnalata</h2><p class="msg">Solo questa conversazione, indicata da chi ha segnalato. In rosso i messaggi della persona segnalata.</p>' +
+          '<div class="chat">' + (m.length ? m.map(function (x) { return '<div class="m' + (x.from_reported ? ' rep' : '') + '"><small>' + esc(x.sender_name || 'Utente') + ' · ' + fdt(x.created_at) + '</small>' + esc(x.body) + '</div>'; }).join('') : '<p class="msg">Nessun messaggio disponibile.</p>') + '</div>' +
+          '<button class="btn ghost" data-act="close">Chiudi</button>');
+      });
+      return;
+    }
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDlg(); });
+
+  render();
+  if (!sb) { document.getElementById('app').innerHTML = '<p class="msg err" style="margin-top:30px">Impossibile caricare il servizio. Controlla la connessione.</p>'; return; }
+  sb.auth.getSession().then(function (r) {
+    var u = r.data && r.data.session && r.data.session.user;
+    if (u) start({ id: u.id, email: u.email });
+  });
+})();
+</script>
+</body>
+</html>
