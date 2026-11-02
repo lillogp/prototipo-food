@@ -327,6 +327,10 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 .ntap b { font-weight: 600; }
 .nrow .av { width: 40px; height: 40px; flex: none; font-size: 16px; }
 .nact { display: flex; gap: 6px; align-items: center; flex: none; }
+.udot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); flex: none; }
+.ntap.unread b { color: var(--fg); }
+.dmhead { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; }
+.dmhead .av { width: 40px; height: 40px; font-size: 16px; }
 </style>
 </head>
 <body>
@@ -334,7 +338,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 <div class="col">
   <header class="top">
     <div class="logo" role="img" aria-label="Gusto">Gust<svg class="lo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="6.6" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg></div>
-    <div style="display:flex;align-items:center;gap:6px"><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
+    <div style="display:flex;align-items:center;gap:6px"><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
   </header>
   <main id="app"></main>
 </div>
@@ -860,15 +864,15 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
     var gate = needAuth();
-    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'notifs' ? viewNotifs() : viewProfile();
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['new', 'Pubblica', ICONS.plus], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
-    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'user', 'notifs'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : state.tab === 'notifs' ? '' : 'me') : state.tab;
+    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
       return '<button class="tab' + (t[0] === 'new' ? ' plus' : '') + '" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' +
         (t[0] === 'new' ? '<span class="pl">' + t[2] + '</span>' : t[2]) + '<span>' + t[1] + '</span></button>';
     }).join('');
     document.querySelector('nav.tabs').style.display = gate ? 'none' : '';
-    updateBell();
+    updateBell(); updateDmBadge();
     if (state.tab === 'new' && !gate) bindForm();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
       var k = c.getAttribute('data-dt') + '|' + c.getAttribute('data-s');
@@ -1303,6 +1307,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
       '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + '</div>' +
+      (liveMode() && id !== state.user.id ? '<div style="margin-top:12px"><button class="btn ghost" data-act="dmstart" data-u="' + esc(id) + '">Scrivi un messaggio</button></div>' : '') +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
         : '<div class="empty" style="margin-top:18px"><b>Ancora nessun piatto</b>Quando pubblicherà delle ricette le troverai qui.</div>');
@@ -1723,6 +1728,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     }).then(function () { return state.profile.account_type === 'pro' ? loadClients() : loadMyLink(); })
       .then(function () { return loadSocial(); })
       .then(function () { return loadNotifs(); })
+      .then(function () { return loadDMs(); })
       .then(function () { render(); }, function () { render(); });
   }
   function liveChatHTML() {
@@ -1927,7 +1933,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   var NTXT = {
     follow: 'ha iniziato a seguirti', follow_request: 'ha chiesto di seguirti', follow_accepted: 'ha accettato la tua richiesta',
     like: 'ha messo mi piace a un tuo piatto', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
-    plan: 'ti ha inviato un nuovo piano', message: 'ti ha scritto un messaggio'
+    plan: 'ti ha inviato un nuovo piano', message: 'ti ha scritto un messaggio', dm: 'ti ha scritto', dm_request: 'ti ha inviato una richiesta di messaggio'
   };
   function ago(iso) {
     var m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -1957,7 +1963,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       });
     });
   }
-  setInterval(function () { if (liveMode() && !document.hidden) loadNotifs(); }, 20000);
+  setInterval(function () { if (liveMode() && !document.hidden) { loadNotifs(); loadDMs(); } }, 20000);
   function nActor(n) { var x = state.realP[n.actor_id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Qualcuno'); }
   function viewNotifs() {
     var head = '<div class="view-h"><h1>Notifiche</h1><p>Follow, richieste, messaggi e novità.</p></div>';
@@ -1980,6 +1986,11 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       if (!aid || !state.realP[aid]) return;
       state.tab = 'user'; state.viewing = 'u:' + aid; render(); window.scrollTo(0, 0); return;
     }
+    if (t === 'dm' || t === 'dm_request') {
+      var cid = n.ref && n.ref.conv_id;
+      loadDMs().then(function () { if (state.convs.some(function (c) { return c.id === cid; })) dmOpen(cid); else { state.tab = 'inbox'; render(); } });
+      return;
+    }
     // clienti, piani e messaggi: area del nutrizionista
     state.tab = 'pro'; state.curClient = null;
     var lid = n.ref && n.ref.link_id;
@@ -2001,8 +2012,131 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   function proLoadThen(cb) {
     if (isPro()) { loadClients().then(cb, cb); } else { loadMyLink().then(cb, cb); }
   }
+
+  /* ---------- Messaggi diretti ---------- */
+  state.convs = []; state.dms = []; state.curDm = null;
+  function otherOf(c) { return c.user_a === state.user.id ? c.user_b : c.user_a; }
+  function pName(id) { var x = state.realP[id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Utente'); }
+  function dmUnreadN() { return state.dms.filter(function (m) { return m.sender_id !== state.user.id && !m.read_at; }).length; }
+  function updateDmBadge() {
+    var b = document.getElementById('dmbtn'), bb = document.getElementById('dmb'); if (!b) return;
+    b.hidden = !liveMode() || needAuth();
+    var n = liveMode() ? dmUnreadN() : 0; bb.hidden = !n; bb.textContent = n > 9 ? '9+' : String(n);
+    b.setAttribute('aria-label', n ? 'Messaggi: ' + n + ' non letti' : 'Messaggi');
+  }
+  function dmKey() { return state.convs.length + ':' + state.convs.map(function (c) { return c.status; }).join('') + ':' + (state.dms[0] ? state.dms[0].id : 0) + ':' + dmUnreadN(); }
+  function dmRefresh() {
+    if (state.tab === 'inbox') { render(); return; }
+    if (state.tab === 'dm') {
+      var inp = document.getElementById('dmin'), v = inp ? inp.value : '', had = inp && document.activeElement === inp;
+      render();
+      var n = document.getElementById('dmin'); if (n) { n.value = v; if (had) n.focus(); }
+    }
+  }
+  function loadDMs() {
+    if (!liveMode()) return Promise.resolve();
+    return Promise.all([
+      sb.from('conversations').select('id,user_a,user_b,initiator,status,created_at').limit(100),
+      sb.from('dm_messages').select('id,conv_id,sender_id,body,created_at,read_at').order('created_at', { ascending: false }).limit(400)
+    ]).then(function (a) {
+      if (a[0].error || a[1].error) return null;
+      var old = state.convs.length || state.dms.length ? dmKey() : '';
+      state.convs = a[0].data || []; state.dms = a[1].data || [];
+      var ids = state.convs.map(otherOf).filter(function (v, i, arr) { return arr.indexOf(v) === i && !state.realP[v]; });
+      var fin = function () { updateDmBadge(); if (dmKey() !== old) dmRefresh(); };
+      if (!ids.length) { fin(); return null; }
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').in('id', ids).then(function (q) {
+        (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); fin();
+      });
+    });
+  }
+  setInterval(function () { if (liveMode() && !document.hidden && (state.tab === 'inbox' || state.tab === 'dm')) loadDMs(); }, 6000);
+  function lastOf(cid) { for (var i = 0; i < state.dms.length; i++) if (state.dms[i].conv_id === cid) return state.dms[i]; return null; }
+  function dmPreview(m) {
+    if (!m) return 'Nessun messaggio';
+    var t = /\[\[r:.+?\]\]/.test(m.body) ? 'Ha condiviso una ricetta' : m.body;
+    return (m.sender_id === state.user.id ? 'Tu: ' : '') + t;
+  }
+  function convRow(c) {
+    var o = otherOf(c), nm = pName(o), last = lastOf(c.id), unread = state.dms.some(function (m) { return m.conv_id === c.id && m.sender_id !== state.user.id && !m.read_at; });
+    var waiting = c.status === 'pending' && c.initiator === state.user.id;
+    return '<div class="nrow' + (unread ? ' new' : '') + '"><button class="ntap' + (unread ? ' unread' : '') + '" data-act="dmopen" data-id="' + c.id + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div>' +
+      '<span style="display:flex;flex-direction:column;gap:2px;color:var(--fg);font-size:14px;min-width:0"><b>' + esc(nm) + '</b><span style="font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(waiting && last ? dmPreview(last) + ' · in attesa' : dmPreview(last)) + '</span></span></button>' +
+      (unread ? '<i class="udot" aria-label="Non letto"></i>' : '') + '</div>';
+  }
+  function viewInbox() {
+    var head = '<div class="view-h"><h1>Messaggi</h1><p>Le tue conversazioni.</p></div>';
+    if (!liveMode()) return head + '<div class="empty"><b>Serve un account</b>Accedi per scrivere alle persone.</div>';
+    var me = state.user.id, t = function (c) { var l = lastOf(c.id); return l ? l.created_at : c.created_at; };
+    var vis = state.convs.filter(function (c) { return c.status !== 'declined'; }).sort(function (a, b) { return t(b) < t(a) ? -1 : 1; });
+    var reqs = vis.filter(function (c) { return c.status === 'pending' && c.initiator !== me; }), rest = vis.filter(function (c) { return reqs.indexOf(c) < 0; });
+    return head + '<button class="btn ghost" data-act="dmfind" style="width:100%;margin-bottom:12px">Cerca una persona a cui scrivere</button>' +
+      (reqs.length ? '<h3 class="shc" style="margin-top:4px">Richieste di messaggio (' + reqs.length + ')</h3><div class="slist" style="margin-bottom:14px">' + reqs.map(convRow).join('') + '</div>' : '') +
+      (rest.length ? '<div class="slist">' + rest.map(convRow).join('') + '</div>' : (reqs.length ? '' : '<div class="empty"><b>Nessuna conversazione</b>Cerca una persona, apri il suo profilo e tocca "Scrivi un messaggio".</div>'));
+  }
+  function dmBubbles(msgs) {
+    if (!msgs.length) return '<p class="hint" style="margin:8px">Ancora nessun messaggio.</p>';
+    return msgs.map(function (m) {
+      var t = m.body || '', rec = /\[\[r:(.+?)\]\]/.exec(t), pp = rec ? postByTitle(rec[1]) : null, txt = t.replace(/\[\[r:.+?\]\]/, '').trim();
+      return '<div class="msg ' + (m.sender_id === state.user.id ? 'me' : 'pro') + '">' + (txt ? '<p>' + esc(txt) + '</p>' : '') +
+        (pp ? '<button class="mrec" data-act="open" data-id="' + pp.id + '"><span class="mt">' + thumbTag(pp.media) + '</span><b>' + esc(pp.title) + '</b></button>' : '') + '<small>' + msgTime(m.created_at) + '</small></div>';
+    }).join('');
+  }
+  function viewDm() {
+    var back = '<button class="ic" data-act="inbox" style="margin-left:-8px">&lsaquo; Messaggi</button>';
+    var c = state.convs.filter(function (x) { return x.id === state.curDm; })[0];
+    if (!c) return back + '<div class="empty" style="margin-top:12px"><b>Conversazione non trovata</b></div>';
+    var me = state.user.id, o = otherOf(c), x = state.realP[o] || {}, nm = pName(o);
+    var msgs = state.dms.filter(function (m) { return m.conv_id === c.id; }).slice().reverse();
+    var forMe = c.status === 'pending' && c.initiator !== me, sentFirst = c.status === 'pending' && c.initiator === me && msgs.some(function (m) { return m.sender_id === me; });
+    return back + '<div class="dmhead"><button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button></div>' +
+      '<div class="chat" id="dmchat" style="max-height:none;min-height:240px">' + dmBubbles(msgs) + '</div>' +
+      (forMe ? '<div class="procard"><h3>Richiesta di messaggio</h3><p class="hint" style="margin:0 0 10px">' + esc(nm) + ' non è tra le persone che segui. Se accetti, potete scrivervi liberamente. Se rifiuti, non lo saprà.</p><div class="shopact"><button class="btn" data-act="dmok" data-id="' + c.id + '">Accetta</button><button class="btn ghost" data-act="dmno" data-id="' + c.id + '">Rifiuta</button></div></div>'
+        : sentFirst ? '<p class="hint" style="margin-top:12px">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
+        : '<form class="cmf" id="dmform" style="margin-top:10px"><button type="button" class="rm scan" data-act="dmattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="dmin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio"><button class="btn" type="submit">Invia</button></form>');
+  }
+  function dmMarkRead(cid) {
+    var ids = state.dms.filter(function (m) { return m.conv_id === cid && m.sender_id !== state.user.id && !m.read_at; }).map(function (m) { return m.id; });
+    if (!ids.length) return;
+    sb.from('dm_messages').update({ read_at: new Date().toISOString() }).in('id', ids).then(function (r) {
+      if (r.error) return;
+      state.dms.forEach(function (m) { if (ids.indexOf(m.id) > -1) m.read_at = new Date().toISOString(); }); updateDmBadge();
+    });
+  }
+  function dmOpen(cid) {
+    state.curDm = cid; state.tab = 'dm'; closeSheet(); render(); window.scrollTo(0, 0);
+    var c = document.getElementById('dmchat'); if (c) c.scrollTop = c.scrollHeight;
+    dmMarkRead(cid);
+  }
+  function dmStart(uid) {
+    var me = state.user.id, a = me < uid ? me : uid, b = me < uid ? uid : me;
+    var ex = state.convs.filter(function (c) { return c.user_a === a && c.user_b === b; })[0];
+    if (ex) { if (ex.status === 'declined' && ex.initiator === me) { toast('Non puoi scrivere a questa persona'); return; } dmOpen(ex.id); return; }
+    sb.from('conversations').insert({ user_a: a, user_b: b }).select('id,user_a,user_b,initiator,status,created_at').single().then(function (r) {
+      if (r.error) { loadDMs().then(function () { var c2 = state.convs.filter(function (c) { return c.user_a === a && c.user_b === b; })[0]; if (c2) dmOpen(c2.id); else toast('Non riesco ad aprire la conversazione'); }); return; }
+      state.convs.push(r.data); dmOpen(r.data.id);
+    });
+  }
+  function dmSend(text) {
+    var cid = state.curDm; if (!cid || !text) return;
+    sb.from('dm_messages').insert({ conv_id: cid, sender_id: state.user.id, body: text }).select('id,conv_id,sender_id,body,created_at,read_at').single().then(function (r) {
+      if (r.error) { toast(/gia inviata/.test(r.error.message || '') ? 'Aspetta che accetti la tua richiesta' : 'Messaggio non inviato'); return; }
+      state.dms.unshift(r.data); dmRefresh2();
+    });
+  }
+  function dmRefresh2() { var c = state.convs.filter(function (x) { return x.id === state.curDm; })[0]; render(); var e = document.getElementById('dmchat'); if (e) e.scrollTop = e.scrollHeight; var i = document.getElementById('dmin'); if (i && c && c.status !== 'pending') i.focus(); }
+  function openDmAttach() {
+    var sv = posts.filter(function (p) { return state.saved[p.id]; }), rest = posts.filter(function (p) { return !state.saved[p.id]; });
+    var rows = function (a) { return a.map(function (p) { return pickRow(p, '', '').replace('data-act="ppick"', 'data-act="dmpick"'); }).join(''); };
+    sheetOpen('Allega una ricetta', 'Allega una ricetta', (sv.length ? '<section><h3>Dai tuoi salvati</h3><div class="slist">' + rows(sv) + '</div></section>' : '') +
+      '<section><h3>' + (sv.length ? 'Tutti i piatti' : 'Piatti') + '</h3><div class="slist">' + rows(rest) + '</div></section>');
+  }
   function extraSubmit(e) {
     var id = e.target.id;
+    if (id === 'dmform') {
+      e.preventDefault(); var di = document.getElementById('dmin'), dt = di.value.trim(); if (!dt || !liveMode()) return true;
+      di.value = ''; dmSend(dt); return true;
+    }
     if (id === 'nameform' || id === 'emailform' || id === 'passform') {
       e.preventDefault(); if (!liveMode()) return true;
       if (id === 'nameform') {
@@ -2085,6 +2219,22 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
 
   function extraClick(act, el, id) {
+    if (act === 'inbox') { state.tab = 'inbox'; closeSheet(); render(); window.scrollTo(0, 0); if (liveMode()) loadDMs(); return true; }
+    if (act === 'dmopen') { dmOpen(id); return true; }
+    if (act === 'dmstart') { if (liveMode()) dmStart(el.getAttribute('data-u')); return true; }
+    if (act === 'dmfind') { state.tab = 'home'; state.homeTab = 'dishes'; render(); var qq = document.getElementById('q'); if (qq) { qq.focus(); } toast('Scrivi il nome della persona'); return true; }
+    if (act === 'dmattach') { openDmAttach(); return true; }
+    if (act === 'dmpick') { var dp = byId(id); if (dp && state.curDm) { dmSend('[[r:' + dp.title + ']]'); closeSheet(); } return true; }
+    if (act === 'dmok' || act === 'dmno') {
+      var st = act === 'dmok' ? 'active' : 'declined';
+      sb.from('conversations').update({ status: st }).eq('id', id).then(function (r) {
+        if (r.error) { toast('Operazione non riuscita'); return; }
+        var cc = state.convs.filter(function (x) { return x.id === id; })[0]; if (cc) cc.status = st;
+        if (st === 'declined') { state.tab = 'inbox'; toast('Richiesta rifiutata'); }
+        render();
+      });
+      return true;
+    }
     if (act === 'notifs') {
       state.notifNew = {}; var unread = [];
       state.notifs.forEach(function (n) { if (!n.read_at) { state.notifNew[n.id] = 1; unread.push(n.id); } });
