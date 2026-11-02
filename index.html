@@ -2714,6 +2714,14 @@ body.inchat nav.tabs { display: none !important; }
 
   normPlan();
   render();
+  /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
+  var BUILD = '202611022040';
+  try {
+    fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
+      var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
+      if (m && m[1] !== BUILD && seen !== m[1]) { try { sessionStorage.setItem('gusto-rl', m[1]); } catch (e) {} location.reload(); }
+    }).catch(function () {});
+  } catch (e) {}
 })();
 </script>
 
