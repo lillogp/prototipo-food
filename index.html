@@ -318,6 +318,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 .mrec .mt { width: 44px; height: 44px; border-radius: 8px; overflow: hidden; flex: none; }
 .mrec .mt img, .mrec .mt video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mrec b { font-size: 14px; font-weight: 600; padding-right: 6px; }
+.accf { margin-bottom: 22px; }
 </style>
 </head>
 <body>
@@ -551,7 +552,10 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var mine = posts.filter(function (p) { return p.mine; });
     var saved = Object.keys(state.saved).filter(function (k) { return state.saved[k]; }).length;
     var nf = Object.keys(state.following).filter(function (k) { return state.following[k]; }).length;
-    return '<div class="prof"><div class="av">T</div><div><h1 style="font-size:26px">' + ME.name + '</h1><div style="color:var(--muted)">@' + ME.handle + '</div></div></div>' +
+    var pn = liveMode() && state.profile ? (state.profile.display_name || 'Il tuo nome') : ME.name;
+    var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : 'Su Gusto')) : '@' + ME.handle;
+    return '<div class="prof"><div class="av">' + esc(pn[0].toUpperCase()) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
+      '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><div><b>0</b>seguaci</div><div><b>' + nf + '</b>seguiti</div><button class="statbtn" data-act="tab" data-v="saved" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
       profMenu() +
       (mine.length ? '<div class="grid3">' + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
@@ -780,22 +784,77 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function () { toast('Lista copiata'); }, function () { showText(txt); });
     else showText(txt);
   }
+  function weekNavHTML(days) {
+    return '<div class="weeknav"><button class="ic" data-act="week" data-d="-1" aria-label="Settimana precedente">&lsaquo;</button><b>' + weekLabel(days) + '</b><button class="ic" data-act="week" data-d="1" aria-label="Settimana successiva">&rsaquo;</button></div>' +
+      (state.weekOff ? '<div style="text-align:center;margin:-4px 0 10px"><button class="reset" data-act="weektoday">Torna a questa settimana</button></div>' : '');
+  }
   function viewPlanner() {
     var days = weekDays(state.weekOff);
-    return '<div class="view-h"><h1>Planner</h1><p>Organizza i pasti e ricava la spesa.</p></div>' +
-      '<div class="seg" role="group" aria-label="Sezione"><button data-act="ptab" data-v="week" aria-pressed="' + (state.planTab === 'week') + '">Settimana</button><button data-act="ptab" data-v="shop" aria-pressed="' + (state.planTab === 'shop') + '">Spesa</button></div>' +
+    return '<div class="view-h"><h1>Planner</h1><p>Organizza i pasti della settimana.</p></div>' +
       '<div class="peoplebar"><span>Persone: <b>' + state.people.map(function (q) { return esc(q.name); }).join(', ') + '</b></span><button class="reset" data-act="people">Modifica</button></div>' +
-      '<div class="weeknav"><button class="ic" data-act="week" data-d="-1" aria-label="Settimana precedente">&lsaquo;</button><b>' + weekLabel(days) + '</b><button class="ic" data-act="week" data-d="1" aria-label="Settimana successiva">&rsaquo;</button></div>' +
-      (state.weekOff ? '<div style="text-align:center;margin:-4px 0 10px"><button class="reset" data-act="weektoday">Torna a questa settimana</button></div>' : '') +
-      (state.planTab === 'week' ? (state.pro && PLANS.length ? '<button class="btn ghost" data-act="plan" data-pl="mp" style="width:100%;margin-bottom:12px">Piano di ' + esc(state.pro.name) + '</button>' : '') + '<div class="days">' + days.map(dayCard).join('') + '</div>' : viewShop());
+      weekNavHTML(days) +
+      (state.pro && PLANS.length ? '<button class="btn ghost" data-act="plan" data-pl="mp" style="width:100%;margin-bottom:12px">Piano di ' + esc(state.pro.name) + '</button>' : '') + '<div class="days">' + days.map(dayCard).join('') + '</div>';
+  }
+  function viewPantry() {
+    var rows = state.pantry.map(function (x, i) {
+      return '<li class="pitem"><span class="pn1">' + esc(x.n) + '</span><span class="pq">' + esc(pQty(x)) + '</span><button class="rm" data-act="pdel" data-i="' + i + '" aria-label="Rimuovi ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>';
+    }).join('');
+    return '<p class="hint" style="margin:0 0 10px">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
+      '<form class="pform" id="pantryform"><input type="text" id="pnn" list="ingl" maxlength="40" placeholder="Ingrediente" aria-label="Ingrediente"><input type="number" id="pqq" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità">' +
+      '<select id="puu" aria-label="Unità"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="pezzi">pezzi</option></select><button class="btn" type="submit">Aggiungi</button></form>' +
+      (rows ? '<ul class="ing plist" style="margin-top:12px">' + rows + '</ul><button class="btn ghost" data-act="pcook" style="margin-top:12px">Cosa posso cucinare?</button>' : '<div class="empty" style="padding:18px;margin-top:12px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
+      '<datalist id="ingl">' + COMMON.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist>';
+  }
+  function viewShopTab() {
+    var days = weekDays(state.weekOff), pan = state.shopTab === 'pantry';
+    return '<div class="view-h"><h1>Spesa</h1><p>Cosa comprare e cosa hai in casa.</p></div>' +
+      '<div class="seg" role="group" aria-label="Sezione"><button data-act="shoptab" data-v="list" aria-pressed="' + !pan + '">Spesa</button><button data-act="shoptab" data-v="pantry" aria-pressed="' + pan + '">Dispensa</button></div>' +
+      (pan ? viewPantry() : weekNavHTML(days) + viewShop());
+  }
+  /* Impostazioni, account e privacy */
+  function viewSettings() {
+    var pr = state.prefs, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
+    if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '')]);
+    rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
+      ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
+      ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
+    return '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button><div class="view-h"><h1>Impostazioni</h1></div>' +
+      '<div class="menu" style="margin-top:0">' + rows.map(function (x) { return '<button class="mrow" data-act="' + x[0] + '"><span><b>' + x[1] + '</b><small>' + esc(x[2]) + '</small></span><span class="chev">&rsaquo;</span></button>'; }).join('') + '</div>';
+  }
+  function viewAccount() {
+    var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
+    if (!liveMode()) return back + '<div class="view-h"><h1>Account</h1></div><div class="empty"><b>Non hai effettuato l\'accesso</b>Con un account ritrovi planner, dispensa e preferenze su ogni dispositivo.<br><button class="btn" data-act="authopen" style="margin-top:12px">Accedi o registrati</button></div>';
+    var nm = (state.profile && state.profile.display_name) || '';
+    return back + '<div class="view-h"><h1>Account</h1></div>' +
+      '<form class="new accf" id="nameform" novalidate><label class="f" for="acc-n">Nome<small>È il nome con cui gli altri ti cercano.</small><input id="acc-n" type="text" maxlength="40" autocomplete="name" value="' + esc(nm) + '"></label><button class="btn ghost" type="submit">Salva il nome</button></form>' +
+      '<form class="new accf" id="emailform" novalidate><label class="f" for="acc-e">Email<small>Ora: ' + esc(state.user.email) + '. Ti mandiamo un\'email per confermare il nuovo indirizzo.</small><input id="acc-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Nuovo indirizzo" maxlength="120"></label><button class="btn ghost" type="submit">Cambia email</button></form>' +
+      '<form class="new accf" id="passform" novalidate><label class="f" for="acc-p">Nuova password<small>Almeno 8 caratteri.</small><input id="acc-p" type="password" autocomplete="new-password" maxlength="72"></label><label class="f" for="acc-p2">Ripeti la password<input id="acc-p2" type="password" autocomplete="new-password" maxlength="72"></label><button class="btn ghost" type="submit">Cambia password</button></form>' +
+      '<button class="btn" data-act="logout">Esci</button>';
+  }
+  function reqListHTML() {
+    if (!state.reqs.length) return '<div class="empty" style="padding:18px"><b>Nessuna richiesta</b>Quando qualcuno chiede di seguirti, la trovi qui.</div>';
+    return '<div class="slist">' + state.reqs.map(function (u) {
+      var x = state.realP[u] || {}, nm = x.display_name || x.handle || 'Utente';
+      return '<div class="rcard" style="align-items:center"><div class="rmain"><b>' + esc(nm) + '</b><span>Vuole seguirti</span></div><button class="follow" data-act="reqok" data-u="' + esc(u) + '">Accetta</button><button class="reset" data-act="reqno" data-u="' + esc(u) + '" style="color:var(--muted)">Rifiuta</button></div>';
+    }).join('') + '</div>';
+  }
+  function viewPrivacy() {
+    var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
+    if (!liveMode() || !state.profile) return back + '<div class="view-h"><h1>Privacy</h1></div><div class="empty"><b>Serve un account</b>Accedi per gestire la privacy del tuo profilo.</div>';
+    var on = !!state.profile.is_private;
+    return back + '<div class="view-h"><h1>Privacy</h1></div>' +
+      '<section class="procard" style="margin-top:0"><h3>' + (on ? 'Profilo privato' : 'Profilo pubblico') + '</h3><p class="hint" style="margin:0 0 12px">' +
+      (on ? 'Il tuo nome compare nella ricerca, ma i tuoi piatti li vede solo chi accetti.' : 'Chiunque può vedere i tuoi piatti. Con il profilo privato il nome resta cercabile, ma i piatti li vede solo chi accetti.') + '</p>' +
+      '<button class="btn" data-act="privtoggle">' + (on ? 'Rendi il profilo pubblico' : 'Rendi il profilo privato') + '</button></section>' +
+      '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML();
   }
   function render() {
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
     var gate = needAuth();
-    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : viewProfile();
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['new', 'Pubblica', ICONS.plus], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
-    var cur = state.tab === 'plan' ? (state.planTab === 'shop' ? 'shop' : 'plan') : state.tab === 'saved' || state.tab === 'pro' ? 'me' : state.tab;
+    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'user'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : 'me') : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
       return '<button class="tab' + (t[0] === 'new' ? ' plus' : '') + '" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' +
         (t[0] === 'new' ? '<span class="pl">' + t[2] + '</span>' : t[2]) + '<span>' + t[1] + '</span></button>';
@@ -1776,12 +1835,12 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     });
   }
   function liveClick(act, el, id) {
-    if (act === 'privacy') { openPrivacy(); return true; }
+    if (act === 'privacy') { state.tab = 'privacy'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
     if (act === 'privtoggle') {
       var nv = !state.profile.is_private;
       sb.from('profiles').update({ is_private: nv }).eq('id', state.user.id).then(function (r) {
         if (r.error) { toast('Non riesco a cambiare l\'impostazione'); return; }
-        state.profile.is_private = nv; openPrivacy(); toast(nv ? 'Profilo privato' : 'Profilo pubblico');
+        state.profile.is_private = nv; render(); toast(nv ? 'Profilo privato' : 'Profilo pubblico');
       });
       return true;
     }
@@ -1791,7 +1850,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       var q = act === 'reqok' ? sb.from('follows').update({ status: 'accepted' }).eq('follower_id', u).eq('followed_id', state.user.id) : sb.from('follows').delete().eq('follower_id', u).eq('followed_id', state.user.id);
       q.then(function (r) {
         if (r.error) { toast('Operazione non riuscita'); return; }
-        state.reqs = state.reqs.filter(function (x) { return x !== u; }); openReqs();
+        state.reqs = state.reqs.filter(function (x) { return x !== u; }); render();
       });
       return true;
     }
@@ -1854,6 +1913,34 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
   function extraSubmit(e) {
     var id = e.target.id;
+    if (id === 'nameform' || id === 'emailform' || id === 'passform') {
+      e.preventDefault(); if (!liveMode()) return true;
+      if (id === 'nameform') {
+        var nm = document.getElementById('acc-n').value.trim();
+        if (!nm || nm.length > 40) { toast('Il nome deve avere da 1 a 40 caratteri'); return true; }
+        sb.from('profiles').update({ display_name: nm }).eq('id', state.user.id).then(function (r) {
+          if (r.error) { toast('Non riesco a salvare il nome'); return; }
+          state.profile.display_name = nm; sb.auth.updateUser({ data: { display_name: nm } }).then(function () {}); toast('Nome aggiornato');
+        });
+      } else if (id === 'emailform') {
+        var em = document.getElementById('acc-e').value.trim();
+        if (!/^\S+@\S+\.\S+$/.test(em)) { toast('Scrivi un\'email valida'); return true; }
+        if (em.toLowerCase() === String(state.user.email).toLowerCase()) { toast('È già la tua email'); return true; }
+        sb.auth.updateUser({ email: em }, { emailRedirectTo: location.origin + location.pathname }).then(function (r) {
+          if (r.error) { toast(authErr(r.error.message)); return; }
+          document.getElementById('acc-e').value = ''; toast('Controlla la posta e conferma il nuovo indirizzo');
+        });
+      } else {
+        var pw = document.getElementById('acc-p').value, pw2 = document.getElementById('acc-p2').value;
+        if (pw.length < 8) { toast('La password deve avere almeno 8 caratteri'); return true; }
+        if (pw !== pw2) { toast('Le due password non coincidono'); return true; }
+        sb.auth.updateUser({ password: pw }).then(function (r) {
+          if (r.error) { toast(authErr(r.error.message)); return; }
+          document.getElementById('acc-p').value = ''; document.getElementById('acc-p2').value = ''; toast('Password cambiata');
+        });
+      }
+      return true;
+    }
 
     if (id === 'authform') {
       e.preventDefault(); if (!sb || authBusy) return true;
@@ -1884,7 +1971,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       var n = document.getElementById('pnn').value.trim(), q = parseFloat(document.getElementById('pqq').value.replace(',', '.')), u = document.getElementById('puu').value;
       if (!n) { toast('Scrivi l\'ingrediente'); return true; }
       if (!(q > 0)) { toast('Scrivi la quantità'); return true; }
-      var b = toBase(q, u); pantryAdd(n, b.q, b.fam); persist(); openPantry(); render(); document.getElementById('pnn').focus(); return true;
+      var b = toBase(q, u); pantryAdd(n, b.q, b.fam); persist(); render(); document.getElementById('pnn').focus(); return true;
     }
     if (id === 'rform') {
       e.preventDefault(); var nm = document.getElementById('rf-n').value.trim();
@@ -1912,7 +1999,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (act === 'authpro') { var e1 = document.getElementById('au-e'), p1 = document.getElementById('au-n'); var ev1 = e1 ? e1.value : '', nv1 = p1 ? p1.value : ''; state.authPro = !state.authPro; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev1; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv1; return true; }
     if (act === 'authguest') { state.guest = true; try { localStorage.setItem('gusto-guest', '1'); } catch (e) {} render(); return true; }
     if (act === 'authopen') { state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {} closeSheet(); render(); return true; }
-    if (act === 'account') { openAccount(); return true; }
+    if (act === 'account') { state.tab = 'account'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
+    if (act === 'shoptab') { state.shopTab = el.getAttribute('data-v'); render(); return true; }
     if (act === 'logout') {
       if (sb) sb.auth.signOut().then(function () { try { localStorage.removeItem('gusto-v1'); localStorage.removeItem('gusto-guest'); } catch (e) {} location.reload(); });
       return true;
@@ -1948,8 +2036,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (act === 'phide') { state.prefs.hide = !state.prefs.hide; persist(); openPrefs(); return true; }
     if (act === 'goalopen') { openGoal(); return true; }
     if (act === 'goalrm') { state.goal = null; state.goalBy = null; persist(); closeSheet(); render(); return true; }
-    if (act === 'pantry') { openPantry(); return true; }
-    if (act === 'pdel') { state.pantry.splice(parseInt(el.getAttribute('data-i'), 10), 1); persist(); openPantry(); render(); return true; }
+    if (act === 'pantry') { state.tab = 'shop'; state.shopTab = 'pantry'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
+    if (act === 'pdel') { state.pantry.splice(parseInt(el.getAttribute('data-i'), 10), 1); persist(); render(); return true; }
     if (act === 'pcook') { state.filter = 'Dalla dispensa'; state.homeTab = 'dishes'; state.tab = 'home'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
     if (act === 'topantry') {
       var list = shopList(), cnt = 0;
@@ -2028,19 +2116,11 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
   function shopperId() { return state.people.some(function (q) { return q.id === state.shopper; }) ? state.shopper : curPerson(); }
   function profMenu() {
-    var pr = state.prefs, nr = Object.keys(state.rsaved).filter(function (k) { return state.rsaved[k]; }).length;
     var rows = [
-      ['account', 'Account', sb ? (state.user ? state.user.email : 'Non hai effettuato l\'accesso') : 'Non disponibile'],
       ['mypro', isPro() ? 'I miei clienti' : 'Il mio nutrizionista', isPro() ? (state.profile.pro_verified ? (state.clients.filter(function (c) { return c.status === 'active'; }).length + ' attivi') : 'In verifica') : (state.pro ? state.pro.name + ' · collegato' : 'Nessuno')],
-      ['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
-      ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
-      ['pantry', 'Dispensa', state.pantry.length ? state.pantry.length + ' ingredienti in casa' : 'Vuota'],
-      ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]
+      ['tab', 'Impostazioni', 'Account, privacy, allergie, obiettivo']
     ];
-    if (liveMode() && state.profile) {
-      rows.splice(1, 0, ['privacy', 'Profilo privato', state.profile.is_private ? 'Attivo: chi non ti segue non vede i tuoi piatti' : 'Non attivo'], ['reqs', 'Richieste di follow', state.reqs.length ? state.reqs.length + ' da approvare' : 'Nessuna']);
-    }
-    return '<div class="menu">' + rows.map(function (r) { return '<button class="mrow" data-act="' + r[0] + '" data-v="rest"><span><b>' + r[1] + '</b><small>' + esc(r[2]) + '</small></span><span class="chev">&rsaquo;</span></button>'; }).join('') + '</div>';
+    return '<div class="menu">' + rows.map(function (x) { return '<button class="mrow" data-act="' + x[0] + '"' + (x[0] === 'tab' ? ' data-v="settings"' : '') + '><span><b>' + x[1] + '</b><small>' + esc(x[2]) + '</small></span><span class="chev">&rsaquo;</span></button>'; }).join('') + '</div>';
   }
 
   document.addEventListener('click', function (e) {
@@ -2049,7 +2129,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (act === 'gosaved') { state.savedTab = el.getAttribute('data-v'); state.tab = 'saved'; closeSheet(); render(); window.scrollTo(0, 0); return; }
     if (extraClick(act, el, id)) return;
     if (act === 'close') { if (el.classList.contains('sheet-bg') && e.target !== el) return; closeSheet(); if (state.tab !== 'new') render(); return; }
-    if (act === 'tab') { if (state.tab === 'new') keepFields(); var tv = el.getAttribute('data-v'); if (tv === 'shop') { state.tab = 'plan'; state.planTab = 'shop'; } else { state.tab = tv; if (tv === 'plan') state.planTab = 'week'; } closeSheet(); render(); window.scrollTo(0, 0); }
+    if (act === 'tab') { if (state.tab === 'new') keepFields(); var tv = el.getAttribute('data-v'); state.tab = tv; if (tv === 'shop') state.shopTab = 'list'; closeSheet(); render(); window.scrollTo(0, 0); }
     else if (act === 'filter') { state.filter = el.getAttribute('data-v'); render(); }
     else if (act === 'hidenote') { state.note = false; render(); }
     else if (act === 'like') { state.liked[id] = !state.liked[id]; persist(); render(); }
