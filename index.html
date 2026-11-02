@@ -537,6 +537,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     return '<div class="people"><h3>Persone che segui</h3>' + out.map(function (p) { return '<button data-act="profile" data-h="' + esc(p.handle) + '">' + esc(p.user) + '</button>'; }).join('') + '</div>';
   }
   function viewUser(h) {
+    if (h && h.indexOf('u:') === 0) return viewRealUser(h.slice(2));
     var ps = posts.filter(function (p) { return p.handle === h; });
     if (!ps.length) return '<div class="empty"><b>Profilo non trovato</b></div>';
     var u = ps[0], likes = ps.reduce(function (a, p) { return a + p.likes; }, 0);
@@ -1206,6 +1207,36 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     }
     return list;
   }
+  var realT = null;
+  function realSearch() {
+    clearTimeout(realT);
+    var q = state.q.replace(/[^\p{L}\p{N} ._-]/gu, ' ').replace(/\s+/g, ' ').trim();
+    if (!liveMode() || q.length < 2) { state.realRes = []; state.realQ = ''; return; }
+    realT = setTimeout(function () {
+      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
+        if (r.error) return;
+        state.realRes = (r.data || []).filter(function (x) { return x.display_name || x.handle; }); state.realQ = q;
+        (state.realRes).forEach(function (x) { state.realP[x.id] = x; });
+        var fw = document.getElementById('feedwrap'); if (fw && state.q.replace(/\s+/g, ' ').trim().toLowerCase().indexOf(q.toLowerCase()) === 0) fw.innerHTML = feedHTML();
+      });
+    }, 300);
+  }
+  function realBadge(x) { return x.account_type === 'pro' && x.pro_verified ? '<span class="role">Nutrizionista</span>' : ''; }
+  function realRows() {
+    if (!liveMode() || !state.realRes.length) return '';
+    return state.realRes.map(function (x) {
+      var nm = x.display_name || ('@' + x.handle), h = 'u:' + x.id;
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
+    }).join('');
+  }
+  function viewRealUser(id) {
+    var x = state.realP[id]; if (!x) return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button><div class="empty"><b>Profilo non trovato</b></div>';
+    var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
+    return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
+      '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + '</div>' +
+      (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
+      '<div class="empty" style="margin-top:18px"><b>Ancora nessun piatto</b>Quando pubblicherà delle ricette le troverai qui.</div>';
+  }
   function peopleHTML() {
     var words = state.q.toLowerCase().split(/\s+/).filter(Boolean); if (!words.length) return '';
     var seen = {}, out = [];
@@ -1214,9 +1245,10 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       var hay = (p.user + ' ' + p.handle + ' ' + (p.role || '')).toLowerCase();
       if (words.every(function (w) { return hay.indexOf(w) > -1; })) { seen[p.handle] = 1; out.push(p); }
     });
-    if (!out.length) return '';
+    var real = realRows();
+    if (!out.length && !real) return '';
     var shown = out.slice(0, 5);
-    return '<h3 class="shc" style="margin-top:4px">Persone</h3><div class="slist" style="margin-bottom:14px">' + shown.map(function (p) {
+    return '<h3 class="shc" style="margin-top:4px">Persone</h3><div class="slist" style="margin-bottom:14px">' + real + shown.map(function (p) {
       var n = posts.filter(function (x) { return x.handle === p.handle; }).length;
       return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '" style="padding:6px 0"><div class="av">' + esc(p.user[0]) + '</div><div class="who"><b>' + esc(p.user) + '</b><span>@' + esc(p.handle) + ' · ' + n + (n === 1 ? ' piatto' : ' piatti') + '</span></div></button>' +
         (p.role ? '<span class="role">' + esc(p.role) + '</span>' : '') + followBtn(p.handle) + '</div>';
@@ -1564,7 +1596,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 
   /* ---------- Area nutrizionista e cliente (dati veri) ---------- */
   function liveMode() { return !!(sb && state.user); }
-  state.profile = null; state.clients = []; state.curClient = null; state.myLink = null; state.msgs = []; state.lastPlan = null; state.pcmp = null; state.names = {};
+  state.realRes = []; state.realP = {}; state.realQ = ''; state.profile = null; state.clients = []; state.curClient = null; state.myLink = null; state.msgs = []; state.lastPlan = null; state.pcmp = null; state.names = {};
   try {
     var invQ = new URLSearchParams(location.search).get('invito');
     if (invQ && /^[0-9a-f]{32}$/.test(invQ)) { localStorage.setItem('gusto-invite', invQ); }
@@ -1974,7 +2006,9 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     else if (act === 'open') { openSheet(id); }
     else if (act === 'follow') {
       var h = el.getAttribute('data-h'); state.following[h] = !state.following[h]; persist();
-      toast(state.following[h] ? 'Ora segui @' + h : 'Non segui più @' + h); render();
+      var real = h.indexOf('u:') === 0, rn = real && state.realP[h.slice(2)] ? (state.realP[h.slice(2)].display_name || state.realP[h.slice(2)].handle) : h;
+      if (real && liveMode()) { var tid = h.slice(2); (state.following[h] ? sb.from('follows').insert({ follower_id: state.user.id, followed_id: tid }) : sb.from('follows').delete().eq('follower_id', state.user.id).eq('followed_id', tid)).then(function () {}); }
+      toast(state.following[h] ? 'Ora segui ' + (real ? rn : '@' + h) : 'Non segui più ' + (real ? rn : '@' + h)); render();
     }
     else if (act === 'profile') {
       var hh = el.getAttribute('data-h'); closeSheet();
@@ -2143,7 +2177,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   });
   document.addEventListener('input', function (e) {
     if (e.target.id === 'pcgoal' && state.pcmp) { state.pcmp.goal = e.target.value; return; }
-    if (e.target.id === 'q') { state.q = e.target.value; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = feedHTML(); return; }
+    if (e.target.id === 'q') { state.q = e.target.value; if (!state.q.trim()) state.realRes = []; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = feedHTML(); realSearch(); return; }
     if (e.target.id === 'rnote') { state.rnote[e.target.getAttribute('data-r')] = e.target.value; persist(); return; }
     if (e.target.classList && e.target.classList.contains('pn')) {
       var v = e.target.value.trim(), q = state.people.filter(function (x) { return x.id === e.target.getAttribute('data-pid'); })[0];
