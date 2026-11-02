@@ -785,7 +785,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<div class="peoplebar"><span>Persone: <b>' + state.people.map(function (q) { return esc(q.name); }).join(', ') + '</b></span><button class="reset" data-act="people">Modifica</button></div>' +
       '<div class="weeknav"><button class="ic" data-act="week" data-d="-1" aria-label="Settimana precedente">&lsaquo;</button><b>' + weekLabel(days) + '</b><button class="ic" data-act="week" data-d="1" aria-label="Settimana successiva">&rsaquo;</button></div>' +
       (state.weekOff ? '<div style="text-align:center;margin:-4px 0 10px"><button class="reset" data-act="weektoday">Torna a questa settimana</button></div>' : '') +
-      (state.planTab === 'week' ? (state.pro ? '<button class="btn ghost" data-act="plan" data-pl="mp" style="width:100%;margin-bottom:12px">Piano di ' + esc(state.pro.name) + '</button>' : '') + '<div class="days">' + days.map(dayCard).join('') + '</div>' : viewShop());
+      (state.planTab === 'week' ? (state.pro && PLANS.length ? '<button class="btn ghost" data-act="plan" data-pl="mp" style="width:100%;margin-bottom:12px">Piano di ' + esc(state.pro.name) + '</button>' : '') + '<div class="days">' + days.map(dayCard).join('') + '</div>' : viewShop());
   }
   function render() {
     var app = document.getElementById('app'), sc = {};
@@ -1319,7 +1319,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
   function openPlan(plid) {
     var pl = PLANS.filter(function (x) { return x.id === plid; })[0]; if (!pl) return;
-    var k = planKcal(pl), names = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+    var k = pl.goal || planKcal(pl), names = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
     sheetOpen(pl.title, pl.title,
       '<div class="meta"><span>' + esc(pl.author) + '</span><span>circa ' + k + ' kcal al giorno</span></div><p style="margin:0">' + esc(pl.desc) + '</p>' +
       '<div class="slist">' + names.map(function (nm, i) {
@@ -1426,6 +1426,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     }).join('');
   }
   function viewPro() {
+    if (liveMode()) return viewProLive();
     var back = '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button>';
     if (!state.pro) return back + '<div class="view-h"><h1>Il mio nutrizionista</h1><p>Collegati al professionista che ti segue.</p></div>' +
       '<div class="invite"><div class="prof"><div class="av">M</div><div><b style="font-family:var(--f-display);font-size:19px">Marco</b><div style="color:var(--muted);font-size:13px">Nutrizionista · iscrizione all\'albo verificata (dato di esempio)</div></div></div>' +
@@ -1438,7 +1439,13 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<form class="cmf" id="chatform" style="margin-top:10px"><button type="button" class="rm scan" data-act="chatattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="chatin" maxlength="300" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio"><button class="btn" type="submit">Invia</button></form>' +
       '<p class="hint">Messaggi di esempio: nel prototipo ' + esc(nm) + ' risponde con un messaggio automatico. Col tasto + allega una ricetta, per esempio per chiedere di sostituirla.</p></section>';
   }
-  function chatRefresh() { var c = document.getElementById('chat'); if (c) { c.innerHTML = chatHTML(); c.scrollTop = c.scrollHeight; } }
+  function viewProLive() {
+    var back = '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button>';
+    if (!state.profile) return back + '<div class="empty" style="margin-top:12px"><b>Un momento…</b></div>';
+    if (isPro() && state.curClient && state.profile.pro_verified) back = '';
+    return back + (isPro() ? viewProDash() : viewClientPro());
+  }
+  function chatRefresh() { var c = document.getElementById('chat'); if (c) { c.innerHTML = liveMode() ? liveChatHTML() : chatHTML(); c.scrollTop = c.scrollHeight; } }
   function chatAutoReply() {
     setTimeout(function () {
       if (!state.pro) return;
@@ -1462,12 +1469,12 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   try { state.guest = localStorage.getItem('gusto-guest') === '1'; } catch (e) { state.guest = false; }
   function needAuth() { return !!sb && authChecked && !state.user && !state.guest; }
   function cloudPack() {
-    var o = {}; KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs') o[k] = state[k]; });
+    var o = {}; KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs' && k !== 'pro' && k !== 'chat') o[k] = state[k]; });
     return { planner: o, pantry: state.pantry, prefs: state.prefs };
   }
   function cloudApply(row) {
     var o = row.planner || {};
-    KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs' && o[k] !== undefined && o[k] !== null) state[k] = o[k]; });
+    KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs' && k !== 'pro' && k !== 'chat' && o[k] !== undefined && o[k] !== null) state[k] = o[k]; });
     if (Array.isArray(row.pantry) && row.pantry.length) state.pantry = row.pantry;
     if (row.prefs && Object.keys(row.prefs).length) state.prefs = { diet: '', allergens: row.prefs.allergens || [], hide: row.prefs.hide !== false };
     if (!state.people || !state.people.length) state.people = [{ id: 'p1', name: 'Io' }];
@@ -1492,6 +1499,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       try { var o = {}; KEEP.forEach(function (k) { o[k] = state[k]; }); localStorage.setItem('gusto-v1', JSON.stringify(o)); } catch (e) {}
       if (!has) cloudSave();
       render();
+      proLoad();
     });
   }
   function authErr(m) {
@@ -1505,7 +1513,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
   function viewAuth() {
     var up = state.authMode === 'up';
-    return '<div class="view-h" style="margin-top:18px"><h1>' + (up ? 'Crea il tuo account' : 'Accedi') + '</h1><p>' + (up ? 'Così planner, spesa e dispensa restano con te su ogni dispositivo.' : 'Bentornato su Gusto.') + '</p></div>' +
+    return (hasInvite() ? '<div class="note" style="margin-top:14px"><span>Hai ricevuto un invito da un nutrizionista. Accedi o registrati per collegarti.</span></div>' : '') + '<div class="view-h" style="margin-top:18px"><h1>' + (up ? 'Crea il tuo account' : 'Accedi') + '</h1><p>' + (up ? 'Così planner, spesa e dispensa restano con te su ogni dispositivo.' : 'Bentornato su Gusto.') + '</p></div>' +
       '<form class="new" id="authform" novalidate>' +
       (up ? '<label class="f" for="au-n">Il tuo nome<input id="au-n" type="text" autocomplete="name" maxlength="40"></label>' : '') +
       '<label class="f" for="au-e">Email<input id="au-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" maxlength="120"></label>' +
@@ -1535,6 +1543,214 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       }, 0);
     });
   }
+
+  /* ---------- Area nutrizionista e cliente (dati veri) ---------- */
+  function liveMode() { return !!(sb && state.user); }
+  state.profile = null; state.clients = []; state.curClient = null; state.myLink = null; state.msgs = []; state.lastPlan = null; state.pcmp = null; state.names = {};
+  try {
+    var invQ = new URLSearchParams(location.search).get('invito');
+    if (invQ && /^[0-9a-f]{32}$/.test(invQ)) { localStorage.setItem('gusto-invite', invQ); }
+    if (invQ) history.replaceState(null, '', location.pathname + location.hash);
+  } catch (e) {}
+  function isPro() { return liveMode() && !!state.profile && state.profile.account_type === 'pro'; }
+  function hasInvite() { try { return !!localStorage.getItem('gusto-invite'); } catch (e) { return false; } }
+  function msgTime(iso) { var d = new Date(iso); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function activeLinkId() { return isPro() ? (state.curClient && state.curClient.id) : (state.myLink && state.myLink.id); }
+  function setLivePlan(row, nm) {
+    var d = row.data || {};
+    PLANS.length = 0;
+    PLANS.push({ id: 'mp', author: nm, title: 'Piano di ' + nm, desc: 'Il piano della settimana preparato per te.', col: d.col || [], pra: d.pra || [], cen: d.cen || [], spu: d.spu || [], goal: row.kcal_goal || null });
+  }
+  function loadMsgs(lid) {
+    return sb.from('messages').select('id,sender_id,body,created_at').eq('link_id', lid).order('created_at', { ascending: true }).limit(200)
+      .then(function (r) { if (!r.error) state.msgs = r.data || []; });
+  }
+  function loadClients() {
+    return sb.from('client_links').select('id,client_id,invite_code,status,created_at').eq('pro_id', state.user.id).neq('status', 'ended').order('created_at', { ascending: false })
+      .then(function (r) {
+        state.clients = r.data || [];
+        var ids = state.clients.map(function (c) { return c.client_id; }).filter(Boolean);
+        if (!ids.length) return null;
+        return sb.from('profiles').select('id,display_name').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.names[x.id] = x.display_name || 'Cliente'; }); });
+      });
+  }
+  function loadMyLink() {
+    return sb.from('client_links').select('id,pro_id,status').eq('client_id', state.user.id).eq('status', 'active').limit(1).then(function (r) {
+      var l = r.data && r.data[0]; state.myLink = l || null; state.msgs = [];
+      if (!l) return null;
+      return Promise.all([
+        sb.from('profiles').select('display_name').eq('id', l.pro_id).maybeSingle(),
+        sb.from('plans').select('data,kcal_goal,created_at').eq('link_id', l.id).order('created_at', { ascending: false }).limit(1),
+        loadMsgs(l.id)
+      ]).then(function (a) {
+        var nm = (a[0].data && a[0].data.display_name) || 'Nutrizionista';
+        state.myLink.proName = nm; state.pro = { name: nm };
+        var pr = a[1].data && a[1].data[0]; if (pr) setLivePlan(pr, nm);
+      });
+    });
+  }
+  function proLoad() {
+    if (!liveMode()) return;
+    state.pro = null; state.chat = []; PLANS.length = 0;
+    sb.from('profiles').select('id,display_name,account_type,pro_verified').eq('id', state.user.id).maybeSingle().then(function (r) {
+      state.profile = r.data || { account_type: 'user', pro_verified: false, display_name: '' };
+      var code = null; try { code = localStorage.getItem('gusto-invite'); localStorage.removeItem('gusto-invite'); } catch (e) {}
+      if (code && state.profile.account_type !== 'pro') {
+        return sb.rpc('accept_invite', { code: code }).then(function (x) { toast(x.error ? 'Invito non valido o già usato' : 'Collegato al tuo nutrizionista'); });
+      }
+      return null;
+    }).then(function () { return state.profile.account_type === 'pro' ? loadClients() : loadMyLink(); })
+      .then(function () { render(); }, function () { render(); });
+  }
+  function liveChatHTML() {
+    if (!state.msgs.length) return '<p class="hint" style="margin:8px">Ancora nessun messaggio. Scrivi per primo.</p>';
+    return state.msgs.map(function (m) {
+      var t = m.body || '', rec = /\[\[r:(.+?)\]\]/.exec(t), pp = rec ? postByTitle(rec[1]) : null, txt = t.replace(/\[\[r:.+?\]\]/, '').trim();
+      return '<div class="msg ' + (m.sender_id === state.user.id ? 'me' : 'pro') + '">' + (txt ? '<p>' + esc(txt) + '</p>' : '') +
+        (pp ? '<button class="mrec" data-act="open" data-id="' + pp.id + '"><span class="mt">' + thumbTag(pp.media) + '</span><b>' + esc(pp.title) + '</b></button>' : '') + '<small>' + msgTime(m.created_at) + '</small></div>';
+    }).join('');
+  }
+  function liveSend(text) {
+    var lid = activeLinkId(); if (!lid || !text) return;
+    sb.from('messages').insert({ link_id: lid, sender_id: state.user.id, body: text }).select('id,sender_id,body,created_at').single().then(function (r) {
+      if (r.error) { toast('Messaggio non inviato'); return; }
+      state.msgs.push(r.data); chatRefresh();
+    });
+  }
+  setInterval(function () {
+    if (!liveMode() || state.tab !== 'pro' || document.hidden) return;
+    var lid = activeLinkId(); if (!lid) return;
+    var n = state.msgs.length, last = n ? state.msgs[n - 1].id : 0;
+    loadMsgs(lid).then(function () {
+      var m = state.msgs.length; if (m !== n || (m && state.msgs[m - 1].id !== last)) chatRefresh();
+    });
+  }, 5000);
+  function chatSection(nm) {
+    return '<section><h3 style="margin:16px 0 8px">Messaggi</h3><div class="chat" id="chat">' + liveChatHTML() + '</div>' +
+      '<form class="cmf" id="chatform" style="margin-top:10px"><button type="button" class="rm scan" data-act="chatattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="chatin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio"><button class="btn" type="submit">Invia</button></form>' +
+      '<p class="hint">Col tasto + allega una ricetta. I messaggi si aggiornano da soli.</p></section>';
+  }
+  function viewClientPro() {
+    var head = '<div class="view-h"><h1>Il mio nutrizionista</h1><p>Collegati al professionista che ti segue.</p></div>';
+    if (!state.myLink) return head + '<div class="empty"><b>Nessun nutrizionista collegato</b>Chiedi al tuo nutrizionista il link di invito. Aprendolo dopo aver effettuato l\'accesso ti colleghi subito.</div>';
+    var nm = state.myLink.proName || 'Nutrizionista', pl = PLANS[0];
+    return '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0]) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">Il tuo nutrizionista</div></div><button class="reset" data-act="clientend" data-id="' + state.myLink.id + '">Scollega</button></div>' +
+      '<p class="hint" style="margin:8px 0 0">Il tuo nutrizionista vede solo il piano e i messaggi tra voi. Il tuo planner, la dispensa e i salvati restano privati.</p>' +
+      '<section class="procard">' + (pl ? '<h3>Piano di ' + esc(nm) + '</h3><p class="hint" style="margin:0 0 10px">Circa ' + (pl.goal || planKcal(pl)) + ' kcal al giorno.</p><div class="shopact"><button class="btn ghost" data-act="plan" data-pl="mp">Vedi il piano</button><button class="btn" data-act="planapply" data-pl="mp">Applica alla settimana</button></div>'
+        : '<h3>Piano settimanale</h3><p class="hint" style="margin:0">Il tuo nutrizionista non ha ancora inviato un piano.</p>') + '</section>' + chatSection(nm);
+  }
+  function invLink(code) { return location.origin + location.pathname + '?invito=' + code; }
+  function viewProDash() {
+    var h = '<div class="view-h"><h1>I miei clienti</h1><p>Chi segui con Gusto.</p></div>';
+    if (!state.profile.pro_verified) return h + '<div class="empty"><b>Profilo in verifica</b>Prima di invitare clienti, il tuo profilo da nutrizionista deve essere verificato. Ti avvisiamo appena è pronto.</div>';
+    if (state.curClient) return viewClientDetail();
+    var act = state.clients.filter(function (c) { return c.status === 'active'; }), pend = state.clients.filter(function (c) { return c.status === 'pending'; });
+    return h + '<p class="hint" style="margin:0 0 10px">Di ogni cliente vedi solo il piano che gli invii e i vostri messaggi, non il suo planner personale.</p>' +
+      '<button class="btn" data-act="invite" style="width:100%;margin-bottom:14px">Invita un cliente</button>' +
+      (act.length ? '<div class="slist">' + act.map(function (c) {
+        return '<div class="rcard"><button class="rmain" data-act="client" data-id="' + c.id + '"><b>' + esc(state.names[c.client_id] || 'Cliente') + '</b><span>Attivo dal ' + new Date(c.created_at).toLocaleDateString('it-IT') + '</span></button></div>';
+      }).join('') + '</div>' : '<div class="empty"><b>Nessun cliente ancora</b>Invita un cliente: ricevi un link da mandargli. Quando lo apre e accede, compare qui.</div>') +
+      (pend.length ? '<h3 class="shc">Inviti in attesa</h3><div class="slist">' + pend.map(function (c) {
+        return '<div class="rcard"><div class="rmain"><b>Invito non ancora usato</b><span>Creato il ' + new Date(c.created_at).toLocaleDateString('it-IT') + '</span></div><button class="reset" data-act="invcopy" data-code="' + esc(c.invite_code) + '">Link</button></div>';
+      }).join('') + '</div>' : '');
+  }
+  function viewClientDetail() {
+    var c = state.curClient, nm = state.names[c.client_id] || 'Cliente', lp = state.lastPlan;
+    return '<button class="ic" data-act="clientback" style="margin-left:-8px">&lsaquo; Clienti</button>' +
+      '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0]) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">Cliente</div></div><button class="reset" data-act="clientend" data-id="' + c.id + '">Scollega</button></div>' +
+      '<section class="procard"><h3>Piano settimanale</h3><p class="hint" style="margin:0 0 10px">' + (lp ? 'Ultimo piano inviato il ' + new Date(lp.created_at).toLocaleDateString('it-IT') + (lp.kcal_goal ? ' · obiettivo ' + lp.kcal_goal + ' kcal' : '') + '.' : 'Non hai ancora inviato un piano.') + '</p>' +
+      '<button class="btn" data-act="pcopen">' + (lp ? 'Modifica e invia un nuovo piano' : 'Componi il piano') + '</button></section>' + chatSection(nm);
+  }
+  function openInvite(code) {
+    var link = invLink(code);
+    sheetOpen('Invita un cliente', 'Invita un cliente',
+      '<p class="hint" style="margin:0">Manda questo link al cliente. Quando lo apre, accede (o si registra) e diventa tuo cliente. Il link vale per una sola persona.</p>' +
+      '<textarea id="invbox" readonly style="min-height:84px">' + esc('Ti invito a seguire il piano alimentare su Gusto: ' + link) + '</textarea>' +
+      '<button class="btn" data-act="invcopy" data-code="' + esc(code) + '">Copia il messaggio</button>' +
+      (navigator.share ? '<button class="btn ghost" data-act="invshare" data-code="' + esc(code) + '">Condividi</button>' : ''));
+  }
+  var SLOTK = [['col', 'Colazione'], ['pra', 'Pranzo'], ['cen', 'Cena'], ['spu', 'Spuntino']], DAYN = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+  function normData(d) { var o = {}; SLOTK.forEach(function (k) { var a = (d && d[k[0]]) || []; o[k[0]] = []; for (var i = 0; i < 7; i++) o[k[0]].push(a[i] || ''); }); return o; }
+  function dayKcal(c, i) { var t = 0; SLOTK.forEach(function (k) { var p = c.data[k[0]][i] && postByTitle(c.data[k[0]][i]); if (p) t += kcalPP(p); }); return t; }
+  function openCompose() {
+    var c = state.pcmp, nm = state.names[c.link.client_id] || 'Cliente';
+    var chips = '<div class="pchips">' + DAYN.map(function (d, i) { return '<button class="pc" data-act="pcday" data-d="' + i + '" aria-pressed="' + (c.day === i) + '">' + d + '</button>'; }).join('') + '</div>';
+    var rows = SLOTK.map(function (k) {
+      var t = c.data[k[0]][c.day];
+      return '<div class="plday"><b>' + k[1] + '</b>' + (t ? '<span>' + esc(t) + '</span><span><button class="reset" data-act="pcsel" data-slot="' + k[0] + '">Cambia</button> <button class="reset" data-act="pcclr" data-slot="' + k[0] + '" style="color:var(--muted)">Togli</button></span>'
+        : '<button class="addslot" data-act="pcsel" data-slot="' + k[0] + '">Scegli un piatto</button>') + '</div>';
+    }).join('');
+    var dk = dayKcal(c, c.day), done = 0; for (var i = 0; i < 7; i++) if (dayKcal(c, i) > 0) done++;
+    sheetOpen('Piano per ' + nm, 'Piano per ' + nm,
+      chips + '<div class="slist">' + rows + '</div>' + '<p class="hint" style="margin:0">' + (dk ? 'Questo giorno: circa ' + dk + ' kcal.' : 'Nessun piatto in questo giorno.') + ' Giorni compilati: ' + done + ' su 7.</p>' +
+      '<label class="f" for="pcgoal">Obiettivo giornaliero in kcal <small>facoltativo, il cliente lo vede nel planner</small><input id="pcgoal" type="number" inputmode="numeric" min="800" max="6000" step="50" value="' + esc(c.goal || '') + '"></label>' +
+      '<button class="btn" data-act="pcsave">Invia il piano a ' + esc(nm) + '</button>');
+  }
+  function openCompPick() {
+    sheetOpen('Scegli un piatto', 'Scegli un piatto', '<div class="slist">' + posts.map(function (q) { return pickRow(q, '', '').replace('data-act="ppick"', 'data-act="pcpick"'); }).join('') + '</div>');
+  }
+  function openEndLink(lid) {
+    sheetOpen('Scollega', 'Scollegare?', '<p style="margin:0">Il collegamento tra nutrizionista e cliente si chiude: non potete più scrivervi né inviarvi piani. Per riattivarlo serve un nuovo invito.</p>' +
+      '<button class="btn" data-act="clientendyes" data-id="' + lid + '">Sì, scollega</button><button class="btn ghost" data-act="close">Annulla</button>');
+  }
+  function liveClick(act, el, id) {
+    if (act === 'invite') {
+      sb.from('client_links').insert({ pro_id: state.user.id }).select('id,client_id,invite_code,status,created_at').single().then(function (r) {
+        if (r.error) { toast('Non riesco a creare l\'invito'); return; }
+        state.clients.unshift(r.data); openInvite(r.data.invite_code); render();
+      });
+      return true;
+    }
+    if (act === 'invcopy' || act === 'invshare') {
+      var msg = 'Ti invito a seguire il piano alimentare su Gusto: ' + invLink(el.getAttribute('data-code'));
+      if (act === 'invshare') { try { navigator.share({ text: msg }); } catch (e) {} return true; }
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(function () { toast('Copiato'); }, function () { showText(msg); }); else showText(msg);
+      return true;
+    }
+    if (act === 'client') {
+      var c = state.clients.filter(function (x) { return x.id === id; })[0]; if (!c) return true;
+      state.curClient = c; state.msgs = []; state.lastPlan = null; render();
+      Promise.all([loadMsgs(c.id), sb.from('plans').select('data,kcal_goal,created_at').eq('link_id', c.id).order('created_at', { ascending: false }).limit(1)]).then(function (a) {
+        state.lastPlan = (a[1].data && a[1].data[0]) || null; if (state.curClient && state.curClient.id === c.id) render();
+      });
+      return true;
+    }
+    if (act === 'clientback') { state.curClient = null; state.msgs = []; render(); return true; }
+    if (act === 'clientend') { openEndLink(id); return true; }
+    if (act === 'clientendyes') {
+      sb.from('client_links').update({ status: 'ended' }).eq('id', id).then(function (r) {
+        closeSheet();
+        if (r.error) { toast('Non riesco a scollegare'); return; }
+        state.curClient = null; state.msgs = []; state.myLink = null; state.pro = null; PLANS.length = 0; state.clients = state.clients.filter(function (x) { return x.id !== id; });
+        toast('Scollegato'); render();
+      });
+      return true;
+    }
+    if (act === 'pcopen') {
+      var cl = state.curClient; if (!cl) return true;
+      state.pcmp = { link: cl, day: 0, data: normData(state.lastPlan && state.lastPlan.data), goal: state.lastPlan && state.lastPlan.kcal_goal ? String(state.lastPlan.kcal_goal) : '' };
+      openCompose(); return true;
+    }
+    if (act === 'pcday') { state.pcmp.day = parseInt(el.getAttribute('data-d'), 10); openCompose(); return true; }
+    if (act === 'pcsel') { state.pcmp.slot = el.getAttribute('data-slot'); openCompPick(); return true; }
+    if (act === 'pcclr') { state.pcmp.data[el.getAttribute('data-slot')][state.pcmp.day] = ''; openCompose(); return true; }
+    if (act === 'pcpick') {
+      var pk = byId(id); if (pk && state.pcmp.slot) state.pcmp.data[state.pcmp.slot][state.pcmp.day] = pk.title;
+      openCompose(); return true;
+    }
+    if (act === 'pcsave') {
+      var c2 = state.pcmp, any = false; for (var i = 0; i < 7; i++) if (dayKcal(c2, i) > 0 || SLOTK.some(function (k) { return c2.data[k[0]][i]; })) any = true;
+      if (!any) { toast('Aggiungi almeno un piatto'); return true; }
+      var gl = c2.goal ? parseInt(c2.goal, 10) : null;
+      if (c2.goal && !(gl >= 800 && gl <= 6000)) { toast('Obiettivo tra 800 e 6000 kcal'); return true; }
+      sb.from('plans').insert({ link_id: c2.link.id, data: c2.data, kcal_goal: gl }).select('data,kcal_goal,created_at').single().then(function (r) {
+        if (r.error) { toast('Piano non inviato'); return; }
+        state.lastPlan = r.data; closeSheet(); render(); toast('Piano inviato al cliente');
+      });
+      return true;
+    }
+    return false;
+  }
   function extraSubmit(e) {
     var id = e.target.id;
 
@@ -1545,7 +1761,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       if (pw.length < 8) { authMsg = 'La password deve avere almeno 8 caratteri.'; render(); return true; }
       var nm = up ? document.getElementById('au-n').value.trim() : '';
       authBusy = true; authMsg = 'Un momento…'; render();
-      var req = up ? sb.auth.signUp({ email: em, password: pw, options: { data: { display_name: nm, account_type: state.authPro ? 'pro' : 'user' } } }) : sb.auth.signInWithPassword({ email: em, password: pw });
+      var req = up ? sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.origin + location.pathname, data: { display_name: nm, account_type: state.authPro ? 'pro' : 'user' } } }) : sb.auth.signInWithPassword({ email: em, password: pw });
       req.then(function (r) {
         authBusy = false;
         if (r.error) { authMsg = authErr(r.error.message); render(); return; }
@@ -1555,7 +1771,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       return true;
     }
     if (id === 'chatform') {
-      e.preventDefault(); var ci = document.getElementById('chatin'), tx = ci.value.trim(); if (!tx || !state.pro) return true;
+      e.preventDefault(); var ci = document.getElementById('chatin'), tx = ci.value.trim(); if (!tx) return true; if (liveMode()) { liveSend(tx); ci.value = ''; return true; } if (!state.pro) return true;
       state.chat.push({ f: 'me', t: tx, at: chatTime() }); persist(); ci.value = ''; chatRefresh(); chatAutoReply(); return true;
     }
     if (id === 'shopform') {
@@ -1600,7 +1816,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       if (sb) sb.auth.signOut().then(function () { try { localStorage.removeItem('gusto-v1'); localStorage.removeItem('gusto-guest'); } catch (e) {} location.reload(); });
       return true;
     }
-    if (act === 'mypro') { state.tab = 'pro'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
+    if (act === 'mypro') { state.tab = 'pro'; state.curClient = null; closeSheet(); if (liveMode()) proLoad(); render(); window.scrollTo(0, 0); return true; }
+    if (liveMode() && liveClick(act, el, id)) return true;
     if (act === 'proaccept') {
       var at0 = chatTime(), pr0 = postByTitle('Porridge con banana e noci');
       state.pro = { name: 'Marco' };
@@ -1611,6 +1828,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (act === 'prodrop') { state.pro = null; state.chat = []; persist(); render(); toast('Nutrizionista scollegato'); return true; }
     if (act === 'chatattach') { openChatAttach(); return true; }
     if (act === 'chatpick') {
+      if (byId(id) && liveMode() && activeLinkId()) { liveSend('[[r:' + byId(id).title + ']]'); closeSheet(); return true; }
       if (byId(id) && state.pro) { state.chat.push({ f: 'me', t: '', rid: id, at: chatTime() }); persist(); closeSheet(); render(); chatAutoReply(); }
       return true;
     }
@@ -1648,7 +1866,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (act === 'plan') { openPlan(el.getAttribute('data-pl')); return true; }
     if (act === 'planapply') {
       var pl = PLANS.filter(function (x) { return x.id === el.getAttribute('data-pl'); })[0];
-      if (pl) { applyPlan(pl); state.goal = planKcal(pl); state.goalBy = pl.author; state.tab = 'plan'; state.planTab = 'week'; persist(); closeSheet(); render(); window.scrollTo(0, 0); toast('Piano applicato e obiettivo impostato'); }
+      if (pl) { applyPlan(pl); state.goal = pl.goal || planKcal(pl); state.goalBy = pl.author; state.tab = 'plan'; state.planTab = 'week'; persist(); closeSheet(); render(); window.scrollTo(0, 0); toast('Piano applicato e obiettivo impostato'); }
       return true;
     }
     if (act === 'remix') {
@@ -1712,7 +1930,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var pr = state.prefs, nr = Object.keys(state.rsaved).filter(function (k) { return state.rsaved[k]; }).length;
     var rows = [
       ['account', 'Account', sb ? (state.user ? state.user.email : 'Non hai effettuato l\'accesso') : 'Non disponibile'],
-      ['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno'],
+      ['mypro', isPro() ? 'I miei clienti' : 'Il mio nutrizionista', isPro() ? (state.profile.pro_verified ? (state.clients.filter(function (c) { return c.status === 'active'; }).length + ' attivi') : 'In verifica') : (state.pro ? state.pro.name + ' · collegato' : 'Nessuno')],
       ['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
       ['pantry', 'Dispensa', state.pantry.length ? state.pantry.length + ' ingredienti in casa' : 'Vuota'],
@@ -1906,6 +2124,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var ng = document.querySelector('.slot[data-sid="' + id + '"] .grip'); if (ng) ng.focus();
   });
   document.addEventListener('input', function (e) {
+    if (e.target.id === 'pcgoal' && state.pcmp) { state.pcmp.goal = e.target.value; return; }
     if (e.target.id === 'q') { state.q = e.target.value; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = feedHTML(); return; }
     if (e.target.id === 'rnote') { state.rnote[e.target.getAttribute('data-r')] = e.target.value; persist(); return; }
     if (e.target.classList && e.target.classList.contains('pn')) {
