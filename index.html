@@ -331,6 +331,19 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 .ntap.unread b { color: var(--fg); }
 .dmhead { display: flex; align-items: center; gap: 10px; margin: 6px 0 10px; }
 .dmhead .av { width: 40px; height: 40px; font-size: 16px; }
+body.inchat { overflow: hidden; }
+body.inchat nav.tabs { display: none !important; }
+.chatpage { position: fixed; left: 0; right: 0; top: var(--vvt, 0px); height: var(--vvh, 100dvh); z-index: 31; background: var(--bg); display: flex; flex-direction: column; max-width: 560px; margin: 0 auto; }
+.cpt { display: flex; align-items: center; gap: 8px; padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px; border-bottom: 1px solid var(--line); flex: none; background: var(--bg); }
+.cpt .av { width: 36px; height: 36px; font-size: 15px; flex: none; }
+.cpt .who { min-width: 0; flex: 1; }
+.cpt .who b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cpt .authbtn { flex: 1; min-width: 0; }
+.chatpage .chat { flex: 1 1 auto; min-height: 0; max-height: none; overflow-y: auto; padding: 12px 14px; overscroll-behavior: contain; }
+.cpb { flex: none; padding: 8px 12px var(--cpad, calc(10px + env(safe-area-inset-bottom, 0px))); border-top: 1px solid var(--line); background: var(--bg); }
+.cpb .cmf { margin: 0 !important; }
+.cpb .procard { margin: 0; }
+.cpb .hint { margin: 0; text-align: center; }
 </style>
 </head>
 <body>
@@ -861,11 +874,20 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML() +
       '<h3 class="shc">Persone bloccate' + (state.blocked.length ? ' (' + state.blocked.length + ')' : '') + '</h3>' + blockList();
   }
+  function fitChat() {
+    var vv = window.visualViewport, root = document.documentElement; if (!vv) return;
+    root.style.setProperty('--vvh', vv.height + 'px'); root.style.setProperty('--vvt', vv.offsetTop + 'px');
+    var kb = window.innerHeight - vv.height > 120;
+    root.style.setProperty('--cpad', kb ? '8px' : 'calc(10px + env(safe-area-inset-bottom, 0px))');
+    var c = document.querySelector('.chatpage .chat'); if (c && kb) c.scrollTop = c.scrollHeight;
+  }
+  if (window.visualViewport) { window.visualViewport.addEventListener('resize', fitChat); window.visualViewport.addEventListener('scroll', fitChat); }
+  document.addEventListener('focusin', function (e) { if (e.target.id === 'dmin' || e.target.id === 'chatin') setTimeout(function () { fitChat(); var c = document.querySelector('.chatpage .chat'); if (c) c.scrollTop = c.scrollHeight; }, 300); });
   function render() {
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
     var gate = needAuth();
-    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : viewProfile();
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['new', 'Pubblica', ICONS.plus], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
     var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
@@ -879,6 +901,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       var k = c.getAttribute('data-dt') + '|' + c.getAttribute('data-s');
       if (state.carEnd === k) c.scrollLeft = c.scrollWidth; else if (sc[k]) c.scrollLeft = sc[k];
     });
+    var inchat = !!document.querySelector('.chatpage'); document.body.classList.toggle('inchat', inchat);
+    if (inchat) { fitChat(); var cc = document.querySelector('.chatpage .chat'); if (cc) cc.scrollTop = cc.scrollHeight; }
     var chatEl = document.getElementById('chat'); if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
     state.carEnd = null;
   }
@@ -1748,7 +1772,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     });
   }
   setInterval(function () {
-    if (!liveMode() || state.tab !== 'pro' || document.hidden) return;
+    if (!liveMode() || (state.tab !== 'pro' && state.tab !== 'prochat') || document.hidden) return;
     var lid = activeLinkId(); if (!lid) return;
     var n = state.msgs.length, last = n ? state.msgs[n - 1].id : 0;
     loadMsgs(lid).then(function () {
@@ -1756,9 +1780,21 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     });
   }, 5000);
   function chatSection(nm) {
+    return '<section class="procard"><h3>Messaggi</h3><p class="hint" style="margin:0 0 10px">Scrivi a ' + esc(nm) + ' e allega le ricette di cui parlate.</p><button class="btn" data-act="prochat">Apri la chat</button></section>';
+  }
+  function chatSectionOld(nm) {
     return '<section><h3 style="margin:16px 0 8px">Messaggi</h3><div class="chat" id="chat">' + liveChatHTML() + '</div>' +
       '<form class="cmf" id="chatform" style="margin-top:10px"><button type="button" class="rm scan" data-act="chatattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="chatin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio"><button class="btn" type="submit">Invia</button></form>' +
       '<p class="hint">Col tasto + allega una ricetta. I messaggi si aggiornano da soli.</p></section>';
+  }
+  function viewProChat() {
+    var lid = activeLinkId();
+    if (!lid) { state.tab = 'pro'; return viewProLive(); }
+    var nm = isPro() ? (state.names[state.curClient.client_id] || 'Cliente') : (state.myLink.proName || 'Nutrizionista');
+    return '<div class="chatpage"><div class="cpt"><button class="ic" data-act="prochatback" aria-label="Indietro"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>' +
+      '<div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span style="font-size:12px;color:var(--muted)">' + (isPro() ? 'Cliente' : 'Il tuo nutrizionista') + '</span></div></div>' +
+      '<div class="chat" id="chat">' + liveChatHTML() + '</div>' +
+      '<div class="cpb"><form class="cmf" id="chatform"><button type="button" class="rm scan" data-act="chatattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="chatin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio" enterkeyhint="send"><button class="btn" type="submit">Invia</button></form></div></div>';
   }
   function viewClientPro() {
     var head = '<div class="view-h"><h1>Il mio nutrizionista</h1><p>Collegati al professionista che ti segue.</p></div>';
@@ -2007,6 +2043,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
           });
         }
       }
+      if (t === 'message' && (isPro() ? state.curClient : state.myLink)) state.tab = 'prochat';
       render();
     };
     if (state.profile) { proLoadThen(go); } else go();
@@ -2092,11 +2129,13 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var me = state.user.id, o = otherOf(c), x = state.realP[o] || {}, nm = pName(o);
     var msgs = state.dms.filter(function (m) { return m.conv_id === c.id; }).slice().reverse();
     var forMe = c.status === 'pending' && c.initiator !== me, sentFirst = c.status === 'pending' && c.initiator === me && msgs.some(function (m) { return m.sender_id === me; });
-    return back + '<div class="dmhead"><button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button><span style="flex:1"></span><button class="ic" data-act="usermenu" data-u="' + esc(o) + '" data-c="' + c.id + '" aria-label="Altre azioni">' + DOTS + '</button></div>' +
-      '<div class="chat" id="dmchat" style="max-height:none;min-height:240px">' + dmBubbles(msgs) + '</div>' +
-      (forMe ? '<div class="procard"><h3>Richiesta di messaggio</h3><p class="hint" style="margin:0 0 10px">' + esc(nm) + ' non è tra le persone che segui. Se accetti, potete scrivervi liberamente. Se rifiuti, non lo saprà.</p><div class="shopact"><button class="btn" data-act="dmok" data-id="' + c.id + '">Accetta</button><button class="btn ghost" data-act="dmno" data-id="' + c.id + '">Rifiuta</button></div></div>'
-        : sentFirst ? '<p class="hint" style="margin-top:12px">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
-        : '<form class="cmf" id="dmform" style="margin-top:10px"><button type="button" class="rm scan" data-act="dmattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="dmin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio"><button class="btn" type="submit">Invia</button></form>');
+    var bottom = forMe ? '<div class="procard"><h3>Richiesta di messaggio</h3><p class="hint" style="margin:0 0 10px;text-align:left">' + esc(nm) + ' non è tra le persone che segui. Se accetti, potete scrivervi liberamente. Se rifiuti, non lo saprà.</p><div class="shopact"><button class="btn" data-act="dmok" data-id="' + c.id + '">Accetta</button><button class="btn ghost" data-act="dmno" data-id="' + c.id + '">Rifiuta</button></div></div>'
+      : sentFirst ? '<p class="hint">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
+      : '<form class="cmf" id="dmform"><button type="button" class="rm scan" data-act="dmattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="dmin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio" enterkeyhint="send"><button class="btn" type="submit">Invia</button></form>';
+    return '<div class="chatpage"><div class="cpt"><button class="ic" data-act="inbox" aria-label="Torna ai messaggi"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>' +
+      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button>' +
+      '<button class="ic" data-act="usermenu" data-u="' + esc(o) + '" data-c="' + c.id + '" aria-label="Altre azioni">' + DOTS + '</button></div>' +
+      '<div class="chat" id="dmchat">' + dmBubbles(msgs) + '</div><div class="cpb">' + bottom + '</div></div>';
   }
   function dmMarkRead(cid) {
     var ids = state.dms.filter(function (m) { return m.conv_id === cid && m.sender_id !== state.user.id && !m.read_at; }).map(function (m) { return m.id; });
@@ -2298,6 +2337,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       });
       return true;
     }
+    if (act === 'prochat') { state.tab = 'prochat'; render(); return true; }
+    if (act === 'prochatback') { state.tab = 'pro'; render(); window.scrollTo(0, 0); return true; }
     if (act === 'inbox') { state.tab = 'inbox'; closeSheet(); render(); window.scrollTo(0, 0); if (liveMode()) loadDMs(); return true; }
     if (act === 'dmopen') { dmOpen(id); return true; }
     if (act === 'dmstart') { if (liveMode()) dmStart(el.getAttribute('data-u')); return true; }
