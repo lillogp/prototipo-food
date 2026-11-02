@@ -826,7 +826,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   /* Impostazioni, account e privacy */
   function viewSettings() {
     var pr = state.prefs, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
-    if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '')]);
+    if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
       ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
@@ -858,7 +858,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<section class="procard" style="margin-top:0"><h3>' + (on ? 'Profilo privato' : 'Profilo pubblico') + '</h3><p class="hint" style="margin:0 0 12px">' +
       (on ? 'Il tuo nome compare nella ricerca, ma i tuoi piatti li vede solo chi accetti.' : 'Chiunque può vedere i tuoi piatti. Con il profilo privato il nome resta cercabile, ma i piatti li vede solo chi accetti.') + '</p>' +
       '<button class="btn" data-act="privtoggle">' + (on ? 'Rendi il profilo pubblico' : 'Rendi il profilo privato') + '</button></section>' +
-      '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML();
+      '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML() +
+      '<h3 class="shc">Persone bloccate' + (state.blocked.length ? ' (' + state.blocked.length + ')' : '') + '</h3>' + blockList();
   }
   function render() {
     var app = document.getElementById('app'), sc = {};
@@ -1306,7 +1307,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var x = state.realP[id]; if (!x) return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button><div class="empty"><b>Profilo non trovato</b></div>';
     var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
-      '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + '</div>' +
+      '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
       (liveMode() && id !== state.user.id ? '<div style="margin-top:12px"><button class="btn ghost" data-act="dmstart" data-u="' + esc(id) + '">Scrivi un messaggio</button></div>' : '') +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
@@ -1839,8 +1840,10 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var me = state.user.id;
     return Promise.all([
       sb.from('follows').select('followed_id,status').eq('follower_id', me),
-      sb.from('follows').select('follower_id').eq('followed_id', me).eq('status', 'pending')
+      sb.from('follows').select('follower_id').eq('followed_id', me).eq('status', 'pending'),
+      sb.from('blocks').select('blocked_id,blocked_name')
     ]).then(function (a) {
+      state.blocked = (a[2] && a[2].data) || [];
       Object.keys(state.following).forEach(function (k) { if (k.indexOf('u:') === 0) delete state.following[k]; });
       state.fstat = {};
       (a[0].data || []).forEach(function (f) { state.fstat['u:' + f.followed_id] = f.status; if (f.status === 'accepted') state.following['u:' + f.followed_id] = true; });
@@ -2089,7 +2092,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var me = state.user.id, o = otherOf(c), x = state.realP[o] || {}, nm = pName(o);
     var msgs = state.dms.filter(function (m) { return m.conv_id === c.id; }).slice().reverse();
     var forMe = c.status === 'pending' && c.initiator !== me, sentFirst = c.status === 'pending' && c.initiator === me && msgs.some(function (m) { return m.sender_id === me; });
-    return back + '<div class="dmhead"><button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button></div>' +
+    return back + '<div class="dmhead"><button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button><span style="flex:1"></span><button class="ic" data-act="usermenu" data-u="' + esc(o) + '" data-c="' + c.id + '" aria-label="Altre azioni">' + DOTS + '</button></div>' +
       '<div class="chat" id="dmchat" style="max-height:none;min-height:240px">' + dmBubbles(msgs) + '</div>' +
       (forMe ? '<div class="procard"><h3>Richiesta di messaggio</h3><p class="hint" style="margin:0 0 10px">' + esc(nm) + ' non è tra le persone che segui. Se accetti, potete scrivervi liberamente. Se rifiuti, non lo saprà.</p><div class="shopact"><button class="btn" data-act="dmok" data-id="' + c.id + '">Accetta</button><button class="btn ghost" data-act="dmno" data-id="' + c.id + '">Rifiuta</button></div></div>'
         : sentFirst ? '<p class="hint" style="margin-top:12px">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
@@ -2130,6 +2133,49 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var rows = function (a) { return a.map(function (p) { return pickRow(p, '', '').replace('data-act="ppick"', 'data-act="dmpick"'); }).join(''); };
     sheetOpen('Allega una ricetta', 'Allega una ricetta', (sv.length ? '<section><h3>Dai tuoi salvati</h3><div class="slist">' + rows(sv) + '</div></section>' : '') +
       '<section><h3>' + (sv.length ? 'Tutti i piatti' : 'Piatti') + '</h3><div class="slist">' + rows(rest) + '</div></section>');
+  }
+
+  /* ---------- Blocca e segnala ---------- */
+  state.blocked = []; state.rep = null;
+  var REASONS = [['spam', 'Spam o pubblicità'], ['molestie', 'Molestie o comportamento offensivo'], ['contenuto', 'Contenuto inappropriato'], ['falso', 'Profilo falso o finto nutrizionista'], ['altro', 'Altro']];
+  var DOTS = '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>';
+  function openUserMenu(uid, cid) {
+    var nm = pName(uid);
+    sheetOpen('Altre azioni', nm,
+      '<button class="mrow" data-act="reportopen" data-u="' + esc(uid) + '" data-c="' + (cid || '') + '" style="background:var(--surface);border:1px solid var(--line);border-radius:14px"><span><b>Segnala</b><small>Spam, molestie, profilo falso</small></span><span class="chev">&rsaquo;</span></button>' +
+      '<button class="mrow" data-act="blockopen" data-u="' + esc(uid) + '" style="background:var(--surface);border:1px solid var(--line);border-radius:14px"><span><b>Blocca</b><small>Non vi vedrete più in nessun modo</small></span><span class="chev">&rsaquo;</span></button>');
+  }
+  function openBlock(uid) {
+    var nm = pName(uid);
+    sheetOpen('Blocca', 'Bloccare ' + nm + '?',
+      '<p style="margin:0">Non potrete più vedere i profili, i piatti e le chat l\'uno dell\'altro, e nessuno dei due potrà seguire o scrivere all\'altro.</p>' +
+      '<p class="hint" style="margin:0">Non diciamo a ' + esc(nm) + ' che l\'hai bloccato. Puoi sbloccarlo quando vuoi da Impostazioni, Privacy.</p>' +
+      '<button class="btn" data-act="blockyes" data-u="' + esc(uid) + '">Sì, blocca</button><button class="btn ghost" data-act="close">Annulla</button>');
+  }
+  function openReport(uid, cid) {
+    var rp = state.rep && state.rep.u === uid ? state.rep : (state.rep = { u: uid, c: cid || null, reason: '', details: '' });
+    sheetOpen('Segnala', 'Segnala ' + pName(uid),
+      '<p class="hint" style="margin:0">Scegli il motivo. La segnalazione è riservata: l\'altra persona non lo saprà.</p>' +
+      '<div class="shgroup">' + REASONS.map(function (x) { return '<button class="shrow" role="radio" aria-checked="' + (rp.reason === x[0]) + '" data-act="reportreason" data-v="' + x[0] + '">' + x[1] + (rp.reason === x[0] ? ' &check;' : '') + '</button>'; }).join('') + '</div>' +
+      '<label class="f" for="repd">Vuoi aggiungere qualcosa? <small>facoltativo</small><textarea id="repd" maxlength="500" style="min-height:84px">' + esc(rp.details) + '</textarea></label>' +
+      '<button class="btn" data-act="reportsend">Invia la segnalazione</button>');
+  }
+  function afterBlock(uid) {
+    state.blocked = state.blocked.filter(function (b) { return b.blocked_id !== uid; }).concat([{ blocked_id: uid, blocked_name: pName(uid) }]);
+    delete state.following['u:' + uid]; delete state.fstat['u:' + uid];
+    state.reqs = state.reqs.filter(function (x) { return x !== uid; });
+    state.convs = state.convs.filter(function (c) { return otherOf(c) !== uid; });
+    var cids = state.convs.map(function (c) { return c.id; });
+    state.dms = state.dms.filter(function (m) { return cids.indexOf(m.conv_id) > -1; });
+    state.notifs = state.notifs.filter(function (n) { return n.actor_id !== uid; });
+    state.realRes = state.realRes.filter(function (x) { return x.id !== uid; });
+    persist(); updateBell(); updateDmBadge();
+  }
+  function blockList() {
+    if (!state.blocked.length) return '<div class="empty" style="padding:18px"><b>Nessuna persona bloccata</b>Se blocchi qualcuno lo trovi qui e puoi sbloccarlo.</div>';
+    return '<div class="slist">' + state.blocked.map(function (b) {
+      return '<div class="rcard" style="align-items:center"><div class="rmain"><b>' + esc(b.blocked_name || 'Utente') + '</b><span>Bloccato</span></div><button class="follow" data-act="unblock" data-u="' + esc(b.blocked_id) + '">Sblocca</button></div>';
+    }).join('') + '</div>';
   }
   function extraSubmit(e) {
     var id = e.target.id;
@@ -2219,6 +2265,39 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
 
   function extraClick(act, el, id) {
+    if (act === 'usermenu') { openUserMenu(el.getAttribute('data-u'), parseInt(el.getAttribute('data-c'), 10) || null); return true; }
+    if (act === 'reportopen') { state.rep = null; openReport(el.getAttribute('data-u'), parseInt(el.getAttribute('data-c'), 10) || null); return true; }
+    if (act === 'reportreason') { var rd = document.getElementById('repd'); if (state.rep) { if (rd) state.rep.details = rd.value; state.rep.reason = el.getAttribute('data-v'); openReport(state.rep.u, state.rep.c); } return true; }
+    if (act === 'reportsend') {
+      var rp = state.rep, rd2 = document.getElementById('repd'); if (!rp) return true; if (rd2) rp.details = rd2.value;
+      if (!rp.reason) { toast('Scegli un motivo'); return true; }
+      sb.from('reports').insert({ reporter_id: state.user.id, reported_id: rp.u, reason: rp.reason, details: rp.details.trim() || null, conv_id: rp.c }).then(function (r) {
+        var dup = r.error && (r.error.code === '23505' || /duplicate/i.test(r.error.message || ''));
+        if (r.error && !dup) { toast('Segnalazione non inviata'); return; }
+        var u = rp.u; state.rep = null;
+        sheetOpen('Segnalazione inviata', 'Grazie',
+          '<p style="margin:0">' + (dup ? 'Avevi già segnalato questa persona: la segnalazione è in esame.' : 'Abbiamo ricevuto la segnalazione e la esamineremo.') + '</p>' +
+          '<button class="btn" data-act="blockopen" data-u="' + esc(u) + '">Blocca anche ' + esc(pName(u)) + '</button><button class="btn ghost" data-act="close">Chiudi</button>');
+      });
+      return true;
+    }
+    if (act === 'blockopen') { openBlock(el.getAttribute('data-u')); return true; }
+    if (act === 'blockyes') {
+      var bu = el.getAttribute('data-u');
+      sb.from('blocks').insert({ blocker_id: state.user.id, blocked_id: bu, blocked_name: pName(bu) }).then(function (r) {
+        if (r.error && !(r.error.code === '23505' || /duplicate/i.test(r.error.message || ''))) { toast('Non riesco a bloccare'); return; }
+        afterBlock(bu); closeSheet(); state.tab = 'home'; state.viewing = null; render(); window.scrollTo(0, 0); toast('Persona bloccata');
+      });
+      return true;
+    }
+    if (act === 'unblock') {
+      var ub = el.getAttribute('data-u');
+      sb.from('blocks').delete().eq('blocker_id', state.user.id).eq('blocked_id', ub).then(function (r) {
+        if (r.error) { toast('Non riesco a sbloccare'); return; }
+        state.blocked = state.blocked.filter(function (b) { return b.blocked_id !== ub; }); render(); toast('Sbloccato'); loadDMs();
+      });
+      return true;
+    }
     if (act === 'inbox') { state.tab = 'inbox'; closeSheet(); render(); window.scrollTo(0, 0); if (liveMode()) loadDMs(); return true; }
     if (act === 'dmopen') { dmOpen(id); return true; }
     if (act === 'dmstart') { if (liveMode()) dmStart(el.getAttribute('data-u')); return true; }
@@ -2578,6 +2657,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var ng = document.querySelector('.slot[data-sid="' + id + '"] .grip'); if (ng) ng.focus();
   });
   document.addEventListener('input', function (e) {
+    if (e.target.id === 'repd' && state.rep) { state.rep.details = e.target.value; return; }
     if (e.target.id === 'pcgoal' && state.pcmp) { state.pcmp.goal = e.target.value; return; }
     if (e.target.id === 'q') { state.q = e.target.value; if (!state.q.trim()) state.realRes = []; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = feedHTML(); realSearch(); return; }
     if (e.target.id === 'rnote') { state.rnote[e.target.getAttribute('data-r')] = e.target.value; persist(); return; }
