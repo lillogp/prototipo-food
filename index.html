@@ -458,7 +458,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (state.homeTab === 'rest') return note + seg + viewRest();
     var tags = ['Tutti', 'Seguiti', 'Dalla dispensa'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
     var times = [[0, 'Tutti i tempi'], [20, 'Fino a 20 min'], [45, 'Fino a 45 min'], [60, 'Fino a 1 ora']];
-    return note + seg + '<input type="search" id="q" class="search" placeholder="Cerca un piatto o un ingrediente" value="' + esc(state.q) + '" aria-label="Cerca">' +
+    return note + seg + '<input type="search" id="q" class="search" placeholder="Cerca un piatto, un ingrediente o una persona" value="' + esc(state.q) + '" aria-label="Cerca">' +
       '<div class="filters" role="group" aria-label="Categorie">' + tags.map(function (t) { return '<button data-act="filter" data-v="' + esc(t) + '" aria-pressed="' + (state.filter === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
       '<div class="filters sub" role="group" aria-label="Tempo">' + times.map(function (t) { return '<button data-act="maxt" data-v="' + t[0] + '" aria-pressed="' + (state.maxT === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       '<div id="feedwrap">' + feedHTML() + '</div>';
@@ -1206,10 +1206,28 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     }
     return list;
   }
+  function peopleHTML() {
+    var words = state.q.toLowerCase().split(/\s+/).filter(Boolean); if (!words.length) return '';
+    var seen = {}, out = [];
+    posts.forEach(function (p) {
+      if (p.mine || seen[p.handle]) return;
+      var hay = (p.user + ' ' + p.handle + ' ' + (p.role || '')).toLowerCase();
+      if (words.every(function (w) { return hay.indexOf(w) > -1; })) { seen[p.handle] = 1; out.push(p); }
+    });
+    if (!out.length) return '';
+    var shown = out.slice(0, 5);
+    return '<h3 class="shc" style="margin-top:4px">Persone</h3><div class="slist" style="margin-bottom:14px">' + shown.map(function (p) {
+      var n = posts.filter(function (x) { return x.handle === p.handle; }).length;
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '" style="padding:6px 0"><div class="av">' + esc(p.user[0]) + '</div><div class="who"><b>' + esc(p.user) + '</b><span>@' + esc(p.handle) + ' · ' + n + (n === 1 ? ' piatto' : ' piatti') + '</span></div></button>' +
+        (p.role ? '<span class="role">' + esc(p.role) + '</span>' : '') + followBtn(p.handle) + '</div>';
+    }).join('') + (out.length > 5 ? '<p class="hint" style="margin:0">Altre ' + (out.length - 5) + ' persone: scrivi più lettere per trovarle.</p>' : '') + '</div>';
+  }
   function feedHTML() {
+    var ppl = peopleHTML();
     var list = visiblePosts(), f = state.filter, hid = state.prefs.hide ? posts.filter(function (p) { return conflicts(p).length; }).length : 0;
     var h = hid ? '<p class="hint" style="margin:0 0 10px">' + hid + (hid === 1 ? ' piatto nascosto' : ' piatti nascosti') + ' dalle tue preferenze. <button class="reset" data-act="showhidden">Mostrali</button></p>' : '';
-    if (list.length) return h + '<div class="feed">' + list.map(card).join('') + '</div>';
+    if (ppl && !list.length) return h + ppl + '<p class="hint" style="text-align:center">Nessun piatto con questa ricerca.</p>';
+    if (list.length) return h + ppl + (ppl ? '<h3 class="shc" style="margin-top:0">Piatti</h3>' : '') + '<div class="feed">' + list.map(card).join('') + '</div>';
     var t = 'Nessun piatto', d = 'Prova un\'altra ricerca o un\'altra categoria.';
     if (f === 'Seguiti') { t = 'Non segui ancora nessuno'; d = 'Tocca Segui sul profilo di un autore per vedere qui i suoi piatti.'; }
     if (f === 'Dalla dispensa') { t = state.pantry.length ? 'Nessuna ricetta con i tuoi ingredienti' : 'La dispensa è vuota'; d = state.pantry.length ? 'Aggiungi altri ingredienti in dispensa.' : 'Aggiungi quello che hai in casa e qui compaiono le ricette che puoi fare.'; }
