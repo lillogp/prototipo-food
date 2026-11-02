@@ -75,7 +75,7 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
 (function () {
   'use strict';
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
-  var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) {}
+  var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var S = { user: null, admin: null, tab: 'pros', rtab: 'open', stats: null, pros: [], reports: [], busy: false, msg: '' };
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
 
@@ -163,7 +163,7 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
     var el = e.target.closest('[data-act]'); if (!el) return;
     var act = el.getAttribute('data-act');
     if (act === 'close') { if (el.classList.contains('bg') && e.target !== el) return; closeDlg(); return; }
-    if (act === 'logout') { sb.auth.signOut().then(function () { S = { user: null, admin: null, tab: 'pros', rtab: 'open', stats: null, pros: [], reports: [], busy: false, msg: '' }; closeDlg(); render(); }); return; }
+    if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = { user: null, admin: null, tab: 'pros', rtab: 'open', stats: null, pros: [], reports: [], busy: false, msg: '' }; closeDlg(); render(); }); return; }
     if (act === 'tab') { S.tab = el.getAttribute('data-v'); render(); return; }
     if (act === 'rtab') { S.rtab = el.getAttribute('data-v'); sb.rpc('admin_reports', { st: S.rtab }).then(function (r) { S.reports = r.data || []; render(); }); return; }
     if (act === 'ver') {

@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <title>Gusto</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#DE4A1E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gusto">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: colonna unica mobile-first, header in alto, barra di navigazione fissa in basso, schede e sheet per la ricetta. */
@@ -54,7 +61,8 @@ header.top {
 .feed { display: flex; flex-direction: column; gap: 22px; }
 .post { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
 .post-h { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
-.av { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; flex: none; }
+.av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.av { overflow: hidden; width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; flex: none; }
 .who { min-width: 0; flex: 1; }
 .who b { display: block; font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .who span { font-size: 12px; color: var(--muted); }
@@ -239,7 +247,17 @@ ul.ing li:last-child { border-bottom: 0; }
 ul.ing li span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
 ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; }
 .cm { display: flex; flex-direction: column; gap: 10px; }
-.cm p { margin: 0; }
+.cm p { margin: 0; flex: 1; min-width: 0; }
+.avedit { display: flex; gap: 14px; align-items: center; margin: 4px 0 18px; }
+.avedit .av { width: 72px; height: 72px; font-size: 28px; flex: none; }
+.avedit small { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 8px; }
+.avbtns { display: flex; gap: 14px; align-items: center; }
+.avlab { cursor: pointer; }
+.cmrow { display: flex; gap: 8px; align-items: flex-start; }
+.clike { display: inline-flex; align-items: center; gap: 3px; background: none; border: 0; padding: 4px 2px; color: var(--muted); font-size: 12px; cursor: pointer; min-width: 36px; min-height: 32px; justify-content: flex-end; }
+.clike svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.clike[aria-pressed="true"] { color: #d6455d; }
+.clike[aria-pressed="true"] svg { fill: currentColor; }
 .cm b { font-weight: 600; }
 .cmf { display: flex; gap: 8px; }
 .cmf input { flex: 1; min-width: 0; }
@@ -470,7 +488,7 @@ body.inchat nav.tabs { display: none !important; }
 
   function card(p) {
     var liked = !!state.liked[p.id], saved = !!state.saved[p.id];
-    return '<article class="post"><div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '"><div class="av">' + esc(p.user[0]) + '</div><div class="who"><b>' + esc(p.user) + '</b><span>' + esc(hnd(p)) + ' · ' + esc(p.t) + '</span></div></button>' +
+    return '<article class="post"><div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '">' + avHTML(p.avatar, p.user) + '<div class="who"><b>' + esc(p.user) + '</b><span>' + esc(hnd(p)) + ' · ' + esc(p.t) + '</span></div></button>' +
       (p.role ? '<span class="role">' + esc(p.role) + '</span>' : '') + (p.mine ? '' : followBtn(p.handle)) + '</div>' +
       (p.media.type === 'video' ? mediaTag(p.media, 'media') : '<div class="tap" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ricetta ' + esc(p.title) + '">' + mediaTag(p.media, 'media') + '</div>') +
       '<div class="post-b"><div class="tap tapb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '"><h2>' + esc(p.title) + '</h2><div class="meta"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + esc(p.tag) + '</span>' + (p.sample ? '<span class="role">Esempio</span>' : '') + (nutriKcal(p) && !(p.hideN && !p.mine) ? '<span>≈ ' + nutriKcal(p) + ' kcal a porzione</span>' : '') + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + (state.filter === 'Dalla dispensa' ? covBadge(p) : '') + '</div>' + warnHTML(p) + '</div>' +
@@ -580,7 +598,7 @@ body.inchat nav.tabs { display: none !important; }
     var nf = Object.keys(state.following).filter(function (k) { return state.following[k]; }).length;
     var pn = liveMode() && state.profile ? (state.profile.display_name || 'Il tuo nome') : ME.name;
     var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : 'Su Gusto')) : '@' + ME.handle;
-    return '<div class="prof"><div class="av">' + esc(pn[0].toUpperCase()) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
+    return '<div class="prof">' + avHTML(liveMode() && state.profile ? state.profile.avatar_url : null, pn) + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><div><b>0</b>seguaci</div><div><b>' + nf + '</b>seguiti</div><button class="statbtn" data-act="tab" data-v="saved" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
       profMenu() +
@@ -841,6 +859,7 @@ body.inchat nav.tabs { display: none !important; }
   function viewSettings() {
     var pr = state.prefs, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
     if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
+    if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
       ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
@@ -852,6 +871,9 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode()) return back + '<div class="view-h"><h1>Account</h1></div><div class="empty"><b>Non hai effettuato l\'accesso</b>Con un account ritrovi planner, dispensa e preferenze su ogni dispositivo.<br><button class="btn" data-act="authopen" style="margin-top:12px">Accedi o registrati</button></div>';
     var nm = (state.profile && state.profile.display_name) || '';
     return back + '<div class="view-h"><h1>Account</h1></div>' +
+      '<div class="avedit">' + avHTML(state.profile && state.profile.avatar_url, nm || state.user.email) + '<div><b>Foto profilo</b><small>Si vede su piatti, profilo e chat.</small>' +
+      '<div class="avbtns"><label class="reset avlab" for="avfile">' + (state.profile && state.profile.avatar_url ? 'Cambia foto' : 'Scegli foto') + '</label>' + (state.profile && state.profile.avatar_url ? '<button class="reset" data-act="avdel" style="color:var(--muted)">Rimuovi</button>' : '') + '</div>' +
+      '<input type="file" id="avfile" accept="image/*" hidden></div></div>' +
       '<form class="new accf" id="nameform" novalidate><label class="f" for="acc-n">Nome<small>È il nome con cui gli altri ti cercano.</small><input id="acc-n" type="text" maxlength="40" autocomplete="name" value="' + esc(nm) + '"></label><button class="btn ghost" type="submit">Salva il nome</button></form>' +
       '<form class="new accf" id="emailform" novalidate><label class="f" for="acc-e">Email<small>Ora: ' + esc(state.user.email) + '. Ti mandiamo un\'email per confermare il nuovo indirizzo.</small><input id="acc-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Nuovo indirizzo" maxlength="120"></label><button class="btn ghost" type="submit">Cambia email</button></form>' +
       '<form class="new accf" id="passform" novalidate><label class="f" for="acc-p">Nuova password<small>Almeno 8 caratteri.</small><input id="acc-p" type="password" autocomplete="new-password" maxlength="72"></label><label class="f" for="acc-p2">Ripeti la password<input id="acc-p2" type="password" autocomplete="new-password" maxlength="72"></label><button class="btn ghost" type="submit">Cambia password</button></form>' +
@@ -896,7 +918,7 @@ body.inchat nav.tabs { display: none !important; }
         (t[0] === 'new' ? '<span class="pl">' + t[2] + '</span>' : t[2]) + '<span>' + t[1] + '</span></button>';
     }).join('');
     document.querySelector('nav.tabs').style.display = gate ? 'none' : '';
-    updateBell(); updateDmBadge();
+    updateBell(); updateDmBadge(); if (window.__navSync) window.__navSync();
     if (state.tab === 'new' && !gate) bindForm();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
       var k = c.getAttribute('data-dt') + '|' + c.getAttribute('data-s');
@@ -1141,7 +1163,7 @@ body.inchat nav.tabs { display: none !important; }
       '<section><h3>Ingredienti</h3>' + servBox(p) + '<ul class="ing" id="inglist">' + ingItems(p, state.sheetServ) + '</ul><p class="hint" id="scalehint"></p></section>' +
       nutriHTML(p) + allergenHTML(p) +
       '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></section>' +
-      '<section><h3 id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</h3><div class="cm" id="cm">' + p.comments.map(function (c) { return '<p><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</p>'; }).join('') + '</div>' +
+      '<section><h3 id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</h3><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
       '<form class="cmf" id="cmf" data-id="' + p.id + '" style="margin-top:12px"><input type="text" id="cmi" placeholder="Scrivi un commento" aria-label="Commento" maxlength="200"><button class="btn" type="submit">Invia</button></form></section>' +
       '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>' +
       '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>' +
@@ -1338,7 +1360,7 @@ body.inchat nav.tabs { display: none !important; }
     var q = state.q.replace(/[^\p{L}\p{N} ._-]/gu, ' ').replace(/\s+/g, ' ').trim();
     if (!liveMode() || q.length < 2) { state.realRes = []; state.realQ = ''; return; }
     realT = setTimeout(function () {
-      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
+      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
         if (r.error) return;
         state.realRes = (r.data || []).filter(function (x) { return x.display_name || x.handle; }); state.realQ = q;
         (state.realRes).forEach(function (x) { state.realP[x.id] = x; });
@@ -1351,14 +1373,14 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode() || !state.realRes.length) return '';
     return state.realRes.map(function (x) {
       var nm = x.display_name || ('@' + x.handle), h = 'u:' + x.id;
-      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0">' + avHTML(x.avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
     }).join('');
   }
   function viewRealUser(id) {
     var x = state.realP[id]; if (!x) return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button><div class="empty"><b>Profilo non trovato</b></div>';
     var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
-      '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
+      '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
       (liveMode() && id !== state.user.id ? '<div style="margin-top:12px"><button class="btn ghost" data-act="dmstart" data-u="' + esc(id) + '">Scrivi un messaggio</button></div>' : '') +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
@@ -1773,7 +1795,7 @@ body.inchat nav.tabs { display: none !important; }
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
-    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private').eq('id', state.user.id).maybeSingle().then(function (r) {
+    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private,avatar_url').eq('id', state.user.id).maybeSingle().then(function (r) {
       state.profile = r.data || { account_type: 'user', pro_verified: false, display_name: '' };
       var code = null; try { code = localStorage.getItem('gusto-invite'); localStorage.removeItem('gusto-invite'); } catch (e) {}
       if (code && state.profile.account_type !== 'pro') {
@@ -1918,7 +1940,7 @@ body.inchat nav.tabs { display: none !important; }
       state.reqs = (a[1].data || []).map(function (f) { return f.follower_id; });
       var ids = state.reqs.concat((a[0].data || []).map(function (f) { return f.followed_id; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
       if (!ids.length) return null;
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
     });
   }
   function liveClick(act, el, id) {
@@ -2003,9 +2025,10 @@ body.inchat nav.tabs { display: none !important; }
   state.notifs = []; state.notifNew = {};
   var NTXT = {
     follow: 'ha iniziato a seguirti', follow_request: 'ha chiesto di seguirti', follow_accepted: 'ha accettato la tua richiesta',
-    like: 'ha messo mi piace a un tuo piatto', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
-    plan: 'ti ha inviato un nuovo piano', message: 'ti ha scritto un messaggio', dm: 'ti ha scritto', dm_request: 'ti ha inviato una richiesta di messaggio'
+    like: 'ha messo mi piace a un tuo piatto', comment_like: 'ha messo mi piace al tuo commento', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
+    plan: 'ti ha inviato un nuovo piano'
   };
+  function avHTML(url, nm) { return '<div class="av">' + (url ? '<img src="' + esc(url) + '" alt="" loading="lazy">' : esc(((nm || '?')[0] || '?').toUpperCase())) + '</div>'; }
   function ago(iso) {
     var m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
     if (m < 1) return 'adesso'; if (m < 60) return m + ' min fa';
@@ -2024,12 +2047,12 @@ body.inchat nav.tabs { display: none !important; }
     return sb.from('notifications').select('id,actor_id,type,ref,read_at,created_at').order('created_at', { ascending: false }).limit(50).then(function (r) {
       if (r.error) return null;
       var before = state.notifs.length ? state.notifs[0].id + ':' + unreadCount() : '';
-      state.notifs = r.data || [];
+      state.notifs = (r.data || []).filter(function (n) { return n.type !== 'message' && n.type !== 'dm' && n.type !== 'dm_request'; });
       var ids = state.notifs.map(function (n) { return n.actor_id; }).filter(function (v, i, a) { return v && a.indexOf(v) === i && !state.realP[v]; });
       var after = state.notifs.length ? state.notifs[0].id + ':' + unreadCount() : '';
       var done = function () { updateBell(); if (state.tab === 'notifs' && before !== after) render(); };
       if (!ids.length) { done(); return null; }
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').in('id', ids).then(function (q) {
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').in('id', ids).then(function (q) {
         (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); done();
       });
     });
@@ -2037,9 +2060,9 @@ body.inchat nav.tabs { display: none !important; }
   setInterval(function () { if (liveMode() && !document.hidden) { loadNotifs(); loadDMs(); } }, 20000);
   function nActor(n) { var x = state.realP[n.actor_id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Qualcuno'); }
   function viewNotifs() {
-    var head = '<div class="view-h"><h1>Notifiche</h1><p>Follow, richieste, messaggi e novità.</p></div>';
+    var head = '<div class="view-h"><h1>Notifiche</h1><p>Follow, richieste e novità.</p></div>';
     if (!liveMode()) return head + '<div class="empty"><b>Serve un account</b>Accedi per ricevere le notifiche.</div>';
-    if (!state.notifs.length) return head + '<div class="empty"><b>Nessuna notifica</b>Quando qualcuno ti segue, ti scrive o mette mi piace, lo trovi qui.</div>';
+    if (!state.notifs.length) return head + '<div class="empty"><b>Nessuna notifica</b>Quando qualcuno ti segue o mette mi piace, lo trovi qui.</div>';
     return head + '<div class="slist">' + state.notifs.map(function (n, i) {
       var nm = nActor(n), isNew = !!state.notifNew[n.id], h = 'u:' + n.actor_id, acts = '';
       if (n.type === 'follow_request') {
@@ -2047,19 +2070,19 @@ body.inchat nav.tabs { display: none !important; }
       } else if (n.type === 'follow' && state.realP[n.actor_id]) {
         acts = '<div class="nact">' + followBtn(h) + '</div>';
       }
-      var text = n.type === 'plan' || n.type === 'message' ? '<b>' + esc(nm) + '</b> ' + NTXT[n.type] : '<b>' + esc(nm) + '</b> ' + NTXT[n.type];
-      return '<div class="nrow' + (isNew ? ' new' : '') + '"><button class="ntap" data-act="notiftap" data-i="' + i + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><span style="display:flex;flex-direction:column;gap:2px;color:var(--fg);font-size:14px;min-width:0">' + text + '<span style="font-size:12px;color:var(--muted)">' + ago(n.created_at) + '</span></span></button>' + acts + '</div>';
+      var text = '<b>' + esc(nm) + '</b> ' + (NTXT[n.type] || '');
+      return '<div class="nrow' + (isNew ? ' new' : '') + '"><button class="ntap" data-act="notiftap" data-i="' + i + '">' + avHTML((state.realP[n.actor_id] || {}).avatar_url, nm) + '<span style="display:flex;flex-direction:column;gap:2px;color:var(--fg);font-size:14px;min-width:0">' + text + '<span style="font-size:12px;color:var(--muted)">' + ago(n.created_at) + '</span></span></button>' + acts + '</div>';
     }).join('') + '</div>';
   }
   function notifOpen(n) {
     var t = n.type, aid = n.actor_id;
-    if ((t === 'like' || t === 'comment') && n.ref && n.ref.recipe_id) {
+    if ((t === 'like' || t === 'comment' || t === 'comment_like') && n.ref && n.ref.recipe_id) {
       var rpid = RB + n.ref.recipe_id;
       if (byId(rpid)) { openSheet(rpid); return; }
       loadFeed().then(function () { if (byId(rpid)) openSheet(rpid); else toast('Il piatto non è più disponibile'); });
       return;
     }
-    if (t === 'follow' || t === 'follow_request' || t === 'follow_accepted' || t === 'like' || t === 'comment') {
+    if (t === 'follow' || t === 'follow_request' || t === 'follow_accepted' || t === 'like' || t === 'comment' || t === 'comment_like') {
       if (!aid || !state.realP[aid]) return;
       state.tab = 'user'; state.viewing = 'u:' + aid; render(); window.scrollTo(0, 0); return;
     }
@@ -2123,7 +2146,7 @@ body.inchat nav.tabs { display: none !important; }
       var ids = state.convs.map(otherOf).filter(function (v, i, arr) { return arr.indexOf(v) === i && !state.realP[v]; });
       var fin = function () { updateDmBadge(); if (dmKey() !== old) dmRefresh(); };
       if (!ids.length) { fin(); return null; }
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').in('id', ids).then(function (q) {
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').in('id', ids).then(function (q) {
         (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); fin();
       });
     });
@@ -2138,7 +2161,7 @@ body.inchat nav.tabs { display: none !important; }
   function convRow(c) {
     var o = otherOf(c), nm = pName(o), last = lastOf(c.id), unread = state.dms.some(function (m) { return m.conv_id === c.id && m.sender_id !== state.user.id && !m.read_at; });
     var waiting = c.status === 'pending' && c.initiator === state.user.id;
-    return '<div class="nrow' + (unread ? ' new' : '') + '"><button class="ntap' + (unread ? ' unread' : '') + '" data-act="dmopen" data-id="' + c.id + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div>' +
+    return '<div class="nrow' + (unread ? ' new' : '') + '"><button class="ntap' + (unread ? ' unread' : '') + '" data-act="dmopen" data-id="' + c.id + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '' +
       '<span style="display:flex;flex-direction:column;gap:2px;color:var(--fg);font-size:14px;min-width:0"><b>' + esc(nm) + '</b><span style="font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(waiting && last ? dmPreview(last) + ' · in attesa' : dmPreview(last)) + '</span></span></button>' +
       (unread ? '<i class="udot" aria-label="Non letto"></i>' : '') + '</div>';
   }
@@ -2171,7 +2194,7 @@ body.inchat nav.tabs { display: none !important; }
       : sentFirst ? '<p class="hint">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
       : '<form class="cmf" id="dmform"><button type="button" class="rm scan" data-act="dmattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="dmin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio" enterkeyhint="send"><button class="btn" type="submit">Invia</button></form>';
     return '<div class="chatpage"><div class="cpt"><button class="ic" data-act="inbox" aria-label="Torna ai messaggi"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>' +
-      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button>' +
+      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button>' +
       '<button class="ic" data-act="usermenu" data-u="' + esc(o) + '" data-c="' + c.id + '" aria-label="Altre azioni">' + DOTS + '</button></div>' +
       '<div class="chat" id="dmchat">' + dmBubbles(msgs) + '</div><div class="cpb">' + bottom + '</div></div>';
   }
@@ -2266,7 +2289,7 @@ body.inchat nav.tabs { display: none !important; }
     var me = liveMode() && r.author_id === state.user.id;
     var nl = r.likes && r.likes[0] ? r.likes[0].count : 0, nc = r.comments && r.comments[0] ? r.comments[0].count : 0;
     return { id: RB + r.id, dbId: r.id, real: true, authorId: r.author_id, user: a.display_name || (a.handle ? '@' + a.handle : 'Utente'), handle: 'u:' + r.author_id,
-      hd: a.handle ? '@' + a.handle : 'Su Gusto', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
+      avatar: a.avatar_url || null, hd: a.handle ? '@' + a.handle : 'Su Gusto', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
       title: r.title, tag: r.tag, time: r.time_min, serv: r.serv, media: { type: r.media_type === 'video' ? 'video' : 'image', src: r.media_url }, mediaPath: pathOf(r.media_url),
       ing: Array.isArray(r.ingredients) ? r.ingredients : [], steps: Array.isArray(r.steps) ? r.steps : [], hideN: !!r.hide_nutrition,
       from: r.from_info || null, likes: nl, ccount: nc, comments: [], mine: me };
@@ -2279,7 +2302,7 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode()) return Promise.resolve();
     var me = state.user.id;
     return Promise.all([
-      sb.from('recipes').select('id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private),likes(count),comments(count)').order('created_at', { ascending: false }).limit(80),
+      sb.from('recipes').select('id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url),likes(count),comments(count)').order('created_at', { ascending: false }).limit(80),
       sb.from('likes').select('recipe_id').eq('user_id', me),
       sb.from('saves').select('recipe_id,folder').eq('user_id', me)
     ]).then(function (a) {
@@ -2300,12 +2323,26 @@ body.inchat nav.tabs { display: none !important; }
     var ae = document.activeElement;
     if (liveMode() && !document.hidden && state.tab === 'home' && !(ae && /^(INPUT|TEXTAREA)$/.test(ae.tagName))) loadFeed();
   }, 60000);
+  function commentsHTML(p) {
+    return p.comments.map(function (c) {
+      var like = c[2] != null ? '<button class="clike" data-act="clike" data-cid="' + c[2] + '" data-rid="' + p.id + '" aria-pressed="' + (c[4] ? 'true' : 'false') + '" aria-label="Mi piace al commento">' + ICONS.heart + '<span>' + (c[3] || '') + '</span></button>' : '';
+      return '<div class="cmrow"><p><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</p>' + like + '</div>';
+    }).join('');
+  }
   function loadComments(p) {
-    sb.from('comments').select('author_id,body,created_at,author:profiles!author_id(display_name,handle)').eq('recipe_id', p.dbId).order('created_at', { ascending: true }).limit(100).then(function (r) {
+    sb.from('comments').select('id,author_id,body,created_at,cl:comment_likes(count),author:profiles!author_id(display_name,handle)').eq('recipe_id', p.dbId).order('created_at', { ascending: true }).limit(100).then(function (r) {
       if (r.error) return;
-      p.comments = (r.data || []).map(function (c) { return [(c.author && (c.author.display_name || (c.author.handle ? '@' + c.author.handle : ''))) || 'Utente', c.body]; }); p.ccount = p.comments.length;
-      var cm = document.getElementById('cm'); if (cm && state.sheetId === p.id) cm.innerHTML = p.comments.map(function (c) { return '<p><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</p>'; }).join('');
-      var h = document.getElementById('cmh'); if (h && state.sheetId === p.id) h.textContent = 'Commenti (' + p.ccount + ')';
+      var rows = r.data || [], ids = rows.map(function (c) { return c.id; });
+      p.comments = rows.map(function (c) { return [(c.author && (c.author.display_name || (c.author.handle ? '@' + c.author.handle : ''))) || 'Utente', c.body, c.id, c.cl && c.cl[0] ? c.cl[0].count : 0, false]; }); p.ccount = p.comments.length;
+      var paint = function () {
+        var cm = document.getElementById('cm'); if (cm && state.sheetId === p.id) cm.innerHTML = commentsHTML(p);
+        var h = document.getElementById('cmh'); if (h && state.sheetId === p.id) h.textContent = 'Commenti (' + p.ccount + ')';
+      };
+      if (!ids.length || !state.user) { paint(); return; }
+      sb.from('comment_likes').select('comment_id').eq('user_id', state.user.id).in('comment_id', ids).then(function (q) {
+        var mine = {}; ((q && q.data) || []).forEach(function (x) { mine[x.comment_id] = 1; });
+        p.comments.forEach(function (c) { c[4] = !!mine[c[2]]; }); paint();
+      });
     });
   }
   function rasterize(src) {
@@ -2329,6 +2366,39 @@ body.inchat nav.tabs { display: none !important; }
       });
     });
   }
+  function avatarSquare(file) {
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        var S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+        var m = Math.min(im.width, im.height), sx = (im.width - m) / 2, sy = (im.height - m) / 2;
+        c.getContext('2d').drawImage(im, sx, sy, m, m, 0, 0, S, S); URL.revokeObjectURL(u);
+        c.toBlob(function (b) { b ? res(b) : rej(new Error('blob')); }, 'image/jpeg', 0.86);
+      };
+      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('img')); };
+      im.src = u;
+    });
+  }
+  function setAvatar(file) {
+    if (!liveMode() || !file) return;
+    toast('Carico la foto…');
+    avatarSquare(file).then(function (blob) {
+      var path = state.user.id + '/avatar-' + uuid4() + '.jpg', old = pathOf(state.profile && state.profile.avatar_url);
+      return sb.storage.from('media').upload(path, blob, { contentType: 'image/jpeg', upsert: false }).then(function (r) {
+        if (r.error) throw r.error;
+        var url = sb.storage.from('media').getPublicUrl(path).data.publicUrl;
+        return sb.from('profiles').update({ avatar_url: url }).eq('id', state.user.id).then(function (q) {
+          if (q.error) throw q.error;
+          if (state.profile) state.profile.avatar_url = url; state.realP[state.user.id] = Object.assign({}, state.realP[state.user.id] || {}, { avatar_url: url });
+          if (old) sb.storage.from('media').remove([old]);
+          toast('Foto aggiornata'); if (state.tab === 'account') render();
+        });
+      });
+    }).catch(function () { toast('Foto non caricata'); });
+  }
+  document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'avfile') { var fl = e.target.files && e.target.files[0]; e.target.value = ''; setAvatar(fl); }
+  });
   function extraSubmit(e) {
     var id = e.target.id;
     if (id === 'dmform') {
@@ -2417,6 +2487,17 @@ body.inchat nav.tabs { display: none !important; }
   }
 
   function extraClick(act, el, id) {
+    if (act === 'clike') {
+      if (!liveMode()) { toast('Accedi per mettere mi piace'); return true; }
+      var cid = parseInt(el.getAttribute('data-cid'), 10), pp = byId(parseInt(el.getAttribute('data-rid'), 10));
+      var cc = pp && pp.comments.filter(function (c) { return c[2] === cid; })[0]; if (!cc) return true;
+      var was = !!cc[4]; cc[4] = !was; cc[3] = Math.max(0, (cc[3] || 0) + (was ? -1 : 1));
+      var cm1 = document.getElementById('cm'); if (cm1) cm1.innerHTML = commentsHTML(pp);
+      var q = was ? sb.from('comment_likes').delete().eq('comment_id', cid).eq('user_id', state.user.id)
+                  : sb.from('comment_likes').insert({ comment_id: cid, user_id: state.user.id });
+      q.then(function (r) { if (r && r.error) { cc[4] = was; cc[3] = Math.max(0, cc[3] + (was ? 1 : -1)); var c2 = document.getElementById('cm'); if (c2) c2.innerHTML = commentsHTML(pp); toast('Non riuscito'); } });
+      return true;
+    }
     if (act === 'usermenu') { openUserMenu(el.getAttribute('data-u'), parseInt(el.getAttribute('data-c'), 10) || null); return true; }
     if (act === 'reportopen') { state.rep = null; openReport(el.getAttribute('data-u'), parseInt(el.getAttribute('data-c'), 10) || null); return true; }
     if (act === 'reportreason') { var rd = document.getElementById('repd'); if (state.rep) { if (rd) state.rep.details = rd.value; state.rep.reason = el.getAttribute('data-v'); openReport(state.rep.u, state.rep.c); } return true; }
@@ -2504,8 +2585,19 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'authopen') { state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {} closeSheet(); render(); return true; }
     if (act === 'account') { state.tab = 'account'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
     if (act === 'shoptab') { state.shopTab = el.getAttribute('data-v'); render(); return true; }
+    if (act === 'avdel') {
+      if (!liveMode() || !state.profile) return true;
+      var oldp = pathOf(state.profile.avatar_url);
+      sb.from('profiles').update({ avatar_url: null }).eq('id', state.user.id).then(function (q) {
+        if (q.error) { toast('Non riuscito'); return; }
+        state.profile.avatar_url = null; if (state.realP[state.user.id]) state.realP[state.user.id].avatar_url = null;
+        if (oldp) sb.storage.from('media').remove([oldp]); render();
+      });
+      return true;
+    }
+    if (act === 'install') { if (window.__doInstall) window.__doInstall(); return true; }
     if (act === 'logout') {
-      if (sb) sb.auth.signOut().then(function () { try { localStorage.removeItem('gusto-v1'); localStorage.removeItem('gusto-guest'); } catch (e) {} location.reload(); });
+      if (sb) sb.auth.signOut({ scope: 'local' }).then(function () { try { localStorage.removeItem('gusto-v1'); localStorage.removeItem('gusto-guest'); } catch (e) {} location.reload(); });
       return true;
     }
     if (act === 'mypro') { state.tab = 'pro'; state.curClient = null; closeSheet(); if (liveMode()) proLoad(); render(); window.scrollTo(0, 0); return true; }
@@ -2798,10 +2890,10 @@ body.inchat nav.tabs { display: none !important; }
     if (p.real) {
       if (!liveMode()) { toast('Accedi per commentare'); return; }
       i.value = '';
-      sb.from('comments').insert({ recipe_id: p.dbId, author_id: state.user.id, body: v }).then(function (r) {
+      sb.from('comments').insert({ recipe_id: p.dbId, author_id: state.user.id, body: v }).select('id').single().then(function (r) {
         if (r.error) { toast('Commento non inviato'); i.value = v; return; }
-        var me = (state.profile && state.profile.display_name) || 'Tu'; p.comments.push([me, v]); p.ccount = (p.ccount || 0) + 1;
-        var cm0 = document.getElementById('cm'), pp0 = document.createElement('p'); if (cm0) { pp0.innerHTML = '<b>' + esc(me) + '</b> ' + esc(v); cm0.appendChild(pp0); }
+        var me = (state.profile && state.profile.display_name) || 'Tu'; p.comments.push([me, v, r.data && r.data.id, 0, false]); p.ccount = (p.ccount || 0) + 1;
+        var cm0 = document.getElementById('cm'); if (cm0) cm0.innerHTML = commentsHTML(p);
         var h0 = document.getElementById('cmh'); if (h0) h0.textContent = 'Commenti (' + p.ccount + ')';
       });
       return;
@@ -2870,8 +2962,64 @@ body.inchat nav.tabs { display: none !important; }
 
   normPlan();
   render();
+  /* Tasto Indietro del telefono: naviga dentro l'app invece di chiuderla.
+     Ogni "livello" aperto (scheda ricetta, modalita' cucina, pagina raggiunta da un'altra) corrisponde a una voce di cronologia. */
+  (function () {
+    var tabHist = [], lastKey = null, cur = 0, ignore = 0, popping = false;
+    function key() { return state.tab + (state.tab === 'user' ? ':' + state.viewing : '') + (state.tab === 'dm' ? ':' + state.curDm : ''); }
+    function depth() { return tabHist.length + (document.getElementById('layer').firstChild ? 1 : 0) + (state.cook ? 1 : 0); }
+    function sync() {
+      var k = key();
+      if (lastKey !== null && k !== lastKey && !popping) {
+        if (state.tab === 'home') tabHist = [];
+        else if (tabHist[tabHist.length - 1] === k) tabHist.pop();
+        else tabHist.push(lastKey);
+        if (tabHist.length > 20) tabHist.shift();
+      }
+      lastKey = k;
+      var d = depth();
+      if (d > cur) { while (cur < d) { cur++; try { history.pushState({ d: cur }, ''); } catch (e) {} } }
+      else if (d < cur) { var back = cur - d; cur = d; ignore++; try { history.go(-back); } catch (e) { ignore = 0; } }
+    }
+    function goKey(k) {
+      var p = k.split(':'); state.tab = p[0];
+      if (p[0] === 'user') state.viewing = p.slice(1).join(':');
+      if (p[0] === 'dm') state.curDm = p.slice(1).join(':');
+      if (p[0] === 'dm' && !isNaN(+state.curDm)) state.curDm = +state.curDm;
+    }
+    function back() {
+      if (state.cook) { closeCook(); return; }
+      if (document.getElementById('layer').firstChild) { closeSheet(); document.getElementById('layer').innerHTML = ''; return; }
+      if (tabHist.length) { var k = tabHist.pop(); goKey(k); render(); window.scrollTo(0, 0); }
+    }
+    window.addEventListener('popstate', function (e) {
+      if (ignore) { ignore = 0; return; }
+      var d = (e.state && e.state.d) || 0;
+      popping = true; cur = d;
+      var guard = 0; while (depth() > d && guard++ < 10) back();
+      popping = false; lastKey = key();
+    });
+    window.__navSync = sync;
+    var lay = document.getElementById('layer'), ck = document.getElementById('cook');
+    try { var mo = new MutationObserver(function () { sync(); }); mo.observe(lay, { childList: true }); mo.observe(ck, { childList: true }); } catch (e) {}
+    try { history.replaceState({ d: 0 }, ''); } catch (e) {}
+    sync();
+  })();
+  /* Installazione sulla schermata Home (PWA) */
+  var deferredInstall = null;
+  var isStandalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  var isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredInstall = e; if (state.tab === 'settings') render(); });
+  window.addEventListener('appinstalled', function () { deferredInstall = null; toast('App installata'); if (state.tab === 'settings') render(); });
+  window.__canInstall = function () { return !isStandalone; };
+  window.__doInstall = function () {
+    if (deferredInstall) { var d = deferredInstall; deferredInstall = null; d.prompt(); return; }
+    sheetOpen('Installa Gusto', 'Installa',
+      '<p class="hint" style="margin:0 0 10px">' + (isIos ? 'Su iPhone: tocca il tasto Condividi in basso in Safari, poi “Aggiungi alla schermata Home”.' : 'Su Android: apri il menu del browser (tre puntini in alto a destra) e scegli “Installa app” oppure “Aggiungi a schermata Home”.') + '</p><button class="btn" data-act="close">Ho capito</button>');
+  };
+  try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611022100';
+  var BUILD = '202611031200';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
