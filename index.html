@@ -428,8 +428,9 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<button class="ic save" data-act="save" data-id="' + p.id + '" aria-pressed="true" aria-label="Rimuovi dai salvati">' + ICONS.save + '</button></div>';
   }
   function followBtn(h) {
-    var on = !!state.following[h];
-    return '<button class="follow" data-act="follow" data-h="' + esc(h) + '" aria-pressed="' + on + '">' + (on ? 'Seguito' : 'Segui') + '</button>';
+    var on = !!state.following[h], pend = h.indexOf('u:') === 0 && state.fstat[h] === 'pending', rp = h.indexOf('u:') === 0 ? state.realP[h.slice(2)] : null;
+    var label = pend ? 'Richiesta inviata' : on ? 'Seguito' : (rp && rp.is_private ? 'Richiedi' : 'Segui');
+    return '<button class="follow" data-act="follow" data-h="' + esc(h) + '" aria-pressed="' + (on || pend) + '">' + label + '</button>';
   }
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -1213,7 +1214,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var q = state.q.replace(/[^\p{L}\p{N} ._-]/gu, ' ').replace(/\s+/g, ' ').trim();
     if (!liveMode() || q.length < 2) { state.realRes = []; state.realQ = ''; return; }
     realT = setTimeout(function () {
-      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
+      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
         if (r.error) return;
         state.realRes = (r.data || []).filter(function (x) { return x.display_name || x.handle; }); state.realQ = q;
         (state.realRes).forEach(function (x) { state.realP[x.id] = x; });
@@ -1226,7 +1227,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (!liveMode() || !state.realRes.length) return '';
     return state.realRes.map(function (x) {
       var nm = x.display_name || ('@' + x.handle), h = 'u:' + x.id;
-      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
     }).join('');
   }
   function viewRealUser(id) {
@@ -1235,7 +1236,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
       '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + '</div>' +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
-      '<div class="empty" style="margin-top:18px"><b>Ancora nessun piatto</b>Quando pubblicherà delle ricette le troverai qui.</div>';
+      (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
+        : '<div class="empty" style="margin-top:18px"><b>Ancora nessun piatto</b>Quando pubblicherà delle ricette le troverai qui.</div>');
   }
   function peopleHTML() {
     var words = state.q.toLowerCase().split(/\s+/).filter(Boolean); if (!words.length) return '';
@@ -1596,7 +1598,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 
   /* ---------- Area nutrizionista e cliente (dati veri) ---------- */
   function liveMode() { return !!(sb && state.user); }
-  state.realRes = []; state.realP = {}; state.realQ = ''; state.profile = null; state.clients = []; state.curClient = null; state.myLink = null; state.msgs = []; state.lastPlan = null; state.pcmp = null; state.names = {};
+  state.realRes = []; state.realP = {}; state.fstat = {}; state.reqs = []; state.realQ = ''; state.profile = null; state.clients = []; state.curClient = null; state.myLink = null; state.msgs = []; state.lastPlan = null; state.pcmp = null; state.names = {};
   try {
     var invQ = new URLSearchParams(location.search).get('invito');
     if (invQ && /^[0-9a-f]{32}$/.test(invQ)) { localStorage.setItem('gusto-invite', invQ); }
@@ -1642,14 +1644,16 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
-    sb.from('profiles').select('id,display_name,account_type,pro_verified').eq('id', state.user.id).maybeSingle().then(function (r) {
+    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private').eq('id', state.user.id).maybeSingle().then(function (r) {
       state.profile = r.data || { account_type: 'user', pro_verified: false, display_name: '' };
       var code = null; try { code = localStorage.getItem('gusto-invite'); localStorage.removeItem('gusto-invite'); } catch (e) {}
       if (code && state.profile.account_type !== 'pro') {
-        return sb.rpc('accept_invite', { code: code }).then(function (x) { toast(x.error ? 'Invito non valido o già usato' : 'Collegato al tuo nutrizionista'); });
+        return sb.rpc('accept_invite', { code: code }).then(function (x) { toast(x.error ? 'Invito non valido o già usato' : 'Collegato al tuo nutrizionista. Il tuo profilo è privato: puoi cambiarlo dal Profilo.');
+          if (!x.error) state.profile.is_private = true; });
       }
       return null;
     }).then(function () { return state.profile.account_type === 'pro' ? loadClients() : loadMyLink(); })
+      .then(function () { return loadSocial(); })
       .then(function () { render(); }, function () { render(); });
   }
   function liveChatHTML() {
@@ -1743,7 +1747,54 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     sheetOpen('Scollega', 'Scollegare?', '<p style="margin:0">Il collegamento tra nutrizionista e cliente si chiude: non potete più scrivervi né inviarvi piani. Per riattivarlo serve un nuovo invito.</p>' +
       '<button class="btn" data-act="clientendyes" data-id="' + lid + '">Sì, scollega</button><button class="btn ghost" data-act="close">Annulla</button>');
   }
+  function openPrivacy() {
+    var on = !!state.profile.is_private;
+    sheetOpen('Profilo privato', 'Profilo privato',
+      '<p style="margin:0">' + (on ? 'Il tuo profilo è privato.' : 'Il tuo profilo è pubblico.') + '</p>' +
+      '<p class="hint" style="margin:0">Con il profilo privato il tuo nome compare ancora nella ricerca, ma nessuno vede i tuoi piatti finché non accetti la sua richiesta di follow. Chi ti segue già resta collegato.</p>' +
+      '<button class="btn" data-act="privtoggle">' + (on ? 'Rendi il profilo pubblico' : 'Rendi il profilo privato') + '</button>');
+  }
+  function openReqs() {
+    sheetOpen('Richieste di follow', 'Richieste di follow', state.reqs.length ? '<div class="slist">' + state.reqs.map(function (u) {
+      var x = state.realP[u] || {}, nm = x.display_name || x.handle || 'Utente';
+      return '<div class="rcard" style="align-items:center"><div class="rmain"><b>' + esc(nm) + '</b><span>Vuole seguirti</span></div><button class="follow" data-act="reqok" data-u="' + esc(u) + '">Accetta</button><button class="reset" data-act="reqno" data-u="' + esc(u) + '" style="color:var(--muted)">Rifiuta</button></div>';
+    }).join('') + '</div>' : '<div class="empty" style="padding:18px"><b>Nessuna richiesta</b>Quando qualcuno chiede di seguirti, la trovi qui.</div>');
+  }
+  function loadSocial() {
+    var me = state.user.id;
+    return Promise.all([
+      sb.from('follows').select('followed_id,status').eq('follower_id', me),
+      sb.from('follows').select('follower_id').eq('followed_id', me).eq('status', 'pending')
+    ]).then(function (a) {
+      Object.keys(state.following).forEach(function (k) { if (k.indexOf('u:') === 0) delete state.following[k]; });
+      state.fstat = {};
+      (a[0].data || []).forEach(function (f) { state.fstat['u:' + f.followed_id] = f.status; if (f.status === 'accepted') state.following['u:' + f.followed_id] = true; });
+      state.reqs = (a[1].data || []).map(function (f) { return f.follower_id; });
+      var ids = state.reqs.concat((a[0].data || []).map(function (f) { return f.followed_id; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
+      if (!ids.length) return null;
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
+    });
+  }
   function liveClick(act, el, id) {
+    if (act === 'privacy') { openPrivacy(); return true; }
+    if (act === 'privtoggle') {
+      var nv = !state.profile.is_private;
+      sb.from('profiles').update({ is_private: nv }).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast('Non riesco a cambiare l\'impostazione'); return; }
+        state.profile.is_private = nv; openPrivacy(); toast(nv ? 'Profilo privato' : 'Profilo pubblico');
+      });
+      return true;
+    }
+    if (act === 'reqs') { openReqs(); return true; }
+    if (act === 'reqok' || act === 'reqno') {
+      var u = el.getAttribute('data-u');
+      var q = act === 'reqok' ? sb.from('follows').update({ status: 'accepted' }).eq('follower_id', u).eq('followed_id', state.user.id) : sb.from('follows').delete().eq('follower_id', u).eq('followed_id', state.user.id);
+      q.then(function (r) {
+        if (r.error) { toast('Operazione non riuscita'); return; }
+        state.reqs = state.reqs.filter(function (x) { return x !== u; }); openReqs();
+      });
+      return true;
+    }
     if (act === 'invite') {
       sb.from('client_links').insert({ pro_id: state.user.id }).select('id,client_id,invite_code,status,created_at').single().then(function (r) {
         if (r.error) { toast('Non riesco a creare l\'invito'); return; }
@@ -1986,6 +2037,9 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       ['pantry', 'Dispensa', state.pantry.length ? state.pantry.length + ' ingredienti in casa' : 'Vuota'],
       ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]
     ];
+    if (liveMode() && state.profile) {
+      rows.splice(1, 0, ['privacy', 'Profilo privato', state.profile.is_private ? 'Attivo: chi non ti segue non vede i tuoi piatti' : 'Non attivo'], ['reqs', 'Richieste di follow', state.reqs.length ? state.reqs.length + ' da approvare' : 'Nessuna']);
+    }
     return '<div class="menu">' + rows.map(function (r) { return '<button class="mrow" data-act="' + r[0] + '" data-v="rest"><span><b>' + r[1] + '</b><small>' + esc(r[2]) + '</small></span><span class="chev">&rsaquo;</span></button>'; }).join('') + '</div>';
   }
 
@@ -2005,10 +2059,25 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     }
     else if (act === 'open') { openSheet(id); }
     else if (act === 'follow') {
-      var h = el.getAttribute('data-h'); state.following[h] = !state.following[h]; persist();
-      var real = h.indexOf('u:') === 0, rn = real && state.realP[h.slice(2)] ? (state.realP[h.slice(2)].display_name || state.realP[h.slice(2)].handle) : h;
-      if (real && liveMode()) { var tid = h.slice(2); (state.following[h] ? sb.from('follows').insert({ follower_id: state.user.id, followed_id: tid }) : sb.from('follows').delete().eq('follower_id', state.user.id).eq('followed_id', tid)).then(function () {}); }
-      toast(state.following[h] ? 'Ora segui ' + (real ? rn : '@' + h) : 'Non segui più ' + (real ? rn : '@' + h)); render();
+      var h = el.getAttribute('data-h');
+      if (h.indexOf('u:') === 0) {
+        if (!liveMode()) { toast('Accedi per seguire le persone'); return; }
+        var tid = h.slice(2), rp = state.realP[tid] || {}, rn = rp.display_name || rp.handle || 'questa persona';
+        if (state.following[h] || state.fstat[h] === 'pending') {
+          state.following[h] = false; delete state.fstat[h];
+          sb.from('follows').delete().eq('follower_id', state.user.id).eq('followed_id', tid).then(function () {});
+          toast('Non segui più ' + rn); persist(); render(); return;
+        }
+        var st = rp.is_private ? 'pending' : 'accepted';
+        sb.from('follows').insert({ follower_id: state.user.id, followed_id: tid, status: st }).then(function (r) {
+          if (r.error) { toast('Non riesco a seguire questo profilo'); return; }
+          state.fstat[h] = st; state.following[h] = st === 'accepted'; persist();
+          toast(st === 'pending' ? 'Richiesta inviata a ' + rn : 'Ora segui ' + rn); render();
+        });
+        return;
+      }
+      state.following[h] = !state.following[h]; persist();
+      toast(state.following[h] ? 'Ora segui @' + h : 'Non segui più @' + h); render();
     }
     else if (act === 'profile') {
       var hh = el.getAttribute('data-h'); closeSheet();
