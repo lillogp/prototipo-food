@@ -95,7 +95,7 @@ nav.tabs .in { max-width: 520px; margin: 0 auto; display: grid; grid-template-co
 form.new { display: flex; flex-direction: column; gap: 14px; }
 label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; }
 label.f small { font-weight: 400; color: var(--muted); }
-input[type=text], input[type=number], textarea, select {
+input[type=text], input[type=number], input[type=email], input[type=password], textarea, select {
   font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%; font-weight: 400;
 }
 textarea { min-height: 112px; resize: vertical; }
@@ -303,6 +303,21 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 .ct b { font-variant-numeric: tabular-nums; font-size: 18px; font-family: var(--f-display); }
 .cnav { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
 .cnav .btn { padding: 16px; font-size: 17px; }
+
+.invite { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.inv { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--muted); font-size: 14px; }
+.procard { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-top: 14px; }
+.procard h3 { margin-bottom: 4px; }
+.chat { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; padding: 4px 2px; }
+.msg { max-width: 82%; border-radius: 16px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
+.msg p { margin: 0; }
+.msg small { font-size: 11px; opacity: .65; align-self: flex-end; }
+.msg.pro { align-self: flex-start; background: var(--soft); border-bottom-left-radius: 4px; }
+.msg.me { align-self: flex-end; background: var(--accent); color: var(--accent-fg); border-bottom-right-radius: 4px; }
+.mrec { display: flex; align-items: center; gap: 8px; text-align: left; background: var(--surface); color: var(--fg); border-radius: 10px; padding: 4px; }
+.mrec .mt { width: 44px; height: 44px; border-radius: 8px; overflow: hidden; flex: none; }
+.mrec .mt img, .mrec .mt video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mrec b { font-size: 14px; font-weight: 600; padding-right: 6px; }
 </style>
 </head>
 <body>
@@ -320,6 +335,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 <div id="cook"></div>
 <div id="toast" class="toast" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
 (function () {
   var ICONS = {
@@ -390,8 +406,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   posts.forEach(function (p) { p.media = { type: 'image', src: plate(p.plate, p.seed) }; p.ing = p.ing.map(normIng); });
 
   var ME = { name: 'Tu', handle: 'tuo.nome' };
-  var state = { tab: 'home', filter: 'Tutti', liked: {}, saved: {}, following: {}, viewing: null, draft: null, note: true, plan: {}, extra: {}, order: {}, checked: {}, weekOff: 0, planTab: 'week', people: [{ id: 'p1', name: 'Io' }], vperson: 'p1', q: '', maxT: 0, homeTab: 'dishes', savedTab: 'recipes', folderSel: '', shopper: null, timers: [], cook: null, pantry: [], prefs: { diet: '', allergens: [], hide: true }, folders: [], fof: {}, goal: null, rsaved: {}, rnote: {}, rvisited: {}, myr: [], shopx: [], cmts: {} };
-  var KEEP = ['liked', 'saved', 'following', 'plan', 'extra', 'order', 'people', 'vperson', 'checked', 'pantry', 'prefs', 'folders', 'fof', 'goal', 'rsaved', 'rnote', 'rvisited', 'myr', 'shopx', 'cmts'];
+  var state = { tab: 'home', filter: 'Tutti', liked: {}, saved: {}, following: {}, viewing: null, draft: null, note: true, plan: {}, extra: {}, order: {}, checked: {}, weekOff: 0, planTab: 'week', people: [{ id: 'p1', name: 'Io' }], vperson: 'p1', q: '', maxT: 0, homeTab: 'dishes', savedTab: 'recipes', folderSel: '', shopper: null, timers: [], cook: null, pantry: [], prefs: { diet: '', allergens: [], hide: true }, folders: [], fof: {}, goal: null, rsaved: {}, rnote: {}, rvisited: {}, myr: [], shopx: [], cmts: {}, pro: null, chat: [], goalBy: null };
+  var KEEP = ['liked', 'saved', 'following', 'plan', 'extra', 'order', 'people', 'vperson', 'checked', 'pantry', 'prefs', 'folders', 'fof', 'goal', 'rsaved', 'rnote', 'rvisited', 'myr', 'shopx', 'cmts', 'pro', 'chat', 'goalBy'];
   try {
     var sv0 = JSON.parse(localStorage.getItem('gusto-v1') || '{}');
     KEEP.forEach(function (k) { if (sv0[k] !== undefined && sv0[k] !== null) state[k] = sv0[k]; });
@@ -399,7 +415,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     state.prefs = { diet: '', allergens: state.prefs.allergens || [], hide: state.prefs.hide !== false };
   } catch (e) {}
   posts.forEach(function (p) { (state.cmts[p.id] || []).forEach(function (c) { p.comments.push(c); }); });
-  function persist() { try { var o = {}; KEEP.forEach(function (k) { o[k] = state[k]; }); localStorage.setItem('gusto-v1', JSON.stringify(o)); } catch (e) {} }
+  function persist() { try { var o = {}; KEEP.forEach(function (k) { o[k] = state[k]; }); localStorage.setItem('gusto-v1', JSON.stringify(o)); } catch (e) {} cloudSave(); }
   var FOLLOWERS = { 'marco.incucina': 412, 'giulia.s': 238, 'sara.nutri': 1240, 'luca.forno': 689, 'anna.dolci': 957, 'elena.cucina': 530, 'davide.g': 84, 'chiara.sana': 870, 'paolo.chef': 1500, 'marta.v': 215, 'fabio.l': 140, 'irene.bio': 360 };
   function followersOf(h) { return (FOLLOWERS[h] || 0) + (state.following[h] ? 1 : 0); }
   function nfmt(n) { return n >= 1000 ? n.toLocaleString('it-IT') : String(n); }
@@ -429,7 +445,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     return '<article class="post"><div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '"><div class="av">' + esc(p.user[0]) + '</div><div class="who"><b>' + esc(p.user) + '</b><span>@' + esc(p.handle) + ' · ' + esc(p.t) + '</span></div></button>' +
       (p.role ? '<span class="role">' + esc(p.role) + '</span>' : '') + (p.mine ? '' : followBtn(p.handle)) + '</div>' +
       (p.media.type === 'video' ? mediaTag(p.media, 'media') : '<div class="tap" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ricetta ' + esc(p.title) + '">' + mediaTag(p.media, 'media') + '</div>') +
-      '<div class="post-b"><div class="tap tapb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '"><h2>' + esc(p.title) + '</h2><div class="meta"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + esc(p.tag) + '</span>' + (nutriKcal(p) ? '<span>≈ ' + nutriKcal(p) + ' kcal a porzione</span>' : '') + (p.from ? '<span>Variante di @' + esc(p.from.handle) + '</span>' : '') + (state.filter === 'Dalla dispensa' ? covBadge(p) : '') + '</div>' + warnHTML(p) + '</div>' +
+      '<div class="post-b"><div class="tap tapb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '"><h2>' + esc(p.title) + '</h2><div class="meta"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + esc(p.tag) + '</span>' + (nutriKcal(p) && !(p.hideN && !p.mine) ? '<span>≈ ' + nutriKcal(p) + ' kcal a porzione</span>' : '') + (p.from ? '<span>Variante di @' + esc(p.from.handle) + '</span>' : '') + (state.filter === 'Dalla dispensa' ? covBadge(p) : '') + '</div>' + warnHTML(p) + '</div>' +
       '<div class="acts"><button class="ic like" data-act="like" data-id="' + p.id + '" aria-pressed="' + liked + '" aria-label="Mi piace">' + ICONS.heart + '<span>' + (p.likes + (liked ? 1 : 0)) + '</span></button>' +
       '<button class="ic" data-act="open" data-id="' + p.id + '" aria-label="Commenti">' + ICONS.chat + '<span>' + p.comments.length + '</span></button>' +
       '<button class="ic save" data-act="save" data-id="' + p.id + '" aria-pressed="' + saved + '" aria-label="Salva ricetta">' + ICONS.save + '</button><span class="sp"></span>' +
@@ -510,6 +526,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<label class="f" for="f-tag">Categoria<select id="f-tag"><option>Colazione</option><option>Primi</option><option>Secondi</option><option>Contorni</option><option>Dolci</option><option>Lievitati</option><option>Light</option><option>Spuntini</option><option>Altro</option></select></label>' +
       '<div class="fbox" id="ingbox">' + ingBox(d) + '</div>' +
       '<div class="fbox" id="stepbox">' + stepBox(d) + '</div>' +
+      '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + (d.showN !== false) + '" data-act="shownut"><span class="box">' + (d.showN !== false ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Mostra calorie e valori nutrizionali agli altri</span></button>' +
       '<button class="btn" type="submit" style="padding:14px 16px">Pubblica</button></form>';
   }
 
@@ -658,7 +675,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var cards = list.map(function (x) {
       var p = x.p, en = x.e, on = en.on !== false, at = 'data-dt="' + dt + '" data-s="' + s[0] + '" data-i="' + x.i + '"';
       return '<div class="meal' + (on ? '' : ' off') + '"><div class="mthumb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ricetta ' + esc(p.title) + '">' + thumbTag(p.media) + '</div><div class="mmid"><button class="mtitle" data-act="open" data-id="' + p.id + '">' + esc(p.title) + '</button>' +
-        '<div class="mser"><button class="mb" data-act="pserv" ' + at + ' data-v="-1" aria-label="Meno porzioni">&minus;</button><span>' + en.serv + ' porzioni</span><button class="mb" data-act="pserv" ' + at + ' data-v="1" aria-label="Più porzioni">+</button></div>' + (kcalPP(p) ? '<div class="mk">≈ ' + kcalPP(p) + ' kcal a porzione</div>' : '') + warnHTML(p) + '</div>' +
+        '<div class="mser"><button class="mb" data-act="pserv" ' + at + ' data-v="-1" aria-label="Meno porzioni">&minus;</button><span>' + en.serv + ' porzioni</span><button class="mb" data-act="pserv" ' + at + ' data-v="1" aria-label="Più porzioni">+</button></div>' + (kcalPP(p) ? '<div class="mk">≈ ' + kcalPP(p) + ' kcal a porzione</div>' : '') + (en.by === 'pro' ? '<div class="mk">Dal piano di ' + esc(state.pro ? state.pro.name : 'Marco') + '</div>' : '') + warnHTML(p) + '</div>' +
         '<button class="mx" data-act="prm" ' + at + ' aria-label="Togli dal planner"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         '<button class="mchk" role="checkbox" aria-checked="' + on + '" data-act="pon" ' + at + '><span class="box">' + (on ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Conta nella spesa e nei valori</span></button>' + whoRow(en, at) + '</div>';
     }).join('');
@@ -768,23 +785,26 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<div class="peoplebar"><span>Persone: <b>' + state.people.map(function (q) { return esc(q.name); }).join(', ') + '</b></span><button class="reset" data-act="people">Modifica</button></div>' +
       '<div class="weeknav"><button class="ic" data-act="week" data-d="-1" aria-label="Settimana precedente">&lsaquo;</button><b>' + weekLabel(days) + '</b><button class="ic" data-act="week" data-d="1" aria-label="Settimana successiva">&rsaquo;</button></div>' +
       (state.weekOff ? '<div style="text-align:center;margin:-4px 0 10px"><button class="reset" data-act="weektoday">Torna a questa settimana</button></div>' : '') +
-      (state.planTab === 'week' ? '<button class="btn ghost" data-act="plans" style="width:100%;margin-bottom:12px">Piani dei dietologi</button><div class="days">' + days.map(dayCard).join('') + '</div>' : viewShop());
+      (state.planTab === 'week' ? (state.pro ? '<button class="btn ghost" data-act="plan" data-pl="mp" style="width:100%;margin-bottom:12px">Piano di ' + esc(state.pro.name) + '</button>' : '') + '<div class="days">' + days.map(dayCard).join('') + '</div>' : viewShop());
   }
   function render() {
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
-    app.innerHTML = state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : viewProfile();
+    var gate = needAuth();
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['new', 'Pubblica', ICONS.plus], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
-    var cur = state.tab === 'plan' ? (state.planTab === 'shop' ? 'shop' : 'plan') : state.tab === 'saved' ? 'me' : state.tab;
+    var cur = state.tab === 'plan' ? (state.planTab === 'shop' ? 'shop' : 'plan') : state.tab === 'saved' || state.tab === 'pro' ? 'me' : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
       return '<button class="tab' + (t[0] === 'new' ? ' plus' : '') + '" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' +
         (t[0] === 'new' ? '<span class="pl">' + t[2] + '</span>' : t[2]) + '<span>' + t[1] + '</span></button>';
     }).join('');
-    if (state.tab === 'new') bindForm();
+    document.querySelector('nav.tabs').style.display = gate ? 'none' : '';
+    if (state.tab === 'new' && !gate) bindForm();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
       var k = c.getAttribute('data-dt') + '|' + c.getAttribute('data-s');
       if (state.carEnd === k) c.scrollLeft = c.scrollWidth; else if (sc[k]) c.scrollLeft = sc[k];
     });
+    var chatEl = document.getElementById('chat'); if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
     state.carEnd = null;
   }
 
@@ -923,12 +943,12 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     return n.any && !n.miss.length ? Math.round(n.t.kcal / p.serv / 5) * 5 : 0;
   }
   function nutriHTML(p) {
-    var n = nutri(p); if (!n.any) return '';
+    var n = nutri(p); if (!n.any || (p.hideN && !p.mine)) return '';
     var s = p.serv, t = n.t;
     return '<section><h3>Valori nutrizionali <small style="font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:13px">stima per porzione</small></h3>' +
       '<div class="nutri"><div class="kc"><b>' + Math.round(t.kcal / s / 5) * 5 + '</b><span>kcal</span></div>' +
       '<div><b>' + Math.round(t.p / s) + ' g</b><span>proteine</span></div><div><b>' + Math.round(t.c / s) + ' g</b><span>carboidrati</span></div><div><b>' + Math.round(t.f / s) + ' g</b><span>grassi</span></div></div>' +
-      '<p class="hint" id="nutritot"></p></section>';
+      '<p class="hint" id="nutritot"></p>' + (p.hideN ? '<p class="hint">Calorie e valori sono nascosti agli altri utenti.</p>' : '') + '</section>';
   }
   function nutriNote(p) {
     var el = document.getElementById('nutritot'); if (!el) return;
@@ -1024,7 +1044,8 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       '<section><h3>Commenti (' + p.comments.length + ')</h3><div class="cm" id="cm">' + p.comments.map(function (c) { return '<p><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</p>'; }).join('') + '</div>' +
       '<form class="cmf" id="cmf" data-id="' + p.id + '" style="margin-top:12px"><input type="text" id="cmi" placeholder="Scrivi un commento" aria-label="Commento" maxlength="200"><button class="btn" type="submit">Invia</button></form></section>' +
       '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>' +
-      '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button></div></div>';
+      '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>' +
+      (p.mine ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') + '</div></div>';
   }
   function closeSheet() { document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
 
@@ -1065,7 +1086,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       if (!ing.length) { toast('Aggiungi almeno un ingrediente'); return; }
       if (!steps.length) { toast('Aggiungi almeno un passaggio'); return; }
       posts.unshift({ id: Date.now(), mine: true, user: ME.name, handle: ME.handle, role: '', t: 'Adesso', title: d.title.trim(), tag: d.tag || 'Altro',
-        time: parseInt(d.time, 10) || 30, serv: parseInt(d.serv, 10) || 2, likes: 0, from: d.from || null, media: d.media, ing: ing, steps: steps, comments: [] });
+        time: parseInt(d.time, 10) || 30, serv: parseInt(d.serv, 10) || 2, likes: 0, from: d.from || null, hideN: d.showN === false, media: d.media, ing: ing, steps: steps, comments: [] });
       state.draft = null; state.tab = 'home'; state.filter = 'Tutti'; render(); window.scrollTo(0, 0); toast('Piatto pubblicato');
     });
   }
@@ -1283,21 +1304,11 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 
   /* Piani dei dietologi */
   var PLANS = [
-    { id: 'pl1', handle: 'sara.nutri', title: 'Mediterranea leggera', diet: 'Onnivora', desc: 'Verdure, legumi e pesce, con carboidrati integrali e porzioni contenute.',
-      col: ['Yogurt greco, granola e frutti di bosco', 'Porridge con banana e noci', 'Toast con avocado e uovo in camicia', 'Overnight oats mela e cannella', 'Smoothie bowl ai frutti di bosco', 'Yogurt greco, granola e frutti di bosco', 'Porridge con banana e noci'],
-      pra: ['Insalata di quinoa e ceci', 'Pasta e ceci', 'Insalata greca', 'Zuppa di lenticchie', 'Poke bowl di salmone e avocado', 'Minestrone di verdure', 'Bowl di pollo e verdure'],
-      cen: ['Salmone al forno con patate', 'Frittata di zucchine', 'Pollo al limone', 'Merluzzo in crosta di pangrattato', 'Falafel al forno', 'Gamberi aglio e peperoncino', 'Pollo al limone'],
-      spu: ['Mela e burro di arachidi', '', 'Yogurt con noci e miele', '', 'Mela e burro di arachidi', '', 'Hummus di ceci'] },
-    { id: 'pl2', handle: 'chiara.sana', title: 'Proteico per allenarsi', diet: 'Onnivora', desc: 'Più proteine a ogni pasto, per chi si allena 3-4 volte a settimana.',
-      col: ['Uova strapazzate con pane tostato', 'Yogurt greco, granola e frutti di bosco', 'Toast con avocado e uovo in camicia', 'Uova strapazzate con pane tostato', 'Yogurt greco, granola e frutti di bosco', 'Crepes con ricotta e miele', 'Toast con avocado e uovo in camicia'],
-      pra: ['Bowl di pollo e verdure', 'Poke bowl di salmone e avocado', 'Pollo al limone', 'Bowl di pollo e verdure', 'Poke bowl di salmone e avocado', 'Pasta e ceci', 'Polpette al sugo'],
-      cen: ['Salmone al forno con patate', 'Merluzzo in crosta di pangrattato', 'Gamberi aglio e peperoncino', 'Pollo al limone', 'Salmone al forno con patate', 'Frittata di zucchine', 'Spezzatino di manzo con patate'],
-      spu: ['Yogurt con noci e miele', 'Energy balls al cacao', 'Yogurt con noci e miele', 'Energy balls al cacao', 'Yogurt con noci e miele', '', 'Energy balls al cacao'] },
-    { id: 'pl3', handle: 'sara.nutri', title: 'Vegetariana equilibrata', diet: 'Vegetariana', desc: 'Senza carne e pesce: legumi, uova, latticini e cereali variati.',
-      col: ['Porridge con banana e noci', 'Crepes con ricotta e miele', 'Overnight oats mela e cannella', 'Toast con avocado e uovo in camicia', 'Yogurt greco, granola e frutti di bosco', 'Pancake soffici', 'Smoothie bowl ai frutti di bosco'],
-      pra: ['Pasta alla norma', 'Risotto ai funghi', 'Insalata greca', 'Pasta e ceci', 'Risotto alla zucca', 'Minestrone di verdure', 'Insalata di quinoa e ceci'],
-      cen: ['Falafel al forno', 'Frittata di zucchine', 'Parmigiana di melanzane al forno', 'Zuppa di lenticchie', 'Gnocchi al gorgonzola e noci', 'Pasta al pomodoro e basilico', 'Frittata di zucchine'],
-      spu: ['Hummus di ceci', 'Mela e burro di arachidi', '', 'Bruschette al pomodoro', 'Hummus di ceci', '', 'Yogurt con noci e miele'] }
+    { id: 'mp', author: 'Marco', title: 'Piano di Marco', desc: 'Il piano della settimana preparato per te (piano di esempio).',
+      col: ['Yogurt greco, granola e frutti di bosco', 'Overnight oats mela e cannella', 'Smoothie bowl ai frutti di bosco', 'Porridge con banana e noci', 'Toast con avocado e uovo in camicia', 'Yogurt greco, granola e frutti di bosco', 'Overnight oats mela e cannella'],
+      pra: ['Insalata di quinoa e ceci', 'Insalata greca', 'Poke bowl di salmone e avocado', 'Pasta e ceci', 'Bowl di pollo e verdure', 'Risotto ai funghi', 'Poke bowl di salmone e avocado'],
+      cen: ['Merluzzo in crosta di pangrattato', 'Salmone al forno con patate', 'Gamberi aglio e peperoncino', 'Merluzzo in crosta di pangrattato', 'Salmone al forno con patate', 'Pollo al limone', 'Frittata di zucchine'],
+      spu: ['Mela e burro di arachidi', 'Hummus di ceci', 'Mela e burro di arachidi', 'Hummus di ceci', 'Mela e burro di arachidi', 'Yogurt con noci e miele', 'Yogurt con noci e miele'] }
   ];
   function postByTitle(t) { return posts.filter(function (p) { return p.title === t; })[0]; }
   function planDishes(pl, i) { return [pl.col[i], pl.pra[i], pl.cen[i], pl.spu[i]].filter(Boolean).map(postByTitle).filter(Boolean); }
@@ -1306,25 +1317,16 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     for (var i = 0; i < 7; i++) { var d = 0; planDishes(pl, i).forEach(function (p) { d += kcalPP(p); }); tot += d; n++; }
     return Math.round(tot / n / 10) * 10;
   }
-  function openPlans() {
-    sheetOpen('Piani dei dietologi', 'Piani dei dietologi',
-      '<p class="hint" style="margin:0">Piani settimanali di esempio, firmati dai dietologi. Li applichi alla settimana del planner.</p><div class="slist">' + PLANS.map(function (pl) {
-        var a = posts.filter(function (p) { return p.handle === pl.handle; })[0];
-        return '<button class="plbtn" data-act="plan" data-pl="' + pl.id + '"><b>' + esc(pl.title) + '</b><span>' + esc(a ? a.user : pl.handle) + ' · ' + pl.diet + ' · circa ' + planKcal(pl) + ' kcal al giorno</span><small>' + esc(pl.desc) + '</small></button>';
-      }).join('') + '</div>');
-  }
   function openPlan(plid) {
     var pl = PLANS.filter(function (x) { return x.id === plid; })[0]; if (!pl) return;
-    var a = posts.filter(function (p) { return p.handle === pl.handle; })[0], k = planKcal(pl);
-    var names = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+    var k = planKcal(pl), names = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
     sheetOpen(pl.title, pl.title,
-      '<div class="meta"><span>' + esc(a ? a.user : pl.handle) + '</span><span>' + pl.diet + '</span><span>circa ' + k + ' kcal al giorno</span></div><p style="margin:0">' + esc(pl.desc) + '</p>' +
+      '<div class="meta"><span>' + esc(pl.author) + '</span><span>circa ' + k + ' kcal al giorno</span></div><p style="margin:0">' + esc(pl.desc) + '</p>' +
       '<div class="slist">' + names.map(function (nm, i) {
         return '<div class="plday"><b>' + nm + '</b><span>' + planDishes(pl, i).map(function (p) { return esc(p.title); }).join(' · ') + '</span></div>';
       }).join('') + '</div>' +
-      '<p class="hint" style="margin:0">Applicandolo, colazione, pranzo, cena e spuntino della settimana mostrata nel planner vengono sostituiti.</p>' +
-      '<button class="btn" data-act="planapply" data-pl="' + pl.id + '">Applica alla settimana</button>' +
-      '<button class="btn ghost" data-act="plangoal" data-pl="' + pl.id + '">Imposta ' + k + ' kcal come obiettivo</button>');
+      '<p class="hint" style="margin:0">Applicandolo, colazione, pranzo, cena e spuntino della settimana mostrata nel planner vengono sostituiti, e l\'obiettivo diventa ' + k + ' kcal.</p>' +
+      '<button class="btn" data-act="planapply" data-pl="' + pl.id + '">Applica alla settimana</button>');
   }
   function applyPlan(pl) {
     var days = weekDays(state.weekOff), n = Math.max(1, state.people.length);
@@ -1333,7 +1335,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       [['colazione', pl.col[i]], ['pranzo', pl.pra[i]], ['cena', pl.cen[i]], ['spuntino', pl.spu[i]]].forEach(function (x) {
         var p = x[1] && postByTitle(x[1]);
         if (p) {
-          state.plan[dt][x[0]] = [{ id: p.id, serv: n, on: true }];
+          state.plan[dt][x[0]] = [{ id: p.id, serv: n, on: true, by: 'pro' }];
           if (x[0] === 'spuntino') {
             state.extra[dt] = state.extra[dt] || [];
             if (!state.extra[dt].some(function (e) { return e.id === 'spuntino'; })) state.extra[dt].push({ id: 'spuntino', label: 'Spuntino' });
@@ -1414,8 +1416,148 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
   function chkWho(v) { return typeof v === 'string' && v !== '1' ? personName(v) : ''; }
 
+  /* Il mio nutrizionista (collegamento e messaggi di esempio) */
+  function chatTime() { var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function chatHTML() {
+    return state.chat.map(function (m) {
+      var p = m.rid ? byId(m.rid) : null;
+      return '<div class="msg ' + (m.f === 'me' ? 'me' : 'pro') + '">' + (m.t ? '<p>' + esc(m.t) + '</p>' : '') +
+        (p ? '<button class="mrec" data-act="open" data-id="' + p.id + '"><span class="mt">' + thumbTag(p.media) + '</span><b>' + esc(p.title) + '</b></button>' : '') + '<small>' + esc(m.at || '') + '</small></div>';
+    }).join('');
+  }
+  function viewPro() {
+    var back = '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button>';
+    if (!state.pro) return back + '<div class="view-h"><h1>Il mio nutrizionista</h1><p>Collegati al professionista che ti segue.</p></div>' +
+      '<div class="invite"><div class="prof"><div class="av">M</div><div><b style="font-family:var(--f-display);font-size:19px">Marco</b><div style="color:var(--muted);font-size:13px">Nutrizionista · iscrizione all\'albo verificata (dato di esempio)</div></div></div>' +
+      '<p style="margin:0">Marco ti ha invitato a collegarti su Gusto.</p><ul class="inv"><li>Può inviarti un piano settimanale e scriverti.</li><li>Non vede il tuo planner personale, la dispensa e i tuoi salvati.</li><li>Puoi scollegarti quando vuoi.</li></ul><button class="btn" data-act="proaccept">Accetta l\'invito</button></div>' +
+      '<p class="hint">Nel prototipo l\'invito è di esempio. Nell\'app vera arriva da un link che ti manda il tuo nutrizionista.</p>';
+    var pl = PLANS[0], nm = state.pro.name;
+    return back + '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0]) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">Il tuo nutrizionista</div></div><button class="reset" data-act="prodrop">Scollega</button></div>' +
+      '<section class="procard"><h3>Piano di ' + esc(nm) + '</h3><p class="hint" style="margin:0 0 10px">' + esc(pl.desc) + ' Circa ' + planKcal(pl) + ' kcal al giorno.</p><div class="shopact"><button class="btn ghost" data-act="plan" data-pl="mp">Vedi il piano</button><button class="btn" data-act="planapply" data-pl="mp">Applica alla settimana</button></div></section>' +
+      '<section><h3 style="margin:16px 0 8px">Messaggi</h3><div class="chat" id="chat">' + chatHTML() + '</div>' +
+      '<form class="cmf" id="chatform" style="margin-top:10px"><button type="button" class="rm scan" data-act="chatattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="chatin" maxlength="300" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio"><button class="btn" type="submit">Invia</button></form>' +
+      '<p class="hint">Messaggi di esempio: nel prototipo ' + esc(nm) + ' risponde con un messaggio automatico. Col tasto + allega una ricetta, per esempio per chiedere di sostituirla.</p></section>';
+  }
+  function chatRefresh() { var c = document.getElementById('chat'); if (c) { c.innerHTML = chatHTML(); c.scrollTop = c.scrollHeight; } }
+  function chatAutoReply() {
+    setTimeout(function () {
+      if (!state.pro) return;
+      state.chat.push({ f: 'pro', t: 'Ricevuto, ti rispondo appena posso. (Risposta automatica di esempio)', at: chatTime() }); persist();
+      if (state.tab === 'pro') chatRefresh();
+    }, 1500);
+  }
+  function openChatAttach() {
+    var sv = posts.filter(function (p) { return state.saved[p.id]; }), rest = posts.filter(function (p) { return !state.saved[p.id]; });
+    var rows = function (a) { return a.map(function (p) { return pickRow(p, '', '').replace('data-act="ppick"', 'data-act="chatpick"'); }).join(''); };
+    sheetOpen('Allega una ricetta', 'Allega una ricetta', (sv.length ? '<section><h3>Dai tuoi salvati</h3><div class="slist">' + rows(sv) + '</div></section>' : '') +
+      '<section><h3>' + (sv.length ? 'Tutti i piatti' : 'Piatti') + '</h3><div class="slist">' + rows(rest) + '</div></section>');
+  }
+
+
+  /* ---------- Account e salvataggio online (Supabase) ---------- */
+  var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
+  var sb = null; try { if (window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { sb = null; }
+  var authChecked = !sb, cloudReady = false, syncT = null, authMsg = '', authBusy = false;
+  state.user = null; state.authMode = 'in';
+  try { state.guest = localStorage.getItem('gusto-guest') === '1'; } catch (e) { state.guest = false; }
+  function needAuth() { return !!sb && authChecked && !state.user && !state.guest; }
+  function cloudPack() {
+    var o = {}; KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs') o[k] = state[k]; });
+    return { planner: o, pantry: state.pantry, prefs: state.prefs };
+  }
+  function cloudApply(row) {
+    var o = row.planner || {};
+    KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs' && o[k] !== undefined && o[k] !== null) state[k] = o[k]; });
+    if (Array.isArray(row.pantry) && row.pantry.length) state.pantry = row.pantry;
+    if (row.prefs && Object.keys(row.prefs).length) state.prefs = { diet: '', allergens: row.prefs.allergens || [], hide: row.prefs.hide !== false };
+    if (!state.people || !state.people.length) state.people = [{ id: 'p1', name: 'Io' }];
+    normPlan();
+  }
+  function cloudSave() {
+    if (!sb || !state.user || !cloudReady) return;
+    clearTimeout(syncT);
+    syncT = setTimeout(function () {
+      var p = cloudPack();
+      sb.from('user_data').upsert({ user_id: state.user.id, planner: p.planner, pantry: p.pantry, prefs: p.prefs, updated_at: new Date().toISOString() })
+        .then(function (r) { if (r.error) toast('Salvataggio online non riuscito'); });
+    }, 800);
+  }
+  function cloudLoad() {
+    if (!sb || !state.user) return;
+    sb.from('user_data').select('planner,pantry,prefs').eq('user_id', state.user.id).maybeSingle().then(function (r) {
+      if (r.error) { toast('Non riesco a leggere i dati online'); return; }
+      var row = r.data, has = row && row.planner && Object.keys(row.planner).length > 0;
+      if (has) cloudApply(row);
+      cloudReady = true;
+      try { var o = {}; KEEP.forEach(function (k) { o[k] = state[k]; }); localStorage.setItem('gusto-v1', JSON.stringify(o)); } catch (e) {}
+      if (!has) cloudSave();
+      render();
+    });
+  }
+  function authErr(m) {
+    m = String(m || '');
+    if (/invalid login/i.test(m)) return 'Email o password non corretti.';
+    if (/already registered|already been registered/i.test(m)) return 'Questa email è già registrata: accedi.';
+    if (/password/i.test(m) && /(least|short|weak)/i.test(m)) return 'La password deve avere almeno 8 caratteri.';
+    if (/not confirmed/i.test(m)) return 'Devi prima confermare l\'email: controlla la posta.';
+    if (/rate limit|too many/i.test(m)) return 'Troppi tentativi: riprova tra qualche minuto.';
+    return 'Operazione non riuscita. Riprova.';
+  }
+  function viewAuth() {
+    var up = state.authMode === 'up';
+    return '<div class="view-h" style="margin-top:18px"><h1>' + (up ? 'Crea il tuo account' : 'Accedi') + '</h1><p>' + (up ? 'Così planner, spesa e dispensa restano con te su ogni dispositivo.' : 'Bentornato su Gusto.') + '</p></div>' +
+      '<form class="new" id="authform" novalidate>' +
+      (up ? '<label class="f" for="au-n">Il tuo nome<input id="au-n" type="text" autocomplete="name" maxlength="40"></label>' : '') +
+      '<label class="f" for="au-e">Email<input id="au-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" maxlength="120"></label>' +
+      '<label class="f" for="au-p">Password' + (up ? ' <small>almeno 8 caratteri</small>' : '') + '<input id="au-p" type="password" autocomplete="' + (up ? 'new-password' : 'current-password') + '" maxlength="72"></label>' +
+      (up ? '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + !!state.authPro + '" data-act="authpro"><span class="box">' + (state.authPro ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Sono un nutrizionista (il profilo viene verificato prima di attivare i clienti)</span></button>' : '') +
+      (authMsg ? '<p class="hint" role="status" style="margin:0">' + esc(authMsg) + '</p>' : '') +
+      '<button class="btn" type="submit" style="padding:14px 16px"' + (authBusy ? ' disabled' : '') + '>' + (up ? 'Registrati' : 'Accedi') + '</button></form>' +
+      '<p style="text-align:center;margin:14px 0 4px"><button class="reset" data-act="authmode">' + (up ? 'Ho già un account' : 'Non ho un account: registrati') + '</button></p>' +
+      '<p style="text-align:center;margin:0"><button class="reset" data-act="authguest" style="color:var(--muted)">Continua senza account</button></p>';
+  }
+  function openAccount() {
+    sheetOpen('Account', 'Account',
+      (state.user ? '<p style="margin:0">Hai effettuato l\'accesso come <b>' + esc(state.user.email) + '</b>.</p><p class="hint" style="margin:0">Planner, dispensa e preferenze si salvano online e li ritrovi su ogni dispositivo.</p><button class="btn" data-act="logout">Esci</button>'
+        : '<p style="margin:0">Stai usando Gusto senza account: i dati restano solo su questo dispositivo.</p><button class="btn" data-act="authopen">Accedi o registrati</button>'));
+  }
+  if (sb) {
+    sb.auth.getSession().then(function (r) {
+      var u = r.data && r.data.session && r.data.session.user;
+      if (u) { state.user = { id: u.id, email: u.email }; cloudLoad(); }
+      authChecked = true; render();
+    }, function () { authChecked = true; render(); });
+    sb.auth.onAuthStateChange(function (ev, session) {
+      setTimeout(function () {
+        var u = session && session.user;
+        if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email }; authBusy = false; authMsg = ''; cloudReady = false; cloudLoad(); }
+        else if (!u && state.user && ev === 'SIGNED_OUT') { state.user = null; render(); }
+      }, 0);
+    });
+  }
   function extraSubmit(e) {
     var id = e.target.id;
+
+    if (id === 'authform') {
+      e.preventDefault(); if (!sb || authBusy) return true;
+      var em = document.getElementById('au-e').value.trim(), pw = document.getElementById('au-p').value, up = state.authMode === 'up';
+      if (!/^\S+@\S+\.\S+$/.test(em)) { authMsg = 'Scrivi un\'email valida.'; render(); return true; }
+      if (pw.length < 8) { authMsg = 'La password deve avere almeno 8 caratteri.'; render(); return true; }
+      var nm = up ? document.getElementById('au-n').value.trim() : '';
+      authBusy = true; authMsg = 'Un momento…'; render();
+      var req = up ? sb.auth.signUp({ email: em, password: pw, options: { data: { display_name: nm, account_type: state.authPro ? 'pro' : 'user' } } }) : sb.auth.signInWithPassword({ email: em, password: pw });
+      req.then(function (r) {
+        authBusy = false;
+        if (r.error) { authMsg = authErr(r.error.message); render(); return; }
+        if (up && !(r.data && r.data.session)) { authMsg = 'Ti abbiamo mandato un\'email: aprila e conferma, poi accedi qui.'; state.authMode = 'in'; render(); return; }
+        authMsg = '';
+      }, function () { authBusy = false; authMsg = 'Connessione non riuscita. Riprova.'; render(); });
+      return true;
+    }
+    if (id === 'chatform') {
+      e.preventDefault(); var ci = document.getElementById('chatin'), tx = ci.value.trim(); if (!tx || !state.pro) return true;
+      state.chat.push({ f: 'me', t: tx, at: chatTime() }); persist(); ci.value = ''; chatRefresh(); chatAutoReply(); return true;
+    }
     if (id === 'shopform') {
       e.preventDefault(); var inp = document.getElementById('shopin'), v = inp.value.trim(); if (!v) return;
       state.shopx.push({ id: Date.now(), n: v }); persist(); render(); var again = document.getElementById('shopin'); if (again) again.focus(); return true;
@@ -1437,7 +1579,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     if (id === 'goalform') {
       e.preventDefault(); var g = parseInt(document.getElementById('goalin').value, 10);
       if (!(g >= 800 && g <= 6000)) { toast('Scrivi un valore tra 800 e 6000'); return true; }
-      state.goal = g; persist(); closeSheet(); render(); toast('Obiettivo salvato'); return true;
+      state.goal = g; state.goalBy = null; persist(); closeSheet(); render(); toast('Obiettivo salvato'); return true;
     }
     if (id === 'fform') {
       e.preventDefault(); var fn = document.getElementById('fname').value.trim(); if (!fn) return true;
@@ -1449,6 +1591,31 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
 
   function extraClick(act, el, id) {
+    if (act === 'authmode') { state.authMode = state.authMode === 'up' ? 'in' : 'up'; authMsg = ''; render(); return true; }
+    if (act === 'authpro') { var e1 = document.getElementById('au-e'), p1 = document.getElementById('au-n'); var ev1 = e1 ? e1.value : '', nv1 = p1 ? p1.value : ''; state.authPro = !state.authPro; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev1; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv1; return true; }
+    if (act === 'authguest') { state.guest = true; try { localStorage.setItem('gusto-guest', '1'); } catch (e) {} render(); return true; }
+    if (act === 'authopen') { state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {} closeSheet(); render(); return true; }
+    if (act === 'account') { openAccount(); return true; }
+    if (act === 'logout') {
+      if (sb) sb.auth.signOut().then(function () { try { localStorage.removeItem('gusto-v1'); localStorage.removeItem('gusto-guest'); } catch (e) {} location.reload(); });
+      return true;
+    }
+    if (act === 'mypro') { state.tab = 'pro'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
+    if (act === 'proaccept') {
+      var at0 = chatTime(), pr0 = postByTitle('Porridge con banana e noci');
+      state.pro = { name: 'Marco' };
+      state.chat = [{ f: 'pro', t: 'Ciao! Ti ho preparato il piano della settimana, lo trovi qui sopra. Per qualsiasi dubbio scrivimi.', at: at0 }];
+      if (pr0) state.chat.push({ f: 'pro', t: 'Per la colazione puoi anche provare questa.', rid: pr0.id, at: at0 });
+      persist(); render(); return true;
+    }
+    if (act === 'prodrop') { state.pro = null; state.chat = []; persist(); render(); toast('Nutrizionista scollegato'); return true; }
+    if (act === 'chatattach') { openChatAttach(); return true; }
+    if (act === 'chatpick') {
+      if (byId(id) && state.pro) { state.chat.push({ f: 'me', t: '', rid: id, at: chatTime() }); persist(); closeSheet(); render(); chatAutoReply(); }
+      return true;
+    }
+    if (act === 'shownut') { keepFields(); state.draft.showN = state.draft.showN === false; render(); return true; }
+    if (act === 'togglenut') { var tp = byId(id); if (tp) { tp.hideN = !tp.hideN; openSheet(id); render(); } return true; }
     if (act === 'htab') { state.homeTab = el.getAttribute('data-v'); render(); return true; }
     if (act === 'maxt') { state.maxT = parseInt(el.getAttribute('data-v'), 10); render(); return true; }
     if (act === 'showhidden') { state.prefs.hide = false; persist(); render(); return true; }
@@ -1461,7 +1628,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     }
     if (act === 'phide') { state.prefs.hide = !state.prefs.hide; persist(); openPrefs(); return true; }
     if (act === 'goalopen') { openGoal(); return true; }
-    if (act === 'goalrm') { state.goal = null; persist(); closeSheet(); render(); return true; }
+    if (act === 'goalrm') { state.goal = null; state.goalBy = null; persist(); closeSheet(); render(); return true; }
     if (act === 'pantry') { openPantry(); return true; }
     if (act === 'pdel') { state.pantry.splice(parseInt(el.getAttribute('data-i'), 10), 1); persist(); openPantry(); render(); return true; }
     if (act === 'pcook') { state.filter = 'Dalla dispensa'; state.homeTab = 'dishes'; state.tab = 'home'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
@@ -1478,16 +1645,10 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       var xid = parseInt(el.getAttribute('data-id'), 10);
       state.shopx = state.shopx.filter(function (x) { return x.id !== xid; }); delete state.checked['x|' + xid]; persist(); render(); return true;
     }
-    if (act === 'plans') { openPlans(); return true; }
     if (act === 'plan') { openPlan(el.getAttribute('data-pl')); return true; }
     if (act === 'planapply') {
       var pl = PLANS.filter(function (x) { return x.id === el.getAttribute('data-pl'); })[0];
-      if (pl) { applyPlan(pl); state.tab = 'plan'; state.planTab = 'week'; persist(); closeSheet(); render(); window.scrollTo(0, 0); toast('Piano applicato alla settimana'); }
-      return true;
-    }
-    if (act === 'plangoal') {
-      var pg = PLANS.filter(function (x) { return x.id === el.getAttribute('data-pl'); })[0];
-      if (pg) { state.goal = planKcal(pg); persist(); closeSheet(); render(); toast('Obiettivo: ' + state.goal + ' kcal'); }
+      if (pl) { applyPlan(pl); state.goal = planKcal(pl); state.goalBy = pl.author; state.tab = 'plan'; state.planTab = 'week'; persist(); closeSheet(); render(); window.scrollTo(0, 0); toast('Piano applicato e obiettivo impostato'); }
       return true;
     }
     if (act === 'remix') {
@@ -1544,12 +1705,14 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var g = state.goal; if (!g || !count) return '';
     var left = g - kcal;
     return '<div class="goalbar"><div class="gb"><i class="' + (left < -g * 0.1 ? 'over' : '') + '" style="width:' + Math.min(100, Math.round(kcal / g * 100)) + '%"></i></div><small>' +
-      (left >= 0 ? 'Mancano ' + left + ' kcal all\'obiettivo di ' + g : 'Oltre l\'obiettivo di ' + (-left) + ' kcal (' + g + ')') + '</small></div>';
+      (state.goalBy ? 'Obiettivo di ' + state.goalBy + '. ' : '') + (left >= 0 ? 'Mancano ' + left + ' kcal all\'obiettivo di ' + g : 'Oltre l\'obiettivo di ' + (-left) + ' kcal (' + g + ')') + '</small></div>';
   }
   function shopperId() { return state.people.some(function (q) { return q.id === state.shopper; }) ? state.shopper : curPerson(); }
   function profMenu() {
     var pr = state.prefs, nr = Object.keys(state.rsaved).filter(function (k) { return state.rsaved[k]; }).length;
     var rows = [
+      ['account', 'Account', sb ? (state.user ? state.user.email : 'Non hai effettuato l\'accesso') : 'Non disponibile'],
+      ['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno'],
       ['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
       ['pantry', 'Dispensa', state.pantry.length ? state.pantry.length + ' ingredienti in casa' : 'Vuota'],
