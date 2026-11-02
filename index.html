@@ -319,6 +319,14 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 .mrec .mt img, .mrec .mt video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .mrec b { font-size: 14px; font-weight: 600; padding-right: 6px; }
 .accf { margin-bottom: 22px; }
+.bell { position: relative; padding: 6px; }
+.bdg { position: absolute; top: 0; right: 0; min-width: 18px; height: 18px; border-radius: 99px; background: var(--hot); color: #fff; font: 600 11px/18px var(--f-body); text-align: center; padding: 0 5px; font-style: normal; }
+.nrow { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
+.nrow.new { background: var(--soft); border-color: var(--soft); }
+.ntap { flex: 1; min-width: 0; display: flex; flex-direction: row; align-items: center; gap: 10px; text-align: left; }
+.ntap b { font-weight: 600; }
+.nrow .av { width: 40px; height: 40px; flex: none; font-size: 16px; }
+.nact { display: flex; gap: 6px; align-items: center; flex: none; }
 </style>
 </head>
 <body>
@@ -326,7 +334,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 <div class="col">
   <header class="top">
     <div class="logo" role="img" aria-label="Gusto">Gust<svg class="lo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="6.6" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg></div>
-    <span class="chip">Prototipo</span>
+    <div style="display:flex;align-items:center;gap:6px"><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
   </header>
   <main id="app"></main>
 </div>
@@ -852,14 +860,15 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
     var gate = needAuth();
-    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : viewProfile();
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'notifs' ? viewNotifs() : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['new', 'Pubblica', ICONS.plus], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
-    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'user'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : 'me') : state.tab;
+    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'user', 'notifs'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : state.tab === 'notifs' ? '' : 'me') : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
       return '<button class="tab' + (t[0] === 'new' ? ' plus' : '') + '" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' +
         (t[0] === 'new' ? '<span class="pl">' + t[2] + '</span>' : t[2]) + '<span>' + t[1] + '</span></button>';
     }).join('');
     document.querySelector('nav.tabs').style.display = gate ? 'none' : '';
+    updateBell();
     if (state.tab === 'new' && !gate) bindForm();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
       var k = c.getAttribute('data-dt') + '|' + c.getAttribute('data-s');
@@ -1713,6 +1722,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       return null;
     }).then(function () { return state.profile.account_type === 'pro' ? loadClients() : loadMyLink(); })
       .then(function () { return loadSocial(); })
+      .then(function () { return loadNotifs(); })
       .then(function () { render(); }, function () { render(); });
   }
   function liveChatHTML() {
@@ -1850,7 +1860,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       var q = act === 'reqok' ? sb.from('follows').update({ status: 'accepted' }).eq('follower_id', u).eq('followed_id', state.user.id) : sb.from('follows').delete().eq('follower_id', u).eq('followed_id', state.user.id);
       q.then(function (r) {
         if (r.error) { toast('Operazione non riuscita'); return; }
-        state.reqs = state.reqs.filter(function (x) { return x !== u; }); render();
+        state.reqs = state.reqs.filter(function (x) { return x !== u; }); render(); loadNotifs();
       });
       return true;
     }
@@ -1910,6 +1920,86 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
       return true;
     }
     return false;
+  }
+
+  /* ---------- Notifiche ---------- */
+  state.notifs = []; state.notifNew = {};
+  var NTXT = {
+    follow: 'ha iniziato a seguirti', follow_request: 'ha chiesto di seguirti', follow_accepted: 'ha accettato la tua richiesta',
+    like: 'ha messo mi piace a un tuo piatto', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
+    plan: 'ti ha inviato un nuovo piano', message: 'ti ha scritto un messaggio'
+  };
+  function ago(iso) {
+    var m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+    if (m < 1) return 'adesso'; if (m < 60) return m + ' min fa';
+    var h = Math.round(m / 60); if (h < 24) return h + (h === 1 ? ' ora fa' : ' ore fa');
+    var d = Math.round(h / 24); return d === 1 ? 'ieri' : d + ' giorni fa';
+  }
+  function unreadCount() { return state.notifs.filter(function (n) { return !n.read_at; }).length; }
+  function updateBell() {
+    var b = document.getElementById('bell'), bb = document.getElementById('bellb'); if (!b) return;
+    b.hidden = !liveMode() || needAuth();
+    var n = unreadCount(); bb.hidden = !n; bb.textContent = n > 9 ? '9+' : String(n);
+    b.setAttribute('aria-label', n ? 'Notifiche: ' + n + ' nuove' : 'Notifiche');
+  }
+  function loadNotifs() {
+    if (!liveMode()) return Promise.resolve();
+    return sb.from('notifications').select('id,actor_id,type,ref,read_at,created_at').order('created_at', { ascending: false }).limit(50).then(function (r) {
+      if (r.error) return null;
+      var before = state.notifs.length ? state.notifs[0].id + ':' + unreadCount() : '';
+      state.notifs = r.data || [];
+      var ids = state.notifs.map(function (n) { return n.actor_id; }).filter(function (v, i, a) { return v && a.indexOf(v) === i && !state.realP[v]; });
+      var after = state.notifs.length ? state.notifs[0].id + ':' + unreadCount() : '';
+      var done = function () { updateBell(); if (state.tab === 'notifs' && before !== after) render(); };
+      if (!ids.length) { done(); return null; }
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private').in('id', ids).then(function (q) {
+        (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); done();
+      });
+    });
+  }
+  setInterval(function () { if (liveMode() && !document.hidden) loadNotifs(); }, 20000);
+  function nActor(n) { var x = state.realP[n.actor_id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Qualcuno'); }
+  function viewNotifs() {
+    var head = '<div class="view-h"><h1>Notifiche</h1><p>Follow, richieste, messaggi e novità.</p></div>';
+    if (!liveMode()) return head + '<div class="empty"><b>Serve un account</b>Accedi per ricevere le notifiche.</div>';
+    if (!state.notifs.length) return head + '<div class="empty"><b>Nessuna notifica</b>Quando qualcuno ti segue, ti scrive o mette mi piace, lo trovi qui.</div>';
+    return head + '<div class="slist">' + state.notifs.map(function (n, i) {
+      var nm = nActor(n), isNew = !!state.notifNew[n.id], h = 'u:' + n.actor_id, acts = '';
+      if (n.type === 'follow_request') {
+        acts = state.reqs.indexOf(n.actor_id) > -1 ? '<div class="nact"><button class="follow" data-act="reqok" data-u="' + esc(n.actor_id) + '">Accetta</button><button class="reset" data-act="reqno" data-u="' + esc(n.actor_id) + '" style="color:var(--muted)">Rifiuta</button></div>' : '';
+      } else if (n.type === 'follow' && state.realP[n.actor_id]) {
+        acts = '<div class="nact">' + followBtn(h) + '</div>';
+      }
+      var text = n.type === 'plan' || n.type === 'message' ? '<b>' + esc(nm) + '</b> ' + NTXT[n.type] : '<b>' + esc(nm) + '</b> ' + NTXT[n.type];
+      return '<div class="nrow' + (isNew ? ' new' : '') + '"><button class="ntap" data-act="notiftap" data-i="' + i + '"><div class="av">' + esc(nm[0].toUpperCase()) + '</div><span style="display:flex;flex-direction:column;gap:2px;color:var(--fg);font-size:14px;min-width:0">' + text + '<span style="font-size:12px;color:var(--muted)">' + ago(n.created_at) + '</span></span></button>' + acts + '</div>';
+    }).join('') + '</div>';
+  }
+  function notifOpen(n) {
+    var t = n.type, aid = n.actor_id;
+    if (t === 'follow' || t === 'follow_request' || t === 'follow_accepted' || t === 'like' || t === 'comment') {
+      if (!aid || !state.realP[aid]) return;
+      state.tab = 'user'; state.viewing = 'u:' + aid; render(); window.scrollTo(0, 0); return;
+    }
+    // clienti, piani e messaggi: area del nutrizionista
+    state.tab = 'pro'; state.curClient = null;
+    var lid = n.ref && n.ref.link_id;
+    var go = function () {
+      if (isPro() && lid) {
+        var c = state.clients.filter(function (x) { return x.id === lid; })[0];
+        if (c && (t === 'message' || t === 'client_joined')) {
+          state.curClient = c; state.msgs = []; state.lastPlan = null;
+          Promise.all([loadMsgs(c.id), sb.from('plans').select('data,kcal_goal,created_at').eq('link_id', c.id).order('created_at', { ascending: false }).limit(1)]).then(function (a) {
+            state.lastPlan = (a[1].data && a[1].data[0]) || null; render();
+          });
+        }
+      }
+      render();
+    };
+    if (state.profile) { proLoadThen(go); } else go();
+    window.scrollTo(0, 0);
+  }
+  function proLoadThen(cb) {
+    if (isPro()) { loadClients().then(cb, cb); } else { loadMyLink().then(cb, cb); }
   }
   function extraSubmit(e) {
     var id = e.target.id;
@@ -1995,6 +2085,19 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
   }
 
   function extraClick(act, el, id) {
+    if (act === 'notifs') {
+      state.notifNew = {}; var unread = [];
+      state.notifs.forEach(function (n) { if (!n.read_at) { state.notifNew[n.id] = 1; unread.push(n.id); } });
+      state.tab = 'notifs'; closeSheet(); render(); window.scrollTo(0, 0);
+      if (unread.length && liveMode()) {
+        sb.from('notifications').update({ read_at: new Date().toISOString() }).in('id', unread).then(function (r) {
+          if (!r.error) { state.notifs.forEach(function (n) { if (unread.indexOf(n.id) > -1) n.read_at = new Date().toISOString(); }); updateBell(); }
+        });
+      }
+      if (liveMode()) loadSocial().then(function () { loadNotifs(); });
+      return true;
+    }
+    if (act === 'notiftap') { var nn = state.notifs[parseInt(el.getAttribute('data-i'), 10)]; if (nn) notifOpen(nn); return true; }
     if (act === 'authmode') { state.authMode = state.authMode === 'up' ? 'in' : 'up'; authMsg = ''; render(); return true; }
     if (act === 'authpro') { var e1 = document.getElementById('au-e'), p1 = document.getElementById('au-n'); var ev1 = e1 ? e1.value : '', nv1 = p1 ? p1.value : ''; state.authPro = !state.authPro; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev1; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv1; return true; }
     if (act === 'authguest') { state.guest = true; try { localStorage.setItem('gusto-guest', '1'); } catch (e) {} render(); return true; }
