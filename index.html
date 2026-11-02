@@ -253,6 +253,12 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .avedit small { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 8px; }
 .avbtns { display: flex; gap: 14px; align-items: center; }
 .avlab { cursor: pointer; }
+.cmbox { margin: 12px 0; border: 1px solid var(--line, rgba(0,0,0,.12)); border-radius: 12px; padding: 0 12px; }
+.cmbox summary { cursor: pointer; padding: 12px 0; font-family: var(--f-display); font-weight: 700; font-size: 16px; list-style: none; display: flex; justify-content: space-between; }
+.cmbox summary::-webkit-details-marker { display: none; }
+.cmbox summary::after { content: '\25BE'; color: var(--muted); }
+.cmbox[open] summary::after { content: '\25B4'; }
+.cmbox[open] { padding-bottom: 12px; }
 .cmrow { display: flex; gap: 8px; align-items: flex-start; }
 .clike { display: inline-flex; align-items: center; gap: 3px; background: none; border: 0; padding: 4px 2px; color: var(--muted); font-size: 12px; cursor: pointer; min-width: 36px; min-height: 32px; justify-content: flex-end; }
 .clike svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
@@ -1158,13 +1164,14 @@ body.inchat nav.tabs { display: none !important; }
     layer.innerHTML = '<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(p.title) + '" data-stop="1">' +
       '<div class="sheet-top"><div><h2>' + esc(p.title) + '</h2><div class="meta" style="margin-top:6px"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>di ' + esc(hnd(p)) + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div></div>' +
       '<button class="x" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
-      '<div class="sheetmedia">' + mediaTag(p.media, 'media') + '</div>' + warnHTML(p) +
+      '<div class="sheetmedia">' + mediaTag(p.media, 'media') + '</div>' +
+      '<details class="cmbox"><summary id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</summary><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
+      '<form class="cmf" id="cmf" data-id="' + p.id + '" style="margin-top:12px"><input type="text" id="cmi" placeholder="Scrivi un commento" aria-label="Commento" maxlength="200"><button class="btn" type="submit">Invia</button></form></details>' +
+      warnHTML(p) +
       '<button class="btn" data-act="cook" data-id="' + p.id + '">Modalità cucina</button>' +
       '<section><h3>Ingredienti</h3>' + servBox(p) + '<ul class="ing" id="inglist">' + ingItems(p, state.sheetServ) + '</ul><p class="hint" id="scalehint"></p></section>' +
       nutriHTML(p) + allergenHTML(p) +
       '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></section>' +
-      '<section><h3 id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</h3><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
-      '<form class="cmf" id="cmf" data-id="' + p.id + '" style="margin-top:12px"><input type="text" id="cmi" placeholder="Scrivi un commento" aria-label="Commento" maxlength="200"><button class="btn" type="submit">Invia</button></form></section>' +
       '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>' +
       '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>' +
       (p.mine ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
@@ -3019,7 +3026,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611031200';
+  var BUILD = '202611032130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
