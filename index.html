@@ -50,6 +50,7 @@ header.top {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg);
   display: flex; align-items: center; justify-content: space-between; padding-block: 12px;
 }
+.ver { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
 .logo { font-family: var(--f-display); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; line-height: 1; }
 .logo .lo { width: .74em; height: .74em; vertical-align: -.07em; margin-left: .04em; color: var(--accent); }
 .chip { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; }
@@ -485,8 +486,8 @@ body.inchat nav.tabs { display: none !important; }
 
 <div class="col">
   <header class="top">
-    <div class="logo" role="img" aria-label="Gusto">Gust<svg class="lo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="6.6" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg></div>
-    <div style="display:flex;align-items:center;gap:6px"><button id="pubtop" class="pubtop" data-act="tab" data-v="new" aria-label="Pubblica un piatto" hidden><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
+    <div style="display:flex;align-items:baseline;gap:6px"><div class="logo" role="img" aria-label="Gusto">Gust<svg class="lo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="6.6" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg></div><small class="ver" id="ver"></small></div>
+    <div style="display:flex;align-items:center;gap:6px"><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><button id="pubtop" class="pubtop" data-act="tab" data-v="new" aria-label="Pubblica un piatto" hidden><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
   </header>
   <main id="app"></main>
 </div>
@@ -1655,7 +1656,13 @@ body.inchat nav.tabs { display: none !important; }
       if (g.length < 2) { out.push(card(p)); return; }
       var mn = (g.filter(function (q) { return q.menuName; })[0] || {}).menuName || ''; out.push('<div class="menucard"><div class="menuh"><b>Menu' + (mn ? ' · ' + esc(mn) : '') + '</b><span class="mcount">1/' + g.length + '</span></div><div class="mcar" data-n="' + g.length + '">' + g.map(card).join('') + '</div><p class="hint" style="margin:6px 0 0;text-align:center">Scorri per vedere gli altri piatti del menu</p></div>');
     });
-    return out.join('');
+    /* i menu (caroselli) salgono in alto: il primo in cima, poi uno ogni tre card */
+    var menus = out.filter(function (h) { return h.indexOf('<div class="menucard"') === 0; }), rest = out.filter(function (h) { return h.indexOf('<div class="menucard"') !== 0; }), res = [], mi = 0;
+    if (!menus.length || state.q) return out.join('');
+    res.push(menus[mi++]);
+    rest.forEach(function (h, k) { res.push(h); if (mi < menus.length && (k + 1) % 3 === 0) res.push(menus[mi++]); });
+    while (mi < menus.length) res.push(menus[mi++]);
+    return res.join('');
   }
   document.addEventListener('scroll', function (e) {
     var t = e.target; if (!t || !t.classList || !t.classList.contains('mcar')) return;
@@ -3751,7 +3758,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041900';
+  var VERSION = 31; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611041930';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
