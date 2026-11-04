@@ -95,8 +95,8 @@ nav.tabs .in { max-width: 520px; margin: 0 auto; display: grid; grid-template-co
 .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; font-size: 11.5px; color: var(--muted); }
 .tab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tab[aria-current="page"] { color: var(--accent); font-weight: 600; }
-.pubtop { display: inline-flex; align-items: center; gap: 4px; background: var(--accent); color: var(--accent-fg); border-radius: 18px; padding: 6px 12px 6px 9px; font-weight: 600; font-size: 14px; }
-.pubtop svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+.pubtop { display: inline-grid; place-items: center; width: 36px; height: 36px; background: var(--accent); color: var(--accent-fg); border-radius: 50%; }
+.pubtop svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
 .pubtop[hidden] { display: none; }
 .chipb { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 7px 14px; font-size: 14px; font-weight: 500; }
 .mstory { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.06); border-radius: 10px; padding: 6px; margin-bottom: 6px; font-size: 12px; }
@@ -108,6 +108,13 @@ nav.tabs .in { max-width: 520px; margin: 0 auto; display: grid; grid-template-co
 .sviewer .svlist .vrow span { flex: 1; } .sviewer .svlist .vrow small { color: var(--muted); }
 .sviewer .svlist button { color: var(--fg); }
 .sviewer .sfoot .vbtn { background: rgba(255,255,255,.18); border-radius: 18px; padding: 8px 14px; font-size: 14px; font-weight: 600; }
+.sviewer .lkbtn { font-size: 30px; line-height: 1; padding: 0 6px; color: #fff; }
+.sviewer .lkbtn[aria-pressed=true] { color: #ff5a6e; }
+.xgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; grid-auto-flow: dense; margin-bottom: 8px; }
+.xt { position: relative; aspect-ratio: 1; overflow: hidden; padding: 0; border: 0; background: var(--soft); border-radius: 4px; cursor: pointer; }
+.xt.big { grid-column: span 2; grid-row: span 2; }
+.xt img, .xt video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.xt .xl { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 5px; font-size: 11px; font-weight: 600; color: #fff; text-align: left; background: linear-gradient(transparent, rgba(0,0,0,.55)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sbig { margin-bottom: 12px; }
 .sugg { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 16px; }
 .tab.plus span.pl { width: 44px; height: 32px; border-radius: 12px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; }
@@ -479,7 +486,7 @@ body.inchat nav.tabs { display: none !important; }
 <div class="col">
   <header class="top">
     <div class="logo" role="img" aria-label="Gusto">Gust<svg class="lo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="6.6" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg></div>
-    <div style="display:flex;align-items:center;gap:6px"><button id="pubtop" class="pubtop" data-act="tab" data-v="new" aria-label="Pubblica un piatto" hidden><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Pubblica</span></button><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
+    <div style="display:flex;align-items:center;gap:6px"><button id="pubtop" class="pubtop" data-act="tab" data-v="new" aria-label="Pubblica un piatto" hidden><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
   </header>
   <main id="app"></main>
 </div>
@@ -625,11 +632,50 @@ body.inchat nav.tabs { display: none !important; }
       '<div id="feedwrap">' + feedHTML() + '</div>';
   }
 
+  state.exN = 18; state.exOff = 80; state.exDone = false; state.exBusy = false; var EXSEED = Math.floor(Math.random() * 1e6);
+  function exHash(id) { var h = (+id || 0) * 2654435761 + EXSEED; h = (h ^ (h >>> 15)) >>> 0; return h % 100000; }
+  function exploreList() {
+    return posts.filter(function (p) { return !p.mine && p.media && p.media.src; }).sort(function (a, b) { return exHash(a.id) - exHash(b.id); });
+  }
+  function exTile(p, i) {
+    return '<button class="xt' + (i % 11 === 0 ? ' big' : '') + '" data-act="open" data-id="' + p.id + '" aria-label="Apri ' + esc(p.title) + '">' + thumbTag(p.media) + '<span class="xl">' + esc(p.title) + '</span></button>';
+  }
+  function exploreHTML() {
+    var l = exploreList();
+    return '<h3 class="shc" style="margin-top:0">Da scoprire</h3><div id="exgrid" class="xgrid">' + l.slice(0, state.exN).map(exTile).join('') + '</div><div id="exsent" class="hint" style="text-align:center;padding:16px">' + (l.length ? 'Carico altri piatti…' : 'Ancora niente da scoprire.') + '</div>';
+  }
+  function exploreMore() {
+    var g = document.getElementById('exgrid'), snt = document.getElementById('exsent'); if (!g || state.exBusy) return;
+    var l = exploreList();
+    if (state.exN < l.length) {
+      var from = state.exN; state.exN += 18;
+      g.insertAdjacentHTML('beforeend', l.slice(from, state.exN).map(function (p, k) { return exTile(p, from + k); }).join(''));
+      return;
+    }
+    if (state.exDone || !liveMode()) { if (snt) snt.textContent = 'Hai visto tutto per ora'; return; }
+    state.exBusy = true;
+    sb.from('recipes').select(RSEL).order('created_at', { ascending: false }).range(state.exOff, state.exOff + 39).then(function (r) {
+      state.exBusy = false;
+      var rows = (r && r.data) || []; state.exOff += rows.length; if (rows.length < 40) state.exDone = true;
+      var have = {}; posts.forEach(function (p) { have[p.id] = 1; });
+      var add = rows.map(mapRecipe).filter(function (p) { return !have[p.id]; });
+      if (add.length) { var keep = posts.filter(function (p) { return p.real; }); rebuildPosts(keep.concat(add)); }
+      var gg = document.getElementById('exgrid'); if (!gg) return;
+      if (add.length) exploreMore(); else if (state.exDone) { var s2 = document.getElementById('exsent'); if (s2) s2.textContent = 'Hai visto tutto per ora'; }
+    });
+  }
+  var exObs = null;
+  function setupExplore() {
+    if (exObs) { try { exObs.disconnect(); } catch (e) {} exObs = null; }
+    var snt = document.getElementById('exsent'); if (!snt || !('IntersectionObserver' in window)) return;
+    exObs = new IntersectionObserver(function (en) { if (en[0].isIntersecting) exploreMore(); }, { rootMargin: '400px' });
+    exObs.observe(snt);
+  }
   function searchBody() {
     if (state.q.trim()) return feedHTML();
     var tags = posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }).slice(0, 8);
     return '<p class="hint" style="margin:4px 0 8px">Prova con una categoria:</p><div class="sugg">' + tags.map(function (t) { return '<button class="chipb" data-act="sqtag" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
-      '<div class="empty"><b>Cerca nell\'app</b>Scrivi il nome di un piatto, un ingrediente o una persona.</div>';
+      exploreHTML();
   }
   function viewSearch() {
     return '<div class="view-h"><h1>Cerca</h1></div><input type="search" id="q" class="search sbig" placeholder="Piatti, ingredienti, persone" value="' + esc(state.q) + '" aria-label="Cerca" autocomplete="off"><div id="feedwrap">' + searchBody() + '</div>';
@@ -1096,6 +1142,7 @@ body.inchat nav.tabs { display: none !important; }
     document.querySelector('nav.tabs').style.display = gate ? 'none' : ''; document.getElementById('pubtop').hidden = !!gate;
     updateBell(); updateDmBadge(); if (window.__navSync) window.__navSync(); if (window.__typEnsure) window.__typEnsure();
     if (state.tab === 'new' && !gate) bindForm();
+    if (state.tab === 'search' && !gate) setupExplore();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
       var k = c.getAttribute('data-dt') + '|' + c.getAttribute('data-s');
       if (state.carEnd === k) c.scrollLeft = c.scrollWidth; else if (sc[k]) c.scrollLeft = sc[k];
@@ -1680,7 +1727,7 @@ body.inchat nav.tabs { display: none !important; }
     return list;
   }
   /* ---------- Storie (24 ore) ---------- */
-  state.stories = []; state.sv = null; state.stdraft = null;
+  state.stories = []; state.sv = null; state.stdraft = null; state.slikes = {};
   var SEEN = {}; try { SEEN = JSON.parse(localStorage.getItem('gusto-seen') || '{}'); } catch (e) { SEEN = {}; }
   function saveSeen() { try { var k = Object.keys(SEEN); if (k.length > 400) k.slice(0, k.length - 400).forEach(function (x) { delete SEEN[x]; }); localStorage.setItem('gusto-seen', JSON.stringify(SEEN)); } catch (e) {} }
   function storiesBy() { var by = {}; state.stories.forEach(function (s) { (by[s.author_id] = by[s.author_id] || []).push(s); }); return by; }
@@ -1708,6 +1755,7 @@ body.inchat nav.tabs { display: none !important; }
     var me = state.user.id, now = new Date().toISOString();
     return sb.from('stories').select('id,author_id,media_url,media_path,caption,recipe_id,created_at,expires_at').gt('expires_at', now).order('created_at', { ascending: true }).limit(300).then(function (r) {
       state.stories = (r && r.data) || [];
+      sb.from('story_likes').select('story_id').eq('user_id', me).then(function (q) { state.slikes = {}; ((q && q.data) || []).forEach(function (x) { state.slikes[x.story_id] = true; }); });
       var miss = Object.keys(storiesBy()).filter(function (u) { return u !== me; });
       var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : Promise.resolve();
       p = p.then(function () { return miss.length ? sb.from('profiles').select('id,story_replies').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : null; });
@@ -1783,8 +1831,9 @@ body.inchat nav.tabs { display: none !important; }
       '<button class="stapl" data-act="stprev" aria-label="Indietro"></button><button class="stapr" data-act="stnext" aria-label="Avanti"></button>' +
       '<div class="sbody">' + (s.caption ? '<p>' + esc(s.caption) + '</p>' : '') + (rp ? '<button class="srecipe" data-act="stopenr" data-id="' + rp.id + '">Vedi la ricetta: ' + esc(rp.title) + '</button>' : '') + '</div>' +
       '<div class="sfoot">' + (mine ? '<button class="vbtn" id="stcount" data-act="stviews" data-s="' + esc(s.id) + '">Visualizzazioni…</button>' :
+        '<button class="lkbtn" data-act="stlike" data-s="' + esc(s.id) + '" aria-pressed="' + !!state.slikes[s.id] + '" aria-label="Mi piace">' + (state.slikes[s.id] ? '♥' : '♡') + '</button>' +
         ((state.realP[sv.u] || {}).story_replies === false ? '<span style="font-size:13px;opacity:.85">Le risposte a questa storia sono disattivate.</span>' : '<form id="stform"><input id="stin" placeholder="Rispondi a ' + esc(pName(sv.u)) + '…" aria-label="Risposta alla storia" maxlength="500" autocomplete="off"><button class="btn" type="submit">Invia</button></form>')) + '</div></div>';
-    if (mine) sb.from('story_views').select('viewer_id').eq('story_id', s.id).then(function (q) { var n = ((q && q.data) || []).length, e = document.getElementById('stcount'); if (e) e.textContent = '👁 ' + n + (n === 1 ? ' visualizzazione' : ' visualizzazioni'); });
+    if (mine) Promise.all([sb.from('story_views').select('viewer_id').eq('story_id', s.id), sb.from('story_likes').select('user_id').eq('story_id', s.id)]).then(function (a) { var n = ((a[0] && a[0].data) || []).length, l = ((a[1] && a[1].data) || []).length, e = document.getElementById('stcount'); if (e) e.textContent = '👁 ' + n + (l ? '  ·  ♥ ' + l : ''); });
     storyTimer();
   }
   function closeStory() { clearTimeout(storyTimer.h); state.sv = null; closeSheet(); refreshStoryBar(); }
@@ -2303,22 +2352,32 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'stnew') { var f0 = document.getElementById('stfile'); if (f0) f0.click(); return true; }
     if (act === 'stopen') { openStory(el.getAttribute('data-u')); return true; }
     if (act === 'stx') { closeStory(); return true; }
+    if (act === 'stlike') {
+      var lid = el.getAttribute('data-s'), was = !!state.slikes[lid];
+      if (was) delete state.slikes[lid]; else state.slikes[lid] = true;
+      el.setAttribute('aria-pressed', String(!was)); el.textContent = was ? '♡' : '♥';
+      var lq = was ? sb.from('story_likes').delete().eq('story_id', lid).eq('user_id', state.user.id) : sb.from('story_likes').insert({ story_id: lid, user_id: state.user.id });
+      lq.then(function (r) { if (r && r.error) { if (was) state.slikes[lid] = true; else delete state.slikes[lid]; el.setAttribute('aria-pressed', String(was)); el.textContent = was ? '♥' : '♡'; toast('Mi piace non salvato'); } });
+      return true;
+    }
     if (act === 'stviews') {
       var vsid = el.getAttribute('data-s'), vv = document.querySelector('.sviewer'); if (!vv) return true;
       clearTimeout(storyTimer.h); vv.classList.add('paused');
       var old = vv.querySelector('.svlist'); if (old) old.remove();
       var pn = document.createElement('div'); pn.className = 'svlist'; pn.innerHTML = '<h3>Visto da <button class="reset" data-act="stvx" aria-label="Chiudi" style="font-size:20px">✕</button></h3><p class="hint">Carico…</p>'; vv.appendChild(pn);
-      sb.from('story_views').select('viewer_id,created_at').eq('story_id', vsid).order('created_at', { ascending: false }).then(function (q) {
+      Promise.all([sb.from('story_views').select('viewer_id,created_at').eq('story_id', vsid).order('created_at', { ascending: false }), sb.from('story_likes').select('user_id').eq('story_id', vsid)]).then(function (aa) {
+        var q = aa[0], lk = {}; ((aa[1] && aa[1].data) || []).forEach(function (x) { lk[x.user_id] = true; });
         var rows = (q && q.data) || [], ids = rows.map(function (r) { return r.viewer_id; }).filter(function (u) { return !state.realP[u]; });
         var pr = ids.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (z) { (z.data || []).forEach(function (x) { state.realP[x.id] = x; }); }) : Promise.resolve();
         pr.then(function () {
           if (!pn.parentNode) return;
           pn.innerHTML = '<h3>Visto da ' + rows.length + '<button class="reset" data-act="stvx" aria-label="Chiudi" style="font-size:20px">✕</button></h3>' +
-            (rows.length ? rows.map(function (r) { return '<div class="vrow">' + avHTML((state.realP[r.viewer_id] || {}).avatar_url, pName(r.viewer_id)) + '<span><b>' + esc(pName(r.viewer_id)) + '</b></span><small>' + ago(r.created_at) + '</small></div>'; }).join('') : '<p class="hint">Ancora nessuno. Chi ha nascosto le proprie visualizzazioni non compare qui.</p>');
+            (rows.length ? rows.map(function (r) { return '<div class="vrow"><button class="reset vp" data-act="stprof" data-u="' + esc(r.viewer_id) + '" style="display:flex;align-items:center;gap:10px;flex:1;text-align:left">' + avHTML((state.realP[r.viewer_id] || {}).avatar_url, pName(r.viewer_id)) + '<b>' + esc(pName(r.viewer_id)) + '</b></button>' + (lk[r.viewer_id] ? '<span style="flex:none;color:#e0405a" aria-label="Mi piace">♥</span>' : '') + '<small>' + ago(r.created_at) + '</small></div>'; }).join('') : '<p class="hint">Ancora nessuno. Chi ha nascosto le proprie visualizzazioni non compare qui.</p>');
         });
       });
       return true;
     }
+    if (act === 'stprof') { var pu = el.getAttribute('data-u'); closeStory(); state.tab = 'user'; state.viewing = 'u:' + pu; render(); window.scrollTo(0, 0); return true; }
     if (act === 'stvx') { var pl = document.querySelector('.sviewer .svlist'); if (pl) pl.remove(); var vw = document.querySelector('.sviewer'); if (vw) vw.classList.remove('paused'); return true; }
     if (act === 'stnext') { storyNext(); return true; }
     if (act === 'stprev') { storyPrev(); return true; }
@@ -2419,7 +2478,7 @@ body.inchat nav.tabs { display: none !important; }
   state.notifs = []; state.notifNew = {};
   var NTXT = {
     follow: 'ha iniziato a seguirti', follow_request: 'ha chiesto di seguirti', follow_accepted: 'ha accettato la tua richiesta',
-    like: 'ha messo mi piace a un tuo piatto', comment_like: 'ha messo mi piace al tuo commento', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
+    like: 'ha messo mi piace a un tuo piatto', story_like: 'ha messo mi piace alla tua storia', comment_like: 'ha messo mi piace al tuo commento', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
     plan: 'ti ha inviato un nuovo piano'
   };
   function avHTML(url, nm) { return '<div class="av">' + (url ? '<img src="' + esc(url) + '" alt="" loading="lazy">' : esc(((nm || '?')[0] || '?').toUpperCase())) + '</div>'; }
@@ -2480,6 +2539,7 @@ body.inchat nav.tabs { display: none !important; }
       if (!aid || !state.realP[aid]) return;
       state.tab = 'user'; state.viewing = 'u:' + aid; render(); window.scrollTo(0, 0); return;
     }
+    if (t === 'story_like') { if (state.stories.some(function (x) { return x.author_id === state.user.id; })) openStory(state.user.id); else toast('La storia non c\'è più'); return; }
     if (t === 'dm' || t === 'dm_request') {
       var cid = n.ref && n.ref.conv_id;
       loadDMs().then(function () { if (state.convs.some(function (c) { return c.id === cid; })) dmOpen(cid); else { state.tab = 'inbox'; render(); } });
@@ -2855,11 +2915,12 @@ body.inchat nav.tabs { display: none !important; }
     var keep = posts.filter(function (p) { return !p.real && !p.sample; });
     Array.prototype.splice.apply(posts, [0, posts.length].concat(real, keep, SAMPLES));
   }
+  var RSEL = 'id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,menu_id,menu_name,menu_pos,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts),likes(count),comments(count)';
   function loadFeed() {
     if (!liveMode()) return Promise.resolve();
     var me = state.user.id;
     return Promise.all([
-      sb.from('recipes').select('id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,menu_id,menu_name,menu_pos,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts),likes(count),comments(count)').order('created_at', { ascending: false }).limit(80),
+      sb.from('recipes').select(RSEL).order('created_at', { ascending: false }).limit(80),
       sb.from('likes').select('recipe_id').eq('user_id', me),
       sb.from('saves').select('recipe_id,folder').eq('user_id', me)
     ]).then(function (a) {
@@ -3595,7 +3656,7 @@ body.inchat nav.tabs { display: none !important; }
     if (e.target.id === 'shq') { shareFind(e.target.value); return; }
     if (e.target.id === 'repd' && state.rep) { state.rep.details = e.target.value; return; }
     if (e.target.id === 'pcgoal' && state.pcmp) { state.pcmp.goal = e.target.value; return; }
-    if (e.target.id === 'q') { state.q = e.target.value; if (!state.q.trim()) state.realRes = []; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = state.tab === 'search' ? searchBody() : feedHTML(); realSearch(); return; }
+    if (e.target.id === 'q') { state.q = e.target.value; if (!state.q.trim()) state.realRes = []; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = state.tab === 'search' ? searchBody() : feedHTML(); if (state.tab === 'search') setupExplore(); realSearch(); return; }
     if (e.target.id === 'rnote') { state.rnote[e.target.getAttribute('data-r')] = e.target.value; persist(); return; }
     if (e.target.classList && e.target.classList.contains('pn')) {
       var v = e.target.value.trim(), q = state.people.filter(function (x) { return x.id === e.target.getAttribute('data-pid'); })[0];
@@ -3686,7 +3747,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041720';
+  var BUILD = '202611041800';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
