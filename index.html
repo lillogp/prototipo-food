@@ -568,6 +568,10 @@ body.inchat nav.tabs { display: none !important; }
   posts = posts.concat([{"id": 62, "user": "Irene Gallo", "handle": "irene.bio", "role": "", "t": "3 giorni fa", "title": "Gyoza di verdure al vapore", "tag": "Spuntini", "time": 40, "serv": 4, "plate": ["#A9B8B2", "#8FB86B", "#F4E7C5", "#C8472B"], "seed": 250, "likes": 96, "ing": [["Farina", "200 g"], ["Acqua", "100 ml"], ["Spinaci", "200 g"], ["Carote", "1"], ["Aglio", "1"], ["Salsa di soia", "2 cucchiai"], ["Olio EVO", "1 cucchiaio"]], "steps": ["Impasta farina e acqua calda e lascia riposare 20 minuti.", "Salta spinaci, carota e aglio con la soia e lasciali raffreddare.", "Stendi l'impasto, ritaglia dei dischi, riempili e chiudili a mezzaluna.", "Cuoci a vapore per 10 minuti."], "comments": []}, {"id": 63, "user": "Paolo Esposito", "handle": "paolo.chef", "role": "", "t": "4 giorni fa", "title": "Ramen con uovo", "tag": "Primi", "time": 30, "serv": 2, "plate": ["#B79A74", "#E6C27A", "#F4E7C5", "#8FB86B"], "seed": 254, "likes": 142, "ing": [["Brodo", "1 l"], ["Pasta (noodles)", "200 g"], ["Uova", "2"], ["Salsa di soia", "2 cucchiai"], ["Funghi", "100 g"], ["Spinaci", "100 g"]], "steps": ["Scalda il brodo con la salsa di soia e i funghi a fettine.", "Cuoci le uova per 7 minuti, raffreddale e sgusciale.", "Cuoci i noodles e mettili nelle ciotole con il brodo.", "Aggiungi spinaci e uovo tagliato a metà."], "comments": []}]);
   posts.forEach(function (p) { p.media = { type: 'image', src: plate(p.plate, p.seed) }; p.ing = p.ing.map(normIng); p.sample = true; });
   var SAMPLES = posts.slice();
+  /* Esempi di menu (carosello): piu' piatti dello stesso autore pubblicati insieme */
+  [['sm-pranzo', 'Pranzo della domenica', [31, 19, 55]], ['sm-merenda', 'Merenda golosa', [56, 20, 44]], ['sm-colazione', 'Colazione energetica', [33, 57]]].forEach(function (m) {
+    m[2].forEach(function (id, i) { var p = SAMPLES.filter(function (x) { return x.id === id; })[0]; if (p) { p.menuId = m[0]; p.menuName = m[1]; p.menuPos = i; } });
+  });
 
   var ME = { name: 'Tu', handle: 'tuo.nome' };
   var state = { tab: 'home', filter: 'Tutti', liked: {}, saved: {}, following: {}, viewing: null, draft: null, note: true, plan: {}, extra: {}, order: {}, checked: {}, weekOff: 0, planTab: 'week', people: [{ id: 'p1', name: 'Io' }], vperson: 'p1', q: '', maxT: 0, homeTab: 'dishes', savedTab: 'recipes', folderSel: '', shopper: null, timers: [], cook: null, pantry: [], prefs: { diet: '', allergens: [], hide: true }, folders: [], fof: {}, goal: null, rsaved: {}, rnote: {}, rvisited: {}, myr: [], shopx: [], cmts: {}, pro: null, chat: [], goalBy: null };
@@ -3747,7 +3751,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041830';
+  var BUILD = '202611041900';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
