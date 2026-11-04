@@ -626,7 +626,7 @@ body.inchat nav.tabs { display: none !important; }
     if (state.homeTab === 'rest') return note + seg + viewRest();
     var tags = ['Tutti', 'Seguiti', 'Dalla dispensa'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
     var times = [[0, 'Tutti i tempi'], [20, 'Fino a 20 min'], [45, 'Fino a 45 min'], [60, 'Fino a 1 ora']];
-    return note + seg + '<div id="stwrap">' + storiesHTML() + '</div><input type="search" id="q" class="search" placeholder="Cerca un piatto, un ingrediente o una persona" value="' + esc(state.q) + '" aria-label="Cerca">' +
+    return note + seg + '<div id="stwrap">' + storiesHTML() + '</div>' +
       '<div class="filters" role="group" aria-label="Categorie">' + tags.map(function (t) { return '<button data-act="filter" data-v="' + esc(t) + '" aria-pressed="' + (state.filter === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
       '<div class="filters sub" role="group" aria-label="Tempo">' + times.map(function (t) { return '<button data-act="maxt" data-v="' + t[0] + '" aria-pressed="' + (state.maxT === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       '<div id="feedwrap">' + feedHTML() + '</div>';
@@ -1132,7 +1132,7 @@ body.inchat nav.tabs { display: none !important; }
   function render() {
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
-    var gate = needAuth();
+    var gate = needAuth(); if (state.tab === 'home' && state.q) { state.q = ''; state.realRes = []; }
     app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'search' ? viewSearch() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'pushset' ? viewPushSet() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['search', 'Cerca', ICONS.search], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
     var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'pushset', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
@@ -3747,7 +3747,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041800';
+  var BUILD = '202611041830';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
