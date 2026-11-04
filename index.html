@@ -7,7 +7,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="theme-color" content="#DE4A1E">
+<meta name="theme-color" content="#45802A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Gusto">
@@ -16,22 +16,25 @@
 /* Layout: colonna unica mobile-first, header in alto, barra di navigazione fissa in basso, schede e sheet per la ricetta. */
 :root {
   color-scheme: light;
-  --bg: #FFF9F2;
+  --bg: #F8FAEC;
   --surface: #FFFFFF;
-  --fg: #2B2320;
-  --muted: #6F625B;
-  --line: #F0E4D8;
-  --accent: #DE4A1E;
+  --fg: #222B16;
+  --muted: #626E50;
+  --line: #E2E8CC;
+  --accent: #45802A;
   --accent-fg: #FFFFFF;
-  --hot: #E5365B;
-  --soft: #FFEBDD;
+  --hot: #E9A23B;
+  --amber: #E9A23B;
+  --amber-soft: #FBEBC8;
+  --amber-fg: #7A4E08;
+  --soft: #E4F0C9;
   --f-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
   --f-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { min-height: 100%; }
 body {
-  background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.45;
+  background: var(--bg) url(bg-food.svg) repeat top center / 400px 520px; color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.45;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 0 96px;
@@ -289,7 +292,7 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .cmrow { display: flex; gap: 8px; align-items: flex-start; }
 .clike { display: inline-flex; align-items: center; gap: 3px; background: none; border: 0; padding: 4px 2px; color: var(--muted); font-size: 12px; cursor: pointer; min-width: 36px; min-height: 32px; justify-content: flex-end; }
 .clike svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-.clike[aria-pressed="true"] { color: #d6455d; }
+.clike[aria-pressed="true"] { color: var(--amber); }
 .clike[aria-pressed="true"] svg { fill: currentColor; }
 .cm b { font-weight: 600; }
 .cmf { display: flex; gap: 8px; }
@@ -371,7 +374,7 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 .mrec b { font-size: 14px; font-weight: 600; padding-right: 6px; }
 .accf { margin-bottom: 22px; }
 .bell { position: relative; padding: 6px; }
-.bdg { position: absolute; top: 0; right: 0; min-width: 18px; height: 18px; border-radius: 99px; background: var(--hot); color: #fff; font: 600 11px/18px var(--f-body); text-align: center; padding: 0 5px; font-style: normal; }
+.bdg { position: absolute; top: 0; right: 0; min-width: 18px; height: 18px; border-radius: 99px; background: var(--amber); color: #4A2F03; font: 600 11px/18px var(--f-body); text-align: center; padding: 0 5px; font-style: normal; }
 .nrow { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; }
 .nrow.new { background: var(--soft); border-color: var(--soft); }
 .ntap { flex: 1; min-width: 0; display: flex; flex-direction: row; align-items: center; gap: 10px; text-align: left; }
@@ -1247,7 +1250,7 @@ body.inchat nav.tabs { display: none !important; }
       '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>' +
       '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>' +
       (p.mine ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
-      (p.mine && p.real ? '<button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:var(--hot)">Elimina il piatto</button>' : '') + '</div></div>';
+      (p.mine && p.real ? '<button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina il piatto</button>' : '') + '</div></div>';
     if (p.real && liveMode()) loadComments(p);
   }
   function closeSheet() { document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
@@ -3182,7 +3185,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611031600';
+  var BUILD = '202611041100';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
