@@ -300,6 +300,38 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .cmf input { flex: 1; min-width: 0; }
 
 .tbtn { margin-left: 8px; color: var(--amber, #f5b942); font-weight: 700; text-decoration: underline; padding: 2px 4px; pointer-events: auto; }
+.stbar { display: flex; gap: 12px; overflow-x: auto; padding: 2px 0 12px; scrollbar-width: none; }
+.stb { flex: none; width: 66px; text-align: center; font-size: 11px; color: var(--muted); position: relative; background: none; border: 0; padding: 0; cursor: pointer; }
+.stb small { display: block; margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.stb .ring { display: block; padding: 3px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), var(--amber)); width: 62px; height: 62px; margin: 0 auto; }
+.stb .ring.seen { background: var(--line); }
+.stb .ring.none { background: transparent; border: 2px dashed var(--line); padding: 1px; }
+.stb .ring .av { width: 100%; height: 100%; border: 2px solid var(--bg); font-size: 20px; }
+.stplus { position: absolute; right: 2px; top: 40px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; display: grid; place-items: center; border: 2px solid var(--bg); cursor: pointer; }
+.stplus svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 3; stroke-linecap: round; }
+.stprev { width: 100%; max-height: 46vh; object-fit: contain; border-radius: 12px; background: #000; display: block; margin-bottom: 12px; }
+.sviewer { position: fixed; inset: 0; z-index: 80; background: #000; color: #fff; display: flex; flex-direction: column; }
+.sviewer .simg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.sviewer .sbars { position: relative; z-index: 3; display: flex; gap: 4px; padding: calc(10px + env(safe-area-inset-top, 0px)) 12px 6px; }
+.sviewer .sbars i { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,.3); overflow: hidden; }
+.sviewer .sbars i b { display: block; height: 100%; width: 0; background: #fff; }
+.sviewer .sbars i.done b { width: 100%; }
+.sviewer .sbars i.cur b { animation: sprog 5s linear forwards; }
+.sviewer.paused .sbars i.cur b { animation-play-state: paused; }
+@keyframes sprog { from { width: 0; } to { width: 100%; } }
+.sviewer .shead { position: relative; z-index: 3; display: flex; align-items: center; gap: 10px; padding: 4px 12px; text-shadow: 0 1px 4px rgba(0,0,0,.6); }
+.sviewer .shead .av { width: 34px; height: 34px; }
+.sviewer .shead span { flex: 1; font-size: 13px; }
+.sviewer .shead button, .sviewer .sfoot button { color: #fff; }
+.sviewer .stapl, .sviewer .stapr { position: absolute; top: 70px; bottom: 120px; z-index: 2; width: 38%; background: none; border: 0; }
+.sviewer .stapl { left: 0; } .sviewer .stapr { right: 0; width: 62%; }
+.sviewer .sbody { position: relative; z-index: 3; margin-top: auto; padding: 12px 16px; text-align: center; text-shadow: 0 1px 6px rgba(0,0,0,.8); }
+.sviewer .sbody p { font-size: 17px; margin: 0 0 10px; }
+.sviewer .srecipe { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.92); color: #222; border-radius: 20px; padding: 8px 14px; font-weight: 600; font-size: 14px; text-shadow: none; }
+.sviewer .sfoot { position: relative; z-index: 3; padding: 8px 12px calc(12px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; align-items: center; background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+.sviewer .sfoot form { display: flex; gap: 8px; flex: 1; }
+.sviewer .sfoot input { flex: 1; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.5); color: #fff; border-radius: 22px; padding: 10px 14px; font-size: 16px; }
+.sviewer .sfoot input::placeholder { color: rgba(255,255,255,.7); }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); }
 @media (prefers-reduced-motion: no-preference) { .toast { animation: up .2s ease-out; } @keyframes up { from { opacity: 0; transform: translate(-50%, 8px); } } }
 input[type=search] { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%; margin-bottom: 10px; }
@@ -571,7 +603,7 @@ body.inchat nav.tabs { display: none !important; }
     if (state.homeTab === 'rest') return note + seg + viewRest();
     var tags = ['Tutti', 'Seguiti', 'Dalla dispensa'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
     var times = [[0, 'Tutti i tempi'], [20, 'Fino a 20 min'], [45, 'Fino a 45 min'], [60, 'Fino a 1 ora']];
-    return note + seg + '<input type="search" id="q" class="search" placeholder="Cerca un piatto, un ingrediente o una persona" value="' + esc(state.q) + '" aria-label="Cerca">' +
+    return note + seg + '<div id="stwrap">' + storiesHTML() + '</div><input type="search" id="q" class="search" placeholder="Cerca un piatto, un ingrediente o una persona" value="' + esc(state.q) + '" aria-label="Cerca">' +
       '<div class="filters" role="group" aria-label="Categorie">' + tags.map(function (t) { return '<button data-act="filter" data-v="' + esc(t) + '" aria-pressed="' + (state.filter === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
       '<div class="filters sub" role="group" aria-label="Tempo">' + times.map(function (t) { return '<button data-act="maxt" data-v="' + t[0] + '" aria-pressed="' + (state.maxT === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       '<div id="feedwrap">' + feedHTML() + '</div>';
@@ -1616,6 +1648,143 @@ body.inchat nav.tabs { display: none !important; }
     else if (state.folderSel) list = list.filter(function (p) { return state.fof[p.id] === state.folderSel; });
     return list;
   }
+  /* ---------- Storie (24 ore) ---------- */
+  state.stories = []; state.sv = null; state.stdraft = null;
+  var SEEN = {}; try { SEEN = JSON.parse(localStorage.getItem('gusto-seen') || '{}'); } catch (e) { SEEN = {}; }
+  function saveSeen() { try { var k = Object.keys(SEEN); if (k.length > 400) k.slice(0, k.length - 400).forEach(function (x) { delete SEEN[x]; }); localStorage.setItem('gusto-seen', JSON.stringify(SEEN)); } catch (e) {} }
+  function storiesBy() { var by = {}; state.stories.forEach(function (s) { (by[s.author_id] = by[s.author_id] || []).push(s); }); return by; }
+  function storyUnseen(list) { return (list || []).some(function (s) { return !SEEN[s.id]; }); }
+  function storyOrder() {
+    var by = storiesBy(), me = state.user && state.user.id;
+    return Object.keys(by).filter(function (u) { return u !== me; }).sort(function (a, b) {
+      var ua = storyUnseen(by[a]) ? 1 : 0, ub = storyUnseen(by[b]) ? 1 : 0;
+      return ub - ua || new Date(by[b][by[b].length - 1].created_at) - new Date(by[a][by[a].length - 1].created_at);
+    });
+  }
+  function storiesHTML() {
+    if (!liveMode()) return '';
+    var by = storiesBy(), me = state.user.id, mine = by[me] || [], mp = state.profile || {};
+    var own = '<div class="stb"><button class="stb" style="width:66px" data-act="' + (mine.length ? 'stopen' : 'stnew') + '" data-u="' + esc(me) + '" aria-label="' + (mine.length ? 'Le tue storie' : 'Aggiungi una storia') + '"><span class="ring ' + (mine.length ? 'seen' : 'none') + '">' + avHTML(mp.avatar_url, mp.display_name || state.user.email) + '</span><small>La tua</small></button>' +
+      '<label class="stplus" for="stfile" aria-label="Nuova storia"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></label></div>';
+    return '<div class="stbar" role="group" aria-label="Storie">' + own + storyOrder().map(function (u) {
+      var x = state.realP[u] || {};
+      return '<button class="stb" data-act="stopen" data-u="' + esc(u) + '"><span class="ring ' + (storyUnseen(by[u]) ? '' : 'seen') + '">' + avHTML(x.avatar_url, pName(u)) + '</span><small>' + esc(pName(u)) + '</small></button>';
+    }).join('') + '<input type="file" id="stfile" accept="image/*" hidden></div>';
+  }
+  function refreshStoryBar() { var w = document.getElementById('stwrap'); if (w) w.innerHTML = storiesHTML(); }
+  function loadStories() {
+    if (!liveMode()) return Promise.resolve();
+    var me = state.user.id, now = new Date().toISOString();
+    return sb.from('stories').select('id,author_id,media_url,media_path,caption,recipe_id,created_at,expires_at').gt('expires_at', now).order('created_at', { ascending: true }).limit(300).then(function (r) {
+      state.stories = (r && r.data) || [];
+      var miss = Object.keys(storiesBy()).filter(function (u) { return !state.realP[u]; });
+      var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); }) : Promise.resolve();
+      return p.then(function () {
+        refreshStoryBar();
+        /* pulizia: tolgo i file delle mie storie scadute */
+        sb.from('stories').select('id,media_path').eq('author_id', me).lte('expires_at', now).limit(50).then(function (q) {
+          var old = (q && q.data) || []; if (!old.length) return;
+          sb.storage.from('media').remove(old.map(function (o) { return o.media_path; })).then(function () {
+            sb.from('stories').delete().in('id', old.map(function (o) { return o.id; })).then(function () {});
+          });
+        });
+      });
+    });
+  }
+  function storyResize(file) {
+    return new Promise(function (res, rej) {
+      var u = URL.createObjectURL(file), im = new Image();
+      im.onload = function () {
+        var M = 1080, k = Math.min(1, M / Math.max(im.width, im.height)), c = document.createElement('canvas');
+        c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(u);
+        c.toBlob(function (b) { b ? res(b) : rej(new Error('blob')); }, 'image/jpeg', 0.82);
+      };
+      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('img')); };
+      im.src = u;
+    });
+  }
+  function openStoryDraft() {
+    var d = state.stdraft; if (!d) return;
+    var rp = d.rid ? byId(d.rid) : null;
+    sheetOpen('Nuova storia', 'Nuova storia',
+      '<img class="stprev" src="' + d.url + '" alt="Anteprima della storia">' +
+      '<form id="stpubform"><label class="lbl" for="stcap">Didascalia (facoltativa)</label><input id="stcap" class="in" maxlength="140" placeholder="Cosa stai cucinando?" value="' + esc(d.caption || '') + '">' +
+      '<div style="margin:10px 0">' + (rp ? '<span>Ricetta: <b>' + esc(rp.title) + '</b></span> <button type="button" class="reset" data-act="stunlink">Togli</button>' : '<button type="button" class="btn ghost" data-act="stlink">Collega una ricetta</button>') + '</div>' +
+      '<p class="hint">La storia resta visibile per 24 ore a chi ti segue.</p>' +
+      '<button class="btn" type="submit" style="width:100%">Pubblica storia</button></form>');
+  }
+  function storyPublish() {
+    var d = state.stdraft; if (!d || !liveMode() || d.busy) return;
+    d.busy = true; toast('Pubblico la storia…');
+    var path = state.user.id + '/story-' + uuid4() + '.jpg', rp = d.rid ? byId(d.rid) : null;
+    sb.storage.from('media').upload(path, d.blob, { contentType: 'image/jpeg', upsert: false }).then(function (r) {
+      if (r.error) throw r.error;
+      var url = sb.storage.from('media').getPublicUrl(path).data.publicUrl;
+      return sb.from('stories').insert({ author_id: state.user.id, media_url: url, media_path: path, caption: d.caption || null, recipe_id: rp && rp.real ? rp.dbId : null }).then(function (q) {
+        if (q.error) { sb.storage.from('media').remove([path]); throw q.error; }
+      });
+    }).then(function () { try { URL.revokeObjectURL(d.url); } catch (e) {} state.stdraft = null; closeSheet(); toast('Storia pubblicata'); loadStories(); })
+      .catch(function () { d.busy = false; toast('Storia non pubblicata'); });
+  }
+  function storyTimer() { clearTimeout(storyTimer.h); storyTimer.h = setTimeout(function () { storyNext(); }, 5000); }
+  function storyItems(u) { return storiesBy()[u] || []; }
+  function openStory(u) {
+    var items = storyItems(u); if (!items.length) return;
+    var first = 0; for (var i = 0; i < items.length; i++) { if (!SEEN[items[i].id]) { first = i; break; } }
+    state.sv = { u: u, i: u === (state.user && state.user.id) ? 0 : first, order: u === state.user.id ? [u] : storyOrder() };
+    showStory();
+  }
+  function showStory() {
+    var sv = state.sv; if (!sv) return;
+    var items = storyItems(sv.u); if (!items.length) { closeStory(); return; }
+    if (sv.i >= items.length) sv.i = items.length - 1;
+    var s = items[sv.i], me = state.user.id, mine = sv.u === me, x = state.realP[sv.u] || (mine ? state.profile : {}) || {};
+    var rp = s.recipe_id ? byId(RB + s.recipe_id) : null;
+    if (!mine) { SEEN[s.id] = 1; saveSeen(); sb.from('story_views').insert({ story_id: s.id, viewer_id: me }).then(function () {}); }
+    var bars = items.map(function (_, k) { return '<i class="' + (k < sv.i ? 'done' : k === sv.i ? 'cur' : '') + '"><b></b></i>'; }).join('');
+    var layer = document.getElementById('layer');
+    layer.innerHTML = '<div class="sviewer" role="dialog" aria-label="Storia di ' + esc(mine ? 'te' : pName(sv.u)) + '"><img class="simg" src="' + esc(s.media_url) + '" alt="">' +
+      '<div class="sbars">' + bars + '</div>' +
+      '<div class="shead">' + avHTML(x.avatar_url, mine ? (state.profile && state.profile.display_name) : pName(sv.u)) + '<span><b>' + esc(mine ? 'La tua storia' : pName(sv.u)) + '</b> · ' + ago(s.created_at) + '</span>' +
+      (mine ? '<button class="reset" data-act="stdel" data-s="' + esc(s.id) + '" aria-label="Elimina storia">Elimina</button>' : '') + '<button class="reset" data-act="stx" aria-label="Chiudi" style="font-size:22px;padding:4px 8px">✕</button></div>' +
+      '<button class="stapl" data-act="stprev" aria-label="Indietro"></button><button class="stapr" data-act="stnext" aria-label="Avanti"></button>' +
+      '<div class="sbody">' + (s.caption ? '<p>' + esc(s.caption) + '</p>' : '') + (rp ? '<button class="srecipe" data-act="stopenr" data-id="' + rp.id + '">Vedi la ricetta: ' + esc(rp.title) + '</button>' : '') + '</div>' +
+      '<div class="sfoot">' + (mine ? '<span id="stcount" style="font-size:13px">Visualizzazioni…</span>' :
+        '<form id="stform"><input id="stin" placeholder="Rispondi a ' + esc(pName(sv.u)) + '…" aria-label="Risposta alla storia" maxlength="500" autocomplete="off"><button class="btn" type="submit">Invia</button></form>') + '</div></div>';
+    if (mine) sb.from('story_views').select('viewer_id', { count: 'exact', head: true }).eq('story_id', s.id).then(function (q) { var e = document.getElementById('stcount'); if (e) e.textContent = (q.count || 0) + (q.count === 1 ? ' visualizzazione' : ' visualizzazioni'); });
+    storyTimer();
+  }
+  function closeStory() { clearTimeout(storyTimer.h); state.sv = null; closeSheet(); refreshStoryBar(); }
+  function storyNext() {
+    var sv = state.sv; if (!sv || !document.querySelector('.sviewer')) { clearTimeout(storyTimer.h); return; }
+    var items = storyItems(sv.u);
+    if (sv.i + 1 < items.length) { sv.i++; showStory(); return; }
+    var k = sv.order.indexOf(sv.u), nu = sv.order[k + 1];
+    if (nu) { sv.u = nu; sv.i = 0; showStory(); } else closeStory();
+  }
+  function storyPrev() {
+    var sv = state.sv; if (!sv) return;
+    if (sv.i > 0) { sv.i--; showStory(); return; }
+    var k = sv.order.indexOf(sv.u), pu = sv.order[k - 1];
+    if (pu) { sv.u = pu; sv.i = Math.max(0, storyItems(pu).length - 1); showStory(); } else showStory();
+  }
+  document.addEventListener('focusin', function (e) { if (e.target && e.target.id === 'stin') { clearTimeout(storyTimer.h); var v = document.querySelector('.sviewer'); if (v) v.classList.add('paused'); } });
+  function sendDmTo(uid, body, done) {
+    var me = state.user.id, a = me < uid ? me : uid, b = me < uid ? uid : me;
+    var send = function (cid) {
+      sb.from('dm_messages').insert({ conv_id: cid, sender_id: me, body: body }).select('id,conv_id,sender_id,body,created_at,read_at,reply_to').single().then(function (r) {
+        if (r.error) { toast(/gia inviata/.test(r.error.message || '') ? 'Aspetta che ' + pName(uid) + ' accetti la tua richiesta' : 'Risposta non inviata'); if (done) done(false); return; }
+        state.dms.unshift(r.data); updateDmBadge(); if (done) done(true);
+      });
+    };
+    var ex = state.convs.filter(function (c) { return c.user_a === a && c.user_b === b; })[0];
+    if (ex) { if (ex.status === 'declined' && ex.initiator === me) { toast('Non puoi scrivere a questa persona'); if (done) done(false); return; } send(ex.id); return; }
+    sb.from('conversations').insert({ user_a: a, user_b: b }).select('id,user_a,user_b,initiator,status,created_at').single().then(function (r) {
+      if (r.error) { toast('Non riesco a inviare'); if (done) done(false); return; }
+      state.convs.push(r.data); send(r.data.id);
+    });
+  }
   function openFolderAdd(fid) {
     var rows = function (a) { return a.map(function (p) { return pickRow(p, '', '').replace('data-act="ppick"', 'data-act="fadd" data-f="' + fid + '"'); }).join(''); };
     var sv = posts.filter(function (p) { return state.saved[p.id] && state.fof[p.id] !== fid; }), rest = posts.filter(function (p) { return !state.saved[p.id]; });
@@ -1954,6 +2123,7 @@ body.inchat nav.tabs { display: none !important; }
       return null;
     }).then(function () { return state.profile.account_type === 'pro' ? loadClients() : loadMyLink(); })
       .then(function () { return loadSocial(); })
+      .then(function () { return loadStories(); })
       .then(function () { return loadNotifs(); })
       .then(function () { return loadDMs(); })
       .then(function () { return loadFeed(); })
@@ -2093,6 +2263,27 @@ body.inchat nav.tabs { display: none !important; }
     });
   }
   function liveClick(act, el, id) {
+    if (act === 'stnew') { var f0 = document.getElementById('stfile'); if (f0) f0.click(); return true; }
+    if (act === 'stopen') { openStory(el.getAttribute('data-u')); return true; }
+    if (act === 'stx') { closeStory(); return true; }
+    if (act === 'stnext') { storyNext(); return true; }
+    if (act === 'stprev') { storyPrev(); return true; }
+    if (act === 'stopenr') { clearTimeout(storyTimer.h); state.sv = null; closeSheet(); openSheet(id); return true; }
+    if (act === 'stdel') {
+      var sid = el.getAttribute('data-s'), st = state.stories.filter(function (x) { return x.id === sid; })[0]; if (!st) return true;
+      state.stories = state.stories.filter(function (x) { return x.id !== sid; });
+      sb.from('stories').delete().eq('id', sid).then(function () { sb.storage.from('media').remove([st.media_path]); });
+      toast('Storia eliminata'); if (state.sv) { if (!storyItems(state.sv.u).length) closeStory(); else showStory(); } return true;
+    }
+    if (act === 'stlink') {
+      if (state.stdraft) { var ci = document.getElementById('stcap'); if (ci) state.stdraft.caption = ci.value; }
+      var rows = posts.filter(function (p) { return p.real; }).map(function (p) { return pickRow(p, '', '').replace('data-act="ppick"', 'data-act="stpick"'); }).join('');
+      sheetOpen('Collega una ricetta', 'Collega una ricetta', pkBar() + '<p class="hint pkempty" hidden>Nessun piatto trovato.</p>' + (rows ? '<div class="slist">' + rows + '</div>' : '<p class="hint">Non hai ancora ricette pubblicate da collegare.</p>') + '<button class="btn ghost" data-act="stback" style="margin-top:10px;width:100%">Indietro</button>');
+      return true;
+    }
+    if (act === 'stpick') { if (state.stdraft) state.stdraft.rid = id; openStoryDraft(); return true; }
+    if (act === 'stback') { openStoryDraft(); return true; }
+    if (act === 'stunlink') { if (state.stdraft) { var c2 = document.getElementById('stcap'); state.stdraft.caption = c2 ? c2.value : state.stdraft.caption; state.stdraft.rid = null; } openStoryDraft(); return true; }
     if (act === 'privacy') { state.tab = 'privacy'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
     if (act === 'privtoggle') {
       var nv = !state.profile.is_private;
@@ -2703,6 +2894,12 @@ body.inchat nav.tabs { display: none !important; }
     }).catch(function () { toast('Foto non caricata'); });
   }
   document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'stfile') {
+      var sf = e.target.files && e.target.files[0]; e.target.value = ''; if (!sf) return;
+      toast('Preparo la foto…');
+      storyResize(sf).then(function (b) { state.stdraft = { blob: b, url: URL.createObjectURL(b), caption: '', rid: null }; openStoryDraft(); }).catch(function () { toast('Foto non valida'); });
+      return;
+    }
     if (e.target && e.target.id === 'avfile') { var fl = e.target.files && e.target.files[0]; e.target.value = ''; setAvatar(fl); }
   });
   function extraSubmit(e) {
@@ -2782,6 +2979,14 @@ body.inchat nav.tabs { display: none !important; }
       e.preventDefault(); var g = parseInt(document.getElementById('goalin').value, 10);
       if (!(g >= 800 && g <= 6000)) { toast('Scrivi un valore tra 800 e 6000'); return true; }
       state.goal = g; state.goalBy = null; persist(); closeSheet(); render(); toast('Obiettivo salvato'); return true;
+    }
+    if (id === 'stpubform') { e.preventDefault(); if (state.stdraft) state.stdraft.caption = document.getElementById('stcap').value.trim(); storyPublish(); return true; }
+    if (id === 'stform') {
+      e.preventDefault(); var si = document.getElementById('stin'), stx = si.value.trim(), sv = state.sv; if (!stx || !sv) return true;
+      var cur = storyItems(sv.u)[sv.i], ctx = cur && cur.caption ? ' («' + cur.caption.slice(0, 40) + '»)' : '';
+      si.disabled = true;
+      sendDmTo(sv.u, 'Risposta alla tua storia' + ctx + ': ' + stx, function (ok) { if (ok) { toast('Risposta inviata'); storyNext(); } else { si.disabled = false; } });
+      return true;
     }
     if (id === 'fform') {
       e.preventDefault(); var fn = document.getElementById('fname').value.trim(); if (!fn) return true;
@@ -3404,7 +3609,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041400';
+  var BUILD = '202611041500';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
