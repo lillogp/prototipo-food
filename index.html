@@ -1032,13 +1032,20 @@ body.inchat nav.tabs { display: none !important; }
   function viewPrivacy() {
     var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
     if (!liveMode() || !state.profile) return back + '<div class="view-h"><h1>Privacy</h1></div><div class="empty"><b>Serve un account</b>Accedi per gestire la privacy del tuo profilo.</div>';
-    var on = !!state.profile.is_private;
+    var on = !!state.profile.is_private, sp = state.profile;
     return back + '<div class="view-h"><h1>Privacy</h1></div>' +
       '<section class="procard" style="margin-top:0"><h3>' + (on ? 'Profilo privato' : 'Profilo pubblico') + '</h3><p class="hint" style="margin:0 0 12px">' +
       (on ? 'Il tuo nome compare nella ricerca, ma i tuoi piatti li vede solo chi accetti.' : 'Chiunque può vedere i tuoi piatti. Con il profilo privato il nome resta cercabile, ma i piatti li vede solo chi accetti.') + '</p>' +
       '<button class="btn" data-act="privtoggle">' + (on ? 'Rendi il profilo pubblico' : 'Rendi il profilo privato') + '</button></section>' +
       '<section class="procard"><h3>Conferme di lettura</h3><p class="hint" style="margin:0 0 12px">' + (state.profile.read_receipts !== false ? 'Chi ti scrive vede quando hai letto i suoi messaggi. Se le disattivi, non vedrai nemmeno quelle degli altri.' : 'Disattivate: nessuno vede quando leggi i messaggi, e tu non vedi quando leggono i tuoi.') + '</p>' +
       '<button class="btn ghost" data-act="rrtoggle">' + (state.profile.read_receipts !== false ? 'Disattiva le conferme di lettura' : 'Attiva le conferme di lettura') + '</button></section>' +
+      '<section class="procard"><h3>Storie</h3>' +
+      '<p class="hint" style="margin:0 0 8px"><b>Chi può vedere le tue storie</b></p><div class="seg" role="group" aria-label="Chi vede le storie"><button data-act="staud" data-v="followers" aria-pressed="' + (sp.story_audience !== 'mutual') + '">Chi ti segue</button><button data-act="staud" data-v="mutual" aria-pressed="' + (sp.story_audience === 'mutual') + '">Solo chi segui anche tu</button></div>' +
+      '<p class="hint" style="margin:8px 0 14px">' + (sp.story_audience === 'mutual' ? 'Le vedono solo le persone che ti seguono e che segui anche tu.' : 'Le vedono tutte le persone che ti seguono. Il blocco di una persona le nasconde subito.') + '</p>' +
+      '<p class="hint" style="margin:0 0 8px"><b>Risposte alle tue storie</b>: ' + (sp.story_replies !== false ? 'chi le vede può risponderti in chat.' : 'disattivate, nessuno può risponderti da una storia.') + '</p>' +
+      '<button class="btn ghost" data-act="sttoggle" data-k="story_replies">' + (sp.story_replies !== false ? 'Disattiva le risposte' : 'Attiva le risposte') + '</button>' +
+      '<p class="hint" style="margin:14px 0 8px"><b>Le tue visualizzazioni</b>: ' + (sp.story_views_on !== false ? 'chi pubblica vede che hai guardato la sua storia.' : 'nascoste, nessuno vede che guardi le sue storie (e il segno di "vista" resta solo sul tuo telefono).') + '</p>' +
+      '<button class="btn ghost" data-act="sttoggle" data-k="story_views_on">' + (sp.story_views_on !== false ? 'Nascondi le mie visualizzazioni' : 'Mostra le mie visualizzazioni') + '</button></section>' +
       '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML() +
       '<h3 class="shc">Persone bloccate' + (state.blocked.length ? ' (' + state.blocked.length + ')' : '') + '</h3>' + blockList();
   }
@@ -1677,8 +1684,8 @@ body.inchat nav.tabs { display: none !important; }
     var me = state.user.id, now = new Date().toISOString();
     return sb.from('stories').select('id,author_id,media_url,media_path,caption,recipe_id,created_at,expires_at').gt('expires_at', now).order('created_at', { ascending: true }).limit(300).then(function (r) {
       state.stories = (r && r.data) || [];
-      var miss = Object.keys(storiesBy()).filter(function (u) { return !state.realP[u]; });
-      var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); }) : Promise.resolve();
+      var miss = Object.keys(storiesBy()).filter(function (u) { return u !== me; });
+      var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,story_replies').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : Promise.resolve();
       return p.then(function () {
         refreshStoryBar();
         /* pulizia: tolgo i file delle mie storie scadute */
@@ -1741,7 +1748,7 @@ body.inchat nav.tabs { display: none !important; }
     if (sv.i >= items.length) sv.i = items.length - 1;
     var s = items[sv.i], me = state.user.id, mine = sv.u === me, x = state.realP[sv.u] || (mine ? state.profile : {}) || {};
     var rp = s.recipe_id ? byId(RB + s.recipe_id) : null;
-    if (!mine) { SEEN[s.id] = 1; saveSeen(); sb.from('story_views').insert({ story_id: s.id, viewer_id: me }).then(function () {}); }
+    if (!mine) { SEEN[s.id] = 1; saveSeen(); if (!state.profile || state.profile.story_views_on !== false) sb.from('story_views').insert({ story_id: s.id, viewer_id: me }).then(function () {}); }
     var bars = items.map(function (_, k) { return '<i class="' + (k < sv.i ? 'done' : k === sv.i ? 'cur' : '') + '"><b></b></i>'; }).join('');
     var layer = document.getElementById('layer');
     layer.innerHTML = '<div class="sviewer" role="dialog" aria-label="Storia di ' + esc(mine ? 'te' : pName(sv.u)) + '"><img class="simg" src="' + esc(s.media_url) + '" alt="">' +
@@ -1751,7 +1758,7 @@ body.inchat nav.tabs { display: none !important; }
       '<button class="stapl" data-act="stprev" aria-label="Indietro"></button><button class="stapr" data-act="stnext" aria-label="Avanti"></button>' +
       '<div class="sbody">' + (s.caption ? '<p>' + esc(s.caption) + '</p>' : '') + (rp ? '<button class="srecipe" data-act="stopenr" data-id="' + rp.id + '">Vedi la ricetta: ' + esc(rp.title) + '</button>' : '') + '</div>' +
       '<div class="sfoot">' + (mine ? '<span id="stcount" style="font-size:13px">Visualizzazioni…</span>' :
-        '<form id="stform"><input id="stin" placeholder="Rispondi a ' + esc(pName(sv.u)) + '…" aria-label="Risposta alla storia" maxlength="500" autocomplete="off"><button class="btn" type="submit">Invia</button></form>') + '</div></div>';
+        ((state.realP[sv.u] || {}).story_replies === false ? '<span style="font-size:13px;opacity:.85">Le risposte a questa storia sono disattivate.</span>' : '<form id="stform"><input id="stin" placeholder="Rispondi a ' + esc(pName(sv.u)) + '…" aria-label="Risposta alla storia" maxlength="500" autocomplete="off"><button class="btn" type="submit">Invia</button></form>')) + '</div></div>';
     if (mine) sb.from('story_views').select('viewer_id', { count: 'exact', head: true }).eq('story_id', s.id).then(function (q) { var e = document.getElementById('stcount'); if (e) e.textContent = (q.count || 0) + (q.count === 1 ? ' visualizzazione' : ' visualizzazioni'); });
     storyTimer();
   }
@@ -2113,7 +2120,7 @@ body.inchat nav.tabs { display: none !important; }
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
-    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs').eq('id', state.user.id).maybeSingle().then(function (r) {
+    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs,story_audience,story_replies,story_views_on').eq('id', state.user.id).maybeSingle().then(function (r) {
       state.profile = r.data || { account_type: 'user', pro_verified: false, display_name: '' };
       var code = null; try { code = localStorage.getItem('gusto-invite'); localStorage.removeItem('gusto-invite'); } catch (e) {}
       if (code && state.profile.account_type !== 'pro') {
@@ -3078,6 +3085,22 @@ body.inchat nav.tabs { display: none !important; }
       if (tg) { tg.scrollIntoView({ block: 'center', behavior: 'smooth' }); tg.classList.add('flash'); setTimeout(function () { tg.classList.remove('flash'); }, 1200); } else toast('Messaggio non più disponibile');
       return true;
     }
+    if (act === 'staud') {
+      var av = el.getAttribute('data-v'); if (state.profile.story_audience === av || (av === 'followers' && !state.profile.story_audience)) return true;
+      sb.from('profiles').update({ story_audience: av }).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast('Non riesco a cambiare l\'impostazione'); return; }
+        state.profile.story_audience = av; render(); toast(av === 'mutual' ? 'Storie solo per chi segui anche tu' : 'Storie per chi ti segue');
+      });
+      return true;
+    }
+    if (act === 'sttoggle') {
+      var sk = el.getAttribute('data-k'), sn = !(state.profile[sk] !== false), upd = {}; upd[sk] = sn;
+      sb.from('profiles').update(upd).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast('Non riesco a cambiare l\'impostazione'); return; }
+        state.profile[sk] = sn; render(); toast(sk === 'story_replies' ? (sn ? 'Risposte alle storie attive' : 'Risposte alle storie disattivate') : (sn ? 'Le tue visualizzazioni sono visibili' : 'Le tue visualizzazioni sono nascoste'));
+      });
+      return true;
+    }
     if (act === 'rrtoggle') {
       var rv = !(state.profile.read_receipts !== false);
       sb.from('profiles').update({ read_receipts: rv }).eq('id', state.user.id).then(function (r) {
@@ -3609,7 +3632,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041500';
+  var BUILD = '202611041600';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
