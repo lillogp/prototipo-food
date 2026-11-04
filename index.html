@@ -940,7 +940,7 @@ body.inchat nav.tabs { display: none !important; }
   function viewSettings() {
     var pr = state.prefs, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
     if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
-    if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
+    rows.push(['install', 'Installa l\'app', window.__canInstall && window.__canInstall() ? 'Aggiungila alla schermata Home' : 'Già installata su questo telefono']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
       ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
@@ -3180,13 +3180,14 @@ body.inchat nav.tabs { display: none !important; }
   window.addEventListener('appinstalled', function () { deferredInstall = null; toast('App installata'); if (state.tab === 'settings') render(); });
   window.__canInstall = function () { return !isStandalone; };
   window.__doInstall = function () {
+    if (isStandalone) { toast('Stai già usando l\'app installata'); return; }
     if (deferredInstall) { var d = deferredInstall; deferredInstall = null; d.prompt(); return; }
     sheetOpen('Installa Gusto', 'Installa',
       '<p class="hint" style="margin:0 0 10px">' + (isIos ? 'Su iPhone: tocca il tasto Condividi in basso in Safari, poi “Aggiungi alla schermata Home”.' : 'Su Android: apri il menu del browser (tre puntini in alto a destra) e scegli “Installa app” oppure “Aggiungi a schermata Home”.') + '</p><button class="btn" data-act="close">Ho capito</button>');
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041115';
+  var BUILD = '202611041130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
