@@ -1685,7 +1685,8 @@ body.inchat nav.tabs { display: none !important; }
     return sb.from('stories').select('id,author_id,media_url,media_path,caption,recipe_id,created_at,expires_at').gt('expires_at', now).order('created_at', { ascending: true }).limit(300).then(function (r) {
       state.stories = (r && r.data) || [];
       var miss = Object.keys(storiesBy()).filter(function (u) { return u !== me; });
-      var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,story_replies').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : Promise.resolve();
+      var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : Promise.resolve();
+      p = p.then(function () { return miss.length ? sb.from('profiles').select('id,story_replies').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : null; });
       return p.then(function () {
         refreshStoryBar();
         /* pulizia: tolgo i file delle mie storie scadute */
@@ -2120,7 +2121,11 @@ body.inchat nav.tabs { display: none !important; }
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
-    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs,story_audience,story_replies,story_views_on').eq('id', state.user.id).maybeSingle().then(function (r) {
+    var PC = 'id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs';
+    sb.from('profiles').select(PC + ',story_audience,story_replies,story_views_on').eq('id', state.user.id).maybeSingle().then(function (r) {
+      if (r.error) return sb.from('profiles').select(PC).eq('id', state.user.id).maybeSingle();
+      return r;
+    }).then(function (r) {
       state.profile = r.data || { account_type: 'user', pro_verified: false, display_name: '' };
       var code = null; try { code = localStorage.getItem('gusto-invite'); localStorage.removeItem('gusto-invite'); } catch (e) {}
       if (code && state.profile.account_type !== 'pro') {
@@ -3632,7 +3637,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041600';
+  var BUILD = '202611041610';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
