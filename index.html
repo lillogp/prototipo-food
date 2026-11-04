@@ -299,6 +299,7 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .cmf { display: flex; gap: 8px; }
 .cmf input { flex: 1; min-width: 0; }
 
+.tbtn { margin-left: 8px; color: var(--amber, #f5b942); font-weight: 700; text-decoration: underline; padding: 2px 4px; pointer-events: auto; }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(84px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 60; max-width: calc(100% - 32px); }
 @media (prefers-reduced-motion: no-preference) { .toast { animation: up .2s ease-out; } @keyframes up { from { opacity: 0; transform: translate(-50%, 8px); } } }
 input[type=search] { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%; margin-bottom: 10px; }
@@ -544,6 +545,9 @@ body.inchat nav.tabs { display: none !important; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmtTime(m) { if (m >= 1440) return Math.round(m / 60) + ' h (con lievitazione)'; if (m >= 60) return Math.floor(m / 60) + ' h ' + (m % 60 ? (m % 60) + ' min' : ''); return m + ' min'; }
   function byId(id) { return posts.filter(function (p) { return p.id === id; })[0]; }
+  function toastAct(msg, label, act, id) {
+    var t = document.getElementById('toast'); t.innerHTML = esc(msg) + ' <button class="tbtn" data-act="' + act + '" data-id="' + id + '">' + esc(label) + '</button>'; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 4500);
+  }
   function toast(msg) { var t = document.getElementById('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 2200); }
   function mediaTag(m, cls) {
     return m.type === 'video' ? '<video class="' + cls + '" src="' + m.src + '" controls playsinline preload="metadata"></video>' : '<img class="' + cls + '" src="' + m.src + '" alt="">';
@@ -582,9 +586,9 @@ body.inchat nav.tabs { display: none !important; }
     }
     var list = savedList(), chips = [['', 'Tutte']].concat(state.folders.length ? [['none', 'Senza cartella']] : []).concat(state.folders.map(function (f) { return [f.id, f.name]; }));
     return head + '<div class="filters" role="group" aria-label="Cartelle">' + chips.map(function (c) { return '<button data-act="fsel" data-v="' + c[0] + '" aria-pressed="' + (state.folderSel === c[0]) + '">' + esc(c[1]) + '</button>'; }).join('') + '<button data-act="fnew">+ Cartella</button></div>' +
-      (state.folderSel && state.folderSel !== 'none' ? '<div style="margin:-6px 0 8px"><button class="reset" data-act="fdel">Elimina questa cartella</button></div>' : '') +
+      (state.folderSel && state.folderSel !== 'none' ? '<div style="margin:-6px 0 8px;display:flex;gap:18px"><button class="reset" data-act="fadds">+ Aggiungi ricette</button><button class="reset" data-act="fdel">Elimina cartella</button></div>' : '') +
       (list.length ? '<div class="slist">' + list.map(savedRow).join('') + '</div>' :
-        '<div class="empty"><b>Ancora niente qui</b>Tocca il segnalibro su una ricetta del feed per ritrovarla in questa pagina.</div>');
+        (state.folderSel && state.folderSel !== 'none' ? '<div class="empty"><b>Cartella vuota</b>Aggiungi ricette salvate o altri piatti.<br><button class="btn" data-act="fadds" style="margin-top:12px">Aggiungi ricette</button></div>' : '<div class="empty"><b>Ancora niente qui</b>Tocca il segnalibro su una ricetta del feed per ritrovarla in questa pagina.</div>'));
   }
 
   var UNITS = [['g', 'g (grammi)'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'l (litri)'], ['cucchiaio', 'cucchiai (≈ 15 g)'], ['cucchiaino', 'cucchiaini (≈ 5 g)'], ['pizzico', 'pizzico (≈ 0,5 g)'], ['pezzi', 'pezzi'], ['mazzetto', 'mazzetti'], ['rametto', 'rametti'], ['foglie', 'foglie'], ['fogli', 'fogli']];
@@ -1276,6 +1280,7 @@ body.inchat nav.tabs { display: none !important; }
       nutriHTML(p) + allergenHTML(p) +
       '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></section>' +
       '<button class="btn ghost" data-act="share" data-id="' + p.id + '">Invia in chat</button>' +
+      (state.saved[p.id] ? '<button class="btn ghost" data-act="fmove" data-id="' + p.id + '">' + (state.fof[p.id] ? 'Cartella: ' + esc(folderName(state.fof[p.id])) + ' (cambia)' : 'Metti in una cartella') + '</button>' : '') +
       '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>' +
       '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>' +
       (p.mine ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
@@ -1610,6 +1615,15 @@ body.inchat nav.tabs { display: none !important; }
     if (state.folderSel === 'none') list = list.filter(function (p) { return !state.fof[p.id]; });
     else if (state.folderSel) list = list.filter(function (p) { return state.fof[p.id] === state.folderSel; });
     return list;
+  }
+  function openFolderAdd(fid) {
+    var rows = function (a) { return a.map(function (p) { return pickRow(p, '', '').replace('data-act="ppick"', 'data-act="fadd" data-f="' + fid + '"'); }).join(''); };
+    var sv = posts.filter(function (p) { return state.saved[p.id] && state.fof[p.id] !== fid; }), rest = posts.filter(function (p) { return !state.saved[p.id]; });
+    sheetOpen('Aggiungi alla cartella', 'Aggiungi a ' + folderName(fid),
+      pkBar() + '<p class="hint pkempty" hidden>Nessun piatto trovato.</p>' +
+      (sv.length ? '<section><h3>Tra i tuoi salvati</h3><div class="slist">' + rows(sv) + '</div></section>' : '') +
+      (rest.length ? '<section><h3>Altri piatti (verranno salvati)</h3><div class="slist">' + rows(rest) + '</div></section>' : '') +
+      '<button class="btn" data-act="close" style="margin-top:12px">Fatto</button>');
   }
   function openFolderSheet(pid) {
     var cur = pid ? state.fof[pid] : null;
@@ -2773,7 +2787,7 @@ body.inchat nav.tabs { display: none !important; }
       e.preventDefault(); var fn = document.getElementById('fname').value.trim(); if (!fn) return true;
       var fid = 'f' + Date.now(), pid = parseInt(e.target.getAttribute('data-id'), 10);
       state.folders.push({ id: fid, name: fn }); if (pid) state.fof[pid] = fid; else state.folderSel = fid;
-      persist(); closeSheet(); render(); return true;
+      persist(); closeSheet(); render(); if (!pid) openFolderAdd(fid); return true;
     }
     return false;
   }
@@ -3015,6 +3029,17 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'stab') { state.savedTab = el.getAttribute('data-v'); render(); return true; }
     if (act === 'fsel') { state.folderSel = el.getAttribute('data-v'); render(); return true; }
     if (act === 'fnew') { openFolderSheet(null); return true; }
+    if (act === 'fadds') { if (state.folderSel && state.folderSel !== 'none') openFolderAdd(state.folderSel); return true; }
+    if (act === 'fadd') {
+      var fid = el.getAttribute('data-f'), fp2 = byId(id); if (!fp2 || !fid) return true;
+      var was = !!state.saved[id]; state.saved[id] = true; state.fof[id] = fid;
+      if (fp2.real && liveMode()) {
+        var fq = was ? sb.from('saves').update({ folder: fid }).eq('user_id', state.user.id).eq('recipe_id', fp2.dbId) : sb.from('saves').insert({ user_id: state.user.id, recipe_id: fp2.dbId, folder: fid });
+        fq.then(function (r) { if (r && r.error) toast('Salvataggio non riuscito'); });
+      }
+      persist(); el.hidden = true; var sc = el.closest('section'); if (sc && !sc.querySelector('.srow:not([hidden])')) sc.hidden = true;
+      render(); toast('Aggiunta a ' + folderName(fid)); return true;
+    }
     if (act === 'fmove') { openFolderSheet(id); return true; }
     if (act === 'fset') {
       var f = el.getAttribute('data-f'); if (f) state.fof[id] = f; else delete state.fof[id];
@@ -3071,7 +3096,7 @@ body.inchat nav.tabs { display: none !important; }
         sq.then(function (r) { if (r.error) { state.saved[id] = !state.saved[id]; toast('Salvataggio non riuscito'); render(); } });
         if (!state.saved[id]) delete state.fof[id];
       }
-      persist(); toast(state.saved[id] ? 'Ricetta salvata' : 'Rimossa dai salvati');
+      persist(); if (state.saved[id]) toastAct('Ricetta salvata', 'Metti in cartella', 'fmove', id); else toast('Rimossa dai salvati');
       if (el.getAttribute('data-sheet')) { openSheet(id); } render();
     }
     else if (act === 'open') { openSheet(id); }
@@ -3379,7 +3404,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041300';
+  var BUILD = '202611041400';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
