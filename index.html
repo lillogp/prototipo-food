@@ -95,6 +95,21 @@ nav.tabs .in { max-width: 520px; margin: 0 auto; display: grid; grid-template-co
 .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; font-size: 11.5px; color: var(--muted); }
 .tab svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .tab[aria-current="page"] { color: var(--accent); font-weight: 600; }
+.pubtop { display: inline-flex; align-items: center; gap: 4px; background: var(--accent); color: var(--accent-fg); border-radius: 18px; padding: 6px 12px 6px 9px; font-weight: 600; font-size: 14px; }
+.pubtop svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; }
+.pubtop[hidden] { display: none; }
+.chipb { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 7px 14px; font-size: 14px; font-weight: 500; }
+.mstory { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.06); border-radius: 10px; padding: 6px; margin-bottom: 6px; font-size: 12px; }
+.msg.me .mstory { background: rgba(255,255,255,.18); }
+.mstory img, .mstory .gone { width: 44px; height: 64px; border-radius: 8px; object-fit: cover; flex: none; background: rgba(0,0,0,.12); display: grid; place-items: center; font-size: 10px; text-align: center; }
+.sviewer .svlist { position: absolute; left: 0; right: 0; bottom: 0; z-index: 6; max-height: 65%; overflow: auto; background: var(--surface); color: var(--fg); border-radius: 18px 18px 0 0; padding: 14px 16px calc(16px + env(safe-area-inset-bottom, 0px)); }
+.sviewer .svlist h3 { margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; }
+.sviewer .svlist .vrow { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--line); }
+.sviewer .svlist .vrow span { flex: 1; } .sviewer .svlist .vrow small { color: var(--muted); }
+.sviewer .svlist button { color: var(--fg); }
+.sviewer .sfoot .vbtn { background: rgba(255,255,255,.18); border-radius: 18px; padding: 8px 14px; font-size: 14px; font-weight: 600; }
+.sbig { margin-bottom: 12px; }
+.sugg { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 16px; }
 .tab.plus span.pl { width: 44px; height: 32px; border-radius: 12px; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; }
 .tab.plus svg { stroke: var(--accent-fg); }
 
@@ -464,7 +479,7 @@ body.inchat nav.tabs { display: none !important; }
 <div class="col">
   <header class="top">
     <div class="logo" role="img" aria-label="Gusto">Gust<svg class="lo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="6.6" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg></div>
-    <div style="display:flex;align-items:center;gap:6px"><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
+    <div style="display:flex;align-items:center;gap:6px"><button id="pubtop" class="pubtop" data-act="tab" data-v="new" aria-label="Pubblica un piatto" hidden><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Pubblica</span></button><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><span class="chip">Prototipo</span></div>
   </header>
   <main id="app"></main>
 </div>
@@ -478,6 +493,7 @@ body.inchat nav.tabs { display: none !important; }
 <script>
 (function () {
   var ICONS = {
+    search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
     home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
     send: '<svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7z"/><path d="M10 13l11-10"/></svg>',
@@ -609,6 +625,15 @@ body.inchat nav.tabs { display: none !important; }
       '<div id="feedwrap">' + feedHTML() + '</div>';
   }
 
+  function searchBody() {
+    if (state.q.trim()) return feedHTML();
+    var tags = posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }).slice(0, 8);
+    return '<p class="hint" style="margin:4px 0 8px">Prova con una categoria:</p><div class="sugg">' + tags.map(function (t) { return '<button class="chipb" data-act="sqtag" data-v="' + esc(t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
+      '<div class="empty"><b>Cerca nell\'app</b>Scrivi il nome di un piatto, un ingrediente o una persona.</div>';
+  }
+  function viewSearch() {
+    return '<div class="view-h"><h1>Cerca</h1></div><input type="search" id="q" class="search sbig" placeholder="Piatti, ingredienti, persone" value="' + esc(state.q) + '" aria-label="Cerca" autocomplete="off"><div id="feedwrap">' + searchBody() + '</div>';
+  }
   function viewSaved() {
     var seg = '<div class="seg" role="group" aria-label="Sezione"><button data-act="stab" data-v="recipes" aria-pressed="' + (state.savedTab !== 'rest') + '">Ricette</button><button data-act="stab" data-v="rest" aria-pressed="' + (state.savedTab === 'rest') + '">Ristoranti</button></div>';
     var head = '<div class="view-h"><h1>Salvati</h1><p>Ricette e ristoranti da ritrovare.</p></div>' + seg;
@@ -1062,14 +1087,13 @@ body.inchat nav.tabs { display: none !important; }
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
     var gate = needAuth();
-    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'pushset' ? viewPushSet() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
-    var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['new', 'Pubblica', ICONS.plus], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'search' ? viewSearch() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'pushset' ? viewPushSet() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
+    var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['search', 'Cerca', ICONS.search], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
     var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'pushset', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
-      return '<button class="tab' + (t[0] === 'new' ? ' plus' : '') + '" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' +
-        (t[0] === 'new' ? '<span class="pl">' + t[2] + '</span>' : t[2]) + '<span>' + t[1] + '</span></button>';
+      return '<button class="tab" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + t[2] + '<span>' + t[1] + '</span></button>';
     }).join('');
-    document.querySelector('nav.tabs').style.display = gate ? 'none' : '';
+    document.querySelector('nav.tabs').style.display = gate ? 'none' : ''; document.getElementById('pubtop').hidden = !!gate;
     updateBell(); updateDmBadge(); if (window.__navSync) window.__navSync(); if (window.__typEnsure) window.__typEnsure();
     if (state.tab === 'new' && !gate) bindForm();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
@@ -1528,7 +1552,7 @@ body.inchat nav.tabs { display: none !important; }
         if (r.error) return;
         state.realRes = (r.data || []).filter(function (x) { return x.display_name || x.handle; }); state.realQ = q;
         (state.realRes).forEach(function (x) { state.realP[x.id] = x; });
-        var fw = document.getElementById('feedwrap'); if (fw && state.q.replace(/\s+/g, ' ').trim().toLowerCase().indexOf(q.toLowerCase()) === 0) fw.innerHTML = feedHTML();
+        var fw = document.getElementById('feedwrap'); if (fw && state.q.replace(/\s+/g, ' ').trim().toLowerCase().indexOf(q.toLowerCase()) === 0) fw.innerHTML = state.tab === 'search' ? searchBody() : feedHTML();
       });
     }, 300);
   }
@@ -1758,9 +1782,9 @@ body.inchat nav.tabs { display: none !important; }
       (mine ? '<button class="reset" data-act="stdel" data-s="' + esc(s.id) + '" aria-label="Elimina storia">Elimina</button>' : '') + '<button class="reset" data-act="stx" aria-label="Chiudi" style="font-size:22px;padding:4px 8px">✕</button></div>' +
       '<button class="stapl" data-act="stprev" aria-label="Indietro"></button><button class="stapr" data-act="stnext" aria-label="Avanti"></button>' +
       '<div class="sbody">' + (s.caption ? '<p>' + esc(s.caption) + '</p>' : '') + (rp ? '<button class="srecipe" data-act="stopenr" data-id="' + rp.id + '">Vedi la ricetta: ' + esc(rp.title) + '</button>' : '') + '</div>' +
-      '<div class="sfoot">' + (mine ? '<span id="stcount" style="font-size:13px">Visualizzazioni…</span>' :
+      '<div class="sfoot">' + (mine ? '<button class="vbtn" id="stcount" data-act="stviews" data-s="' + esc(s.id) + '">Visualizzazioni…</button>' :
         ((state.realP[sv.u] || {}).story_replies === false ? '<span style="font-size:13px;opacity:.85">Le risposte a questa storia sono disattivate.</span>' : '<form id="stform"><input id="stin" placeholder="Rispondi a ' + esc(pName(sv.u)) + '…" aria-label="Risposta alla storia" maxlength="500" autocomplete="off"><button class="btn" type="submit">Invia</button></form>')) + '</div></div>';
-    if (mine) sb.from('story_views').select('viewer_id', { count: 'exact', head: true }).eq('story_id', s.id).then(function (q) { var e = document.getElementById('stcount'); if (e) e.textContent = (q.count || 0) + (q.count === 1 ? ' visualizzazione' : ' visualizzazioni'); });
+    if (mine) sb.from('story_views').select('viewer_id').eq('story_id', s.id).then(function (q) { var n = ((q && q.data) || []).length, e = document.getElementById('stcount'); if (e) e.textContent = '👁 ' + n + (n === 1 ? ' visualizzazione' : ' visualizzazioni'); });
     storyTimer();
   }
   function closeStory() { clearTimeout(storyTimer.h); state.sv = null; closeSheet(); refreshStoryBar(); }
@@ -1778,10 +1802,11 @@ body.inchat nav.tabs { display: none !important; }
     if (pu) { sv.u = pu; sv.i = Math.max(0, storyItems(pu).length - 1); showStory(); } else showStory();
   }
   document.addEventListener('focusin', function (e) { if (e.target && e.target.id === 'stin') { clearTimeout(storyTimer.h); var v = document.querySelector('.sviewer'); if (v) v.classList.add('paused'); } });
-  function sendDmTo(uid, body, done) {
+  function sendDmTo(uid, body, done, storyId) {
     var me = state.user.id, a = me < uid ? me : uid, b = me < uid ? uid : me;
     var send = function (cid) {
-      sb.from('dm_messages').insert({ conv_id: cid, sender_id: me, body: body }).select('id,conv_id,sender_id,body,created_at,read_at,reply_to').single().then(function (r) {
+      var row = { conv_id: cid, sender_id: me, body: body }; if (storyId) row.story_id = storyId;
+      sb.from('dm_messages').insert(row).select('id,conv_id,sender_id,body,created_at,read_at,reply_to,story_id').single().then(function (r) {
         if (r.error) { toast(/gia inviata/.test(r.error.message || '') ? 'Aspetta che ' + pName(uid) + ' accetti la tua richiesta' : 'Risposta non inviata'); if (done) done(false); return; }
         state.dms.unshift(r.data); updateDmBadge(); if (done) done(true);
       });
@@ -2278,6 +2303,23 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'stnew') { var f0 = document.getElementById('stfile'); if (f0) f0.click(); return true; }
     if (act === 'stopen') { openStory(el.getAttribute('data-u')); return true; }
     if (act === 'stx') { closeStory(); return true; }
+    if (act === 'stviews') {
+      var vsid = el.getAttribute('data-s'), vv = document.querySelector('.sviewer'); if (!vv) return true;
+      clearTimeout(storyTimer.h); vv.classList.add('paused');
+      var old = vv.querySelector('.svlist'); if (old) old.remove();
+      var pn = document.createElement('div'); pn.className = 'svlist'; pn.innerHTML = '<h3>Visto da <button class="reset" data-act="stvx" aria-label="Chiudi" style="font-size:20px">✕</button></h3><p class="hint">Carico…</p>'; vv.appendChild(pn);
+      sb.from('story_views').select('viewer_id,created_at').eq('story_id', vsid).order('created_at', { ascending: false }).then(function (q) {
+        var rows = (q && q.data) || [], ids = rows.map(function (r) { return r.viewer_id; }).filter(function (u) { return !state.realP[u]; });
+        var pr = ids.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (z) { (z.data || []).forEach(function (x) { state.realP[x.id] = x; }); }) : Promise.resolve();
+        pr.then(function () {
+          if (!pn.parentNode) return;
+          pn.innerHTML = '<h3>Visto da ' + rows.length + '<button class="reset" data-act="stvx" aria-label="Chiudi" style="font-size:20px">✕</button></h3>' +
+            (rows.length ? rows.map(function (r) { return '<div class="vrow">' + avHTML((state.realP[r.viewer_id] || {}).avatar_url, pName(r.viewer_id)) + '<span><b>' + esc(pName(r.viewer_id)) + '</b></span><small>' + ago(r.created_at) + '</small></div>'; }).join('') : '<p class="hint">Ancora nessuno. Chi ha nascosto le proprie visualizzazioni non compare qui.</p>');
+        });
+      });
+      return true;
+    }
+    if (act === 'stvx') { var pl = document.querySelector('.sviewer .svlist'); if (pl) pl.remove(); var vw = document.querySelector('.sviewer'); if (vw) vw.classList.remove('paused'); return true; }
     if (act === 'stnext') { storyNext(); return true; }
     if (act === 'stprev') { storyPrev(); return true; }
     if (act === 'stopenr') { clearTimeout(storyTimer.h); state.sv = null; closeSheet(); openSheet(id); return true; }
@@ -2590,7 +2632,7 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode()) return Promise.resolve();
     return Promise.all([
       sb.from('conversations').select('id,user_a,user_b,initiator,status,created_at').limit(100),
-      sb.from('dm_messages').select('id,conv_id,sender_id,body,created_at,read_at,reply_to').order('created_at', { ascending: false }).limit(400)
+      sb.from('dm_messages').select('id,conv_id,sender_id,body,created_at,read_at,reply_to,story_id').order('created_at', { ascending: false }).limit(400)
     ]).then(function (a) {
       if (a[0].error || a[1].error) return null;
       var old = state.convs.length || state.dms.length ? dmKey() : '';
@@ -2638,11 +2680,17 @@ body.inchat nav.tabs { display: none !important; }
     var who = q.sender_id === state.user.id ? 'Tu' : pName(o), t = (q.body || '').replace(RECTOK, '').trim() || 'Ricetta condivisa';
     return '<button class="quote" data-act="dmjump" data-id="' + q.id + '"><b>' + esc(who) + '</b><span>' + esc(t.length > 80 ? t.slice(0, 80) + '…' : t) + '</span></button>';
   }
+  function storyRefHTML(m, mine) {
+    var st = state.stories.filter(function (x) { return x.id === m.story_id; })[0];
+    var lab = mine ? 'Hai risposto alla storia' : 'Ha risposto alla tua storia';
+    return '<div class="mstory">' + (st ? '<img src="' + esc(st.media_url) + '" alt="Miniatura della storia" loading="lazy">' : '<span class="gone">Scaduta</span>') + '<span>' + lab + (st ? '' : '<br><small>La storia non c\'è più</small>') + '</span></div>';
+  }
   function dmBubbles(msgs, o) {
     if (!msgs.length) return '<p class="hint" style="margin:8px">Ancora nessun messaggio.</p>';
     var rc = receiptsOn(o), out = msgs.map(function (m) {
       var t = m.body || '', rec = RECTOK.exec(t), pp = rec ? recOf(rec) : null, txt = t.replace(RECTOK, '').trim(), mine = m.sender_id === state.user.id;
-      return '<div class="msg ' + (mine ? 'me' : 'pro') + (state.selMsg === m.id ? ' sel' : '') + '" data-act="dmsel" data-id="' + m.id + '" data-mid="' + m.id + '">' + quoteHTML(m, o) + (txt ? '<p>' + esc(txt) + '</p>' : '') +
+      if (m.story_id) txt = txt.replace(/^Risposta alla storia: /, '');
+      return '<div class="msg ' + (mine ? 'me' : 'pro') + (state.selMsg === m.id ? ' sel' : '') + '" data-act="dmsel" data-id="' + m.id + '" data-mid="' + m.id + '">' + quoteHTML(m, o) + (m.story_id ? storyRefHTML(m, mine) : '') + (txt ? '<p>' + esc(txt) + '</p>' : '') +
         (pp ? '<button class="mrec" data-act="open" data-id="' + pp.id + '"><span class="mt">' + thumbTag(pp.media) + '</span><b>' + esc(pp.title) + '</b></button>' : (rec ? '<button class="mrec" data-act="recmiss"><span class="mt"></span><b>Ricetta condivisa</b></button>' : '')) +
         '<small>' + msgTime(m.created_at) + (mine ? '<i class="tk' + (m.read_at && rc ? ' rd' : '') + '" aria-label="' + (m.read_at && rc ? 'Letto' : 'Inviato') + '">' + (m.read_at && rc ? '✓✓' : '✓') + '</i>' : '') + '</small>' +
         '<button class="rpl" data-act="dmreply" data-id="' + m.id + '">Rispondi</button></div>';
@@ -2731,7 +2779,7 @@ body.inchat nav.tabs { display: none !important; }
   function dmSend(text) {
     var cid = state.curDm; if (!cid || !text) return;
     var row = { conv_id: cid, sender_id: state.user.id, body: text }; if (state.replyTo) row.reply_to = state.replyTo;
-    sb.from('dm_messages').insert(row).select('id,conv_id,sender_id,body,created_at,read_at,reply_to').single().then(function (r) {
+    sb.from('dm_messages').insert(row).select('id,conv_id,sender_id,body,created_at,read_at,reply_to,story_id').single().then(function (r) {
       if (r.error) { toast(/gia inviata/.test(r.error.message || '') ? 'Aspetta che accetti la tua richiesta' : 'Messaggio non inviato'); return; }
       state.replyTo = null; state.selMsg = null; state.dms.unshift(r.data); dmRefresh2();
     });
@@ -2997,7 +3045,7 @@ body.inchat nav.tabs { display: none !important; }
       e.preventDefault(); var si = document.getElementById('stin'), stx = si.value.trim(), sv = state.sv; if (!stx || !sv) return true;
       var cur = storyItems(sv.u)[sv.i], ctx = cur && cur.caption ? ' («' + cur.caption.slice(0, 40) + '»)' : '';
       si.disabled = true;
-      sendDmTo(sv.u, 'Risposta alla tua storia' + ctx + ': ' + stx, function (ok) { if (ok) { toast('Risposta inviata'); storyNext(); } else { si.disabled = false; } });
+      sendDmTo(sv.u, 'Risposta alla storia: ' + stx, function (ok) { if (ok) { toast('Risposta inviata'); storyNext(); } else { si.disabled = false; } }, cur && cur.id);
       return true;
     }
     if (id === 'fform') {
@@ -3310,6 +3358,7 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'gosaved') { state.savedTab = el.getAttribute('data-v'); state.tab = 'saved'; closeSheet(); render(); window.scrollTo(0, 0); return; }
     if (extraClick(act, el, id)) return;
     if (act === 'close') { if (el.classList.contains('sheet-bg') && e.target !== el) return; closeSheet(); if (state.tab !== 'new') render(); return; }
+    if (act === 'sqtag') { state.q = el.getAttribute('data-v'); render(); realSearch(); return true; }
     if (act === 'tab') { if (state.tab === 'new') keepFields(); var tv = el.getAttribute('data-v'); state.tab = tv; if (tv === 'shop') state.shopTab = 'list'; closeSheet(); render(); window.scrollTo(0, 0); if (tv === 'home' && liveMode()) loadFeed(); }
     else if (act === 'filter') { state.filter = el.getAttribute('data-v'); render(); }
     else if (act === 'hidenote') { state.note = false; render(); }
@@ -3546,7 +3595,7 @@ body.inchat nav.tabs { display: none !important; }
     if (e.target.id === 'shq') { shareFind(e.target.value); return; }
     if (e.target.id === 'repd' && state.rep) { state.rep.details = e.target.value; return; }
     if (e.target.id === 'pcgoal' && state.pcmp) { state.pcmp.goal = e.target.value; return; }
-    if (e.target.id === 'q') { state.q = e.target.value; if (!state.q.trim()) state.realRes = []; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = feedHTML(); realSearch(); return; }
+    if (e.target.id === 'q') { state.q = e.target.value; if (!state.q.trim()) state.realRes = []; var fw = document.getElementById('feedwrap'); if (fw) fw.innerHTML = state.tab === 'search' ? searchBody() : feedHTML(); realSearch(); return; }
     if (e.target.id === 'rnote') { state.rnote[e.target.getAttribute('data-r')] = e.target.value; persist(); return; }
     if (e.target.classList && e.target.classList.contains('pn')) {
       var v = e.target.value.trim(), q = state.people.filter(function (x) { return x.id === e.target.getAttribute('data-pid'); })[0];
@@ -3637,7 +3686,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041610';
+  var BUILD = '202611041720';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
