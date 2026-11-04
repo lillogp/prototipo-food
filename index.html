@@ -367,6 +367,31 @@ input[type=search] { font: inherit; color: var(--fg); background: var(--surface)
 .msg { max-width: 82%; border-radius: 16px; padding: 8px 12px; display: flex; flex-direction: column; gap: 4px; }
 .msg p { margin: 0; }
 .msg small { font-size: 11px; opacity: .65; align-self: flex-end; }
+.msg { position: relative; touch-action: pan-y; }
+.msg.sel { outline: 2px solid var(--amber); outline-offset: 1px; }
+.msg.flash { outline: 2px solid var(--amber); outline-offset: 2px; }
+.msg .rpl { display: none; align-self: flex-start; background: rgba(255, 255, 255, .85); color: var(--fg); border-radius: 8px; padding: 3px 10px; font-size: 12px; font-weight: 600; }
+.msg.sel .rpl { display: inline-flex; }
+.msg .quote { display: flex; flex-direction: column; text-align: left; gap: 1px; border-left: 3px solid var(--amber); background: rgba(255, 255, 255, .55); color: var(--fg); border-radius: 6px; padding: 4px 8px; font-size: 12px; max-width: 100%; }
+.msg.me .quote { background: rgba(255, 255, 255, .22); color: var(--accent-fg); }
+.msg .quote b { font-weight: 600; }
+.msg .quote span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; opacity: .85; }
+.msg .quote.gone { opacity: .6; font-style: italic; }
+.tk { font-style: normal; margin-left: 4px; letter-spacing: -2px; }
+.tk.rd { color: #FFE2A3; opacity: 1; }
+.msg small { display: flex; align-items: center; }
+.typ { padding: 10px 14px; }
+.dots { display: inline-flex; gap: 4px; }
+.dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: bl 1s infinite; }
+.dots i:nth-child(2) { animation-delay: .15s; } .dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes bl { 0%, 60%, 100% { opacity: .25; } 30% { opacity: 1; } }
+.rb { display: flex; align-items: center; gap: 8px; background: var(--soft); border-left: 3px solid var(--amber); border-radius: 8px; padding: 6px 8px 6px 10px; margin-bottom: 8px; font-size: 13px; }
+.rb > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rb span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.sw { width: 44px; height: 26px; border-radius: 99px; background: var(--line); position: relative; flex: none; transition: background .15s; }
+.sw i { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 2px rgba(0, 0, 0, .25); }
+.sw.on { background: var(--accent); }
+.sw.on i { transform: translateX(18px); }
 .msg.pro { align-self: flex-start; background: var(--soft); border-bottom-left-radius: 4px; }
 .msg.me { align-self: flex-end; background: var(--accent); color: var(--accent-fg); border-bottom-right-radius: 4px; }
 .mrec { display: flex; align-items: center; gap: 8px; text-align: left; background: var(--surface); color: var(--fg); border-radius: 10px; padding: 4px; }
@@ -940,6 +965,7 @@ body.inchat nav.tabs { display: none !important; }
   function viewSettings() {
     var pr = state.prefs, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
     if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
+    if (liveMode() && state.profile) rows.push(['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']);
     rows.push(['install', 'Installa l\'app', window.__canInstall && window.__canInstall() ? 'Aggiungila alla schermata Home' : 'Già installata su questo telefono']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
@@ -975,6 +1001,8 @@ body.inchat nav.tabs { display: none !important; }
       '<section class="procard" style="margin-top:0"><h3>' + (on ? 'Profilo privato' : 'Profilo pubblico') + '</h3><p class="hint" style="margin:0 0 12px">' +
       (on ? 'Il tuo nome compare nella ricerca, ma i tuoi piatti li vede solo chi accetti.' : 'Chiunque può vedere i tuoi piatti. Con il profilo privato il nome resta cercabile, ma i piatti li vede solo chi accetti.') + '</p>' +
       '<button class="btn" data-act="privtoggle">' + (on ? 'Rendi il profilo pubblico' : 'Rendi il profilo privato') + '</button></section>' +
+      '<section class="procard"><h3>Conferme di lettura</h3><p class="hint" style="margin:0 0 12px">' + (state.profile.read_receipts !== false ? 'Chi ti scrive vede quando hai letto i suoi messaggi. Se le disattivi, non vedrai nemmeno quelle degli altri.' : 'Disattivate: nessuno vede quando leggi i messaggi, e tu non vedi quando leggono i tuoi.') + '</p>' +
+      '<button class="btn ghost" data-act="rrtoggle">' + (state.profile.read_receipts !== false ? 'Disattiva le conferme di lettura' : 'Attiva le conferme di lettura') + '</button></section>' +
       '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML() +
       '<h3 class="shc">Persone bloccate' + (state.blocked.length ? ' (' + state.blocked.length + ')' : '') + '</h3>' + blockList();
   }
@@ -991,15 +1019,15 @@ body.inchat nav.tabs { display: none !important; }
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
     var gate = needAuth();
-    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'pushset' ? viewPushSet() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['new', 'Pubblica', ICONS.plus], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
-    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
+    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'pushset', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
       return '<button class="tab' + (t[0] === 'new' ? ' plus' : '') + '" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' +
         (t[0] === 'new' ? '<span class="pl">' + t[2] + '</span>' : t[2]) + '<span>' + t[1] + '</span></button>';
     }).join('');
     document.querySelector('nav.tabs').style.display = gate ? 'none' : '';
-    updateBell(); updateDmBadge(); if (window.__navSync) window.__navSync();
+    updateBell(); updateDmBadge(); if (window.__navSync) window.__navSync(); if (window.__typEnsure) window.__typEnsure();
     if (state.tab === 'new' && !gate) bindForm();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
       var k = c.getAttribute('data-dt') + '|' + c.getAttribute('data-s');
@@ -1452,7 +1480,7 @@ body.inchat nav.tabs { display: none !important; }
     var q = state.q.replace(/[^\p{L}\p{N} ._-]/gu, ' ').replace(/\s+/g, ' ').trim();
     if (!liveMode() || q.length < 2) { state.realRes = []; state.realQ = ''; return; }
     realT = setTimeout(function () {
-      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
+      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
         if (r.error) return;
         state.realRes = (r.data || []).filter(function (x) { return x.display_name || x.handle; }); state.realQ = q;
         (state.realRes).forEach(function (x) { state.realP[x.id] = x; });
@@ -1902,7 +1930,7 @@ body.inchat nav.tabs { display: none !important; }
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
-    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private,avatar_url').eq('id', state.user.id).maybeSingle().then(function (r) {
+    sb.from('profiles').select('id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs').eq('id', state.user.id).maybeSingle().then(function (r) {
       state.profile = r.data || { account_type: 'user', pro_verified: false, display_name: '' };
       var code = null; try { code = localStorage.getItem('gusto-invite'); localStorage.removeItem('gusto-invite'); } catch (e) {}
       if (code && state.profile.account_type !== 'pro') {
@@ -2047,7 +2075,7 @@ body.inchat nav.tabs { display: none !important; }
       state.reqs = (a[1].data || []).map(function (f) { return f.follower_id; });
       var ids = state.reqs.concat((a[0].data || []).map(function (f) { return f.followed_id; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
       if (!ids.length) return null;
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
     });
   }
   function liveClick(act, el, id) {
@@ -2159,7 +2187,7 @@ body.inchat nav.tabs { display: none !important; }
       var after = state.notifs.length ? state.notifs[0].id + ':' + unreadCount() : '';
       var done = function () { updateBell(); if (state.tab === 'notifs' && before !== after) render(); };
       if (!ids.length) { done(); return null; }
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').in('id', ids).then(function (q) {
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (q) {
         (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); done();
       });
     });
@@ -2232,7 +2260,107 @@ body.inchat nav.tabs { display: none !important; }
     var n = liveMode() ? dmUnreadN() : 0; bb.hidden = !n; bb.textContent = n > 9 ? '9+' : String(n);
     b.setAttribute('aria-label', n ? 'Messaggi: ' + n + ' non letti' : 'Messaggi');
   }
-  function dmKey() { return state.convs.length + ':' + state.convs.map(function (c) { return c.status; }).join('') + ':' + (state.dms[0] ? state.dms[0].id : 0) + ':' + dmUnreadN(); }
+  state.replyTo = null; state.selMsg = null; state.typing = {};
+  function replyBarHTML() {
+    if (!state.replyTo) return '';
+    var q = state.dms.filter(function (x) { return x.id === state.replyTo; })[0]; if (!q) return '';
+    var c = state.convs.filter(function (x) { return x.id === state.curDm; })[0], o = c ? otherOf(c) : null;
+    var who = q.sender_id === state.user.id ? 'te stesso' : pName(o), t = (q.body || '').replace(RECTOK, '').trim() || 'Ricetta condivisa';
+    return '<div class="rb"><div><b>Rispondi a ' + esc(who) + '</b><span>' + esc(t.length > 80 ? t.slice(0, 80) + '…' : t) + '</span></div><button class="ic" data-act="dmreplyx" aria-label="Annulla risposta">' + XICON_X + '</button></div>';
+  }
+  function setReply(id) {
+    state.replyTo = id; var rb = document.getElementById('replybar'); if (rb) rb.innerHTML = replyBarHTML();
+    var i = document.getElementById('dmin'); if (i) i.focus();
+  }
+  /* Indicatore "sta scrivendo" (Realtime broadcast) */
+  var typCh = null, typCid = null, typSentAt = 0;
+  function typOn(cid) { return !!state.typing[cid] && Date.now() - state.typing[cid] < 4000; }
+  function typUpdate() {
+    var sub = document.getElementById('dmsub'), chat = document.getElementById('dmchat'), on = state.tab === 'dm' && typOn(state.curDm), t = document.getElementById('typ');
+    if (sub) sub.textContent = on ? 'sta scrivendo…' : (sub.getAttribute('data-t') || '');
+    if (on && chat && !t) { var d = document.createElement('div'); d.className = 'msg pro typ'; d.id = 'typ'; d.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>'; var near = chat.scrollHeight - chat.scrollTop - chat.clientHeight < 80; chat.appendChild(d); if (near) chat.scrollTop = chat.scrollHeight; }
+    else if (!on && t) t.remove();
+  }
+  function typEnsure() {
+    var want = liveMode() && state.tab === 'dm' && state.curDm ? state.curDm : null;
+    if (want === typCid) return;
+    if (typCh) { try { sb.removeChannel(typCh); } catch (e) {} typCh = null; }
+    typCid = want; if (!want || !sb || !sb.channel) return;
+    try {
+      typCh = sb.channel('typing-' + want, { config: { broadcast: { self: false } } });
+      typCh.on('broadcast', { event: 'typing' }, function (m) {
+        var p = (m && m.payload) || {}; if (!p.u || p.u === state.user.id) return;
+        state.typing[want] = Date.now(); typUpdate(); setTimeout(typUpdate, 4200);
+      }).subscribe();
+    } catch (e) { typCh = null; }
+  }
+  function typSend() {
+    var n = Date.now(); if (!typCh || n - typSentAt < 2500) return; typSentAt = n;
+    try { typCh.send({ type: 'broadcast', event: 'typing', payload: { u: state.user.id } }); } catch (e) {}
+  }
+  /* Notifiche push */
+  var PCATS = [['messages', 'Messaggi', 'Quando qualcuno ti scrive'], ['follows', 'Follower e richieste', 'Nuovi follower, richieste di follow e accettazioni'], ['likes', 'Mi piace', 'Ai tuoi piatti e ai tuoi commenti'], ['comments', 'Commenti', 'Ai tuoi piatti'], ['pro', 'Nutrizionista', 'Nuovi piani e nuovi clienti']];
+  state.pushOn = null;
+  function pushSupported() { return !!(navigator.serviceWorker && window.PushManager && window.Notification); }
+  function b64ToU8(b) { var p = '='.repeat((4 - b.length % 4) % 4), r = atob((b + p).replace(/-/g, '+').replace(/_/g, '/')), o = new Uint8Array(r.length); for (var i = 0; i < r.length; i++) o[i] = r.charCodeAt(i); return o; }
+  function pushRegister(sub) {
+    var j = sub.toJSON(); if (!j.keys) return Promise.resolve();
+    return sb.rpc('register_push', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth });
+  }
+  function pushCheck() {
+    if (!pushSupported() || !liveMode()) { state.pushOn = false; return Promise.resolve(); }
+    return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      state.pushOn = !!sub && Notification.permission === 'granted';
+      if (state.pushOn) pushRegister(sub);
+      if (state.tab === 'pushset') render();
+    }).catch(function () { state.pushOn = false; });
+  }
+  function pushEnable() {
+    if (!pushSupported()) { toast('Questo browser non supporta le notifiche'); return; }
+    Notification.requestPermission().then(function (perm) {
+      if (perm !== 'granted') { toast('Permesso negato: abilitalo dalle impostazioni del telefono'); return; }
+      return fetch(SB_URL + '/functions/v1/send-push').then(function (r) { return r.json(); }).then(function (k) {
+        if (!k || !k.key) throw new Error('key');
+        return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(k.key) }); });
+      }).then(function (sub) { return pushRegister(sub); }).then(function () { state.pushOn = true; toast('Notifiche attivate'); render(); });
+    }).catch(function () { toast('Non riesco ad attivare le notifiche'); });
+  }
+  function pushDisable() {
+    navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+      if (!sub) return; var ep = sub.endpoint;
+      return sub.unsubscribe().then(function () { return sb.from('push_subscriptions').delete().eq('endpoint', ep); });
+    }).then(function () { state.pushOn = false; toast('Notifiche disattivate'); render(); }).catch(function () { toast('Non riesco a disattivarle'); });
+  }
+  function viewPushSet() {
+    var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
+    if (!liveMode() || !state.profile) return back + '<div class="view-h"><h1>Notifiche</h1></div><div class="empty"><b>Serve un account</b>Accedi per ricevere le notifiche.</div>';
+    var pr = state.profile.push_prefs || {}, sup = pushSupported(), ios = /iphone|ipad|ipod/i.test(navigator.userAgent), standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    var dev;
+    if (!sup) dev = '<p class="hint" style="margin:0">' + (ios && !standalone ? 'Su iPhone le notifiche funzionano solo con l\'app installata sulla Home (Condividi, poi “Aggiungi alla schermata Home”). Apri l\'app da lì e torna qui.' : 'Questo browser non supporta le notifiche.') + '</p>';
+    else if (state.pushOn) dev = '<p class="hint" style="margin:0 0 12px">Le notifiche sono attive su questo dispositivo.</p><button class="btn ghost" data-act="pushoff">Disattiva su questo dispositivo</button>';
+    else dev = '<p class="hint" style="margin:0 0 12px">Ricevi un avviso sul telefono anche quando l\'app è chiusa.' + (typeof Notification !== 'undefined' && Notification.permission === 'denied' ? ' Hai negato il permesso: riattivalo dalle impostazioni del browser.' : '') + '</p><button class="btn" data-act="pushon">Attiva le notifiche</button>';
+    return back + '<div class="view-h"><h1>Notifiche</h1><p>Avvisi fuori dall\'app.</p></div>' +
+      '<section class="procard" style="margin-top:0"><h3>Questo dispositivo</h3>' + dev + '</section>' +
+      '<h3 class="shc">Cosa notificare</h3><div class="menu" style="margin-top:0">' + PCATS.map(function (c) {
+        var on = pr[c[0]] !== false;
+        return '<button class="mrow" role="switch" aria-checked="' + on + '" data-act="pushcat" data-c="' + c[0] + '"><span><b>' + c[1] + '</b><small>' + c[2] + '</small></span><span class="sw' + (on ? ' on' : '') + '"><i></i></span></button>';
+      }).join('') + '</div>';
+  }
+  function runGo(g) {
+    if (!g || !liveMode()) return;
+    if (g.indexOf('dm:') === 0) { var cid = parseInt(g.slice(3), 10); loadDMs().then(function () { if (state.convs.some(function (c) { return c.id === cid; })) dmOpen(cid); else { state.tab = 'inbox'; render(); } }); }
+    else if (g === 'notifs') { state.tab = 'notifs'; render(); }
+  }
+  try {
+    var gq = /[?&]go=([^&]+)/.exec(location.search); if (gq) state.go = decodeURIComponent(gq[1]);
+    if (navigator.serviceWorker) navigator.serviceWorker.addEventListener('message', function (e) { if (e.data && e.data.go) runGo(e.data.go); });
+  } catch (e) {}
+  window.__typEnsure = function () {
+    typEnsure();
+    if (liveMode() && !state.pushChecked) { state.pushChecked = 1; pushCheck(); }
+    if (liveMode() && state.go) { var g = state.go; state.go = null; try { history.replaceState(history.state, '', location.pathname); } catch (e) {} runGo(g); }
+  };
+  function dmKey() { return state.convs.length + ':' + state.convs.map(function (c) { return c.status; }).join('') + ':' + (state.dms[0] ? state.dms[0].id : 0) + ':' + dmUnreadN() + ':' + state.dms.filter(function (m) { return m.read_at; }).length; }
   function dmRefresh() {
     if (state.tab === 'inbox') { render(); return; }
     if (state.tab === 'dm') {
@@ -2245,7 +2373,7 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode()) return Promise.resolve();
     return Promise.all([
       sb.from('conversations').select('id,user_a,user_b,initiator,status,created_at').limit(100),
-      sb.from('dm_messages').select('id,conv_id,sender_id,body,created_at,read_at').order('created_at', { ascending: false }).limit(400)
+      sb.from('dm_messages').select('id,conv_id,sender_id,body,created_at,read_at,reply_to').order('created_at', { ascending: false }).limit(400)
     ]).then(function (a) {
       if (a[0].error || a[1].error) return null;
       var old = state.convs.length || state.dms.length ? dmKey() : '';
@@ -2253,7 +2381,7 @@ body.inchat nav.tabs { display: none !important; }
       var ids = state.convs.map(otherOf).filter(function (v, i, arr) { return arr.indexOf(v) === i && !state.realP[v]; });
       var fin = function () { updateDmBadge(); if (dmKey() !== old) dmRefresh(); };
       if (!ids.length) { fin(); return null; }
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').in('id', ids).then(function (q) {
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (q) {
         (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); fin();
       });
     });
@@ -2285,13 +2413,24 @@ body.inchat nav.tabs { display: none !important; }
       (reqs.length ? '<h3 class="shc" style="margin-top:4px">Richieste di messaggio (' + reqs.length + ')</h3><div class="slist" style="margin-bottom:14px">' + reqs.map(convRow).join('') + '</div>' : '') +
       (rest.length ? '<div class="slist">' + rest.map(convRow).join('') + '</div>' : (reqs.length ? '' : '<div class="empty"><b>Nessuna conversazione</b>Cerca una persona, apri il suo profilo e tocca "Scrivi un messaggio".</div>'));
   }
-  function dmBubbles(msgs) {
+  function receiptsOn(o) { return !!(state.profile && state.profile.read_receipts !== false) && (state.realP[o] || {}).read_receipts !== false; }
+  function quoteHTML(m, o) {
+    if (!m.reply_to) return '';
+    var q = state.dms.filter(function (x) { return x.id === m.reply_to; })[0];
+    if (!q) return '<div class="quote gone">Messaggio precedente</div>';
+    var who = q.sender_id === state.user.id ? 'Tu' : pName(o), t = (q.body || '').replace(RECTOK, '').trim() || 'Ricetta condivisa';
+    return '<button class="quote" data-act="dmjump" data-id="' + q.id + '"><b>' + esc(who) + '</b><span>' + esc(t.length > 80 ? t.slice(0, 80) + '…' : t) + '</span></button>';
+  }
+  function dmBubbles(msgs, o) {
     if (!msgs.length) return '<p class="hint" style="margin:8px">Ancora nessun messaggio.</p>';
-    return msgs.map(function (m) {
-      var t = m.body || '', rec = RECTOK.exec(t), pp = rec ? recOf(rec) : null, txt = t.replace(RECTOK, '').trim();
-      return '<div class="msg ' + (m.sender_id === state.user.id ? 'me' : 'pro') + '">' + (txt ? '<p>' + esc(txt) + '</p>' : '') +
-        (pp ? '<button class="mrec" data-act="open" data-id="' + pp.id + '"><span class="mt">' + thumbTag(pp.media) + '</span><b>' + esc(pp.title) + '</b></button>' : (rec ? '<button class="mrec" data-act="recmiss"><span class="mt"></span><b>Ricetta condivisa</b></button>' : '')) + '<small>' + msgTime(m.created_at) + '</small></div>';
+    var rc = receiptsOn(o), out = msgs.map(function (m) {
+      var t = m.body || '', rec = RECTOK.exec(t), pp = rec ? recOf(rec) : null, txt = t.replace(RECTOK, '').trim(), mine = m.sender_id === state.user.id;
+      return '<div class="msg ' + (mine ? 'me' : 'pro') + (state.selMsg === m.id ? ' sel' : '') + '" data-act="dmsel" data-id="' + m.id + '" data-mid="' + m.id + '">' + quoteHTML(m, o) + (txt ? '<p>' + esc(txt) + '</p>' : '') +
+        (pp ? '<button class="mrec" data-act="open" data-id="' + pp.id + '"><span class="mt">' + thumbTag(pp.media) + '</span><b>' + esc(pp.title) + '</b></button>' : (rec ? '<button class="mrec" data-act="recmiss"><span class="mt"></span><b>Ricetta condivisa</b></button>' : '')) +
+        '<small>' + msgTime(m.created_at) + (mine ? '<i class="tk' + (m.read_at && rc ? ' rd' : '') + '" aria-label="' + (m.read_at && rc ? 'Letto' : 'Inviato') + '">' + (m.read_at && rc ? '✓✓' : '✓') + '</i>' : '') + '</small>' +
+        '<button class="rpl" data-act="dmreply" data-id="' + m.id + '">Rispondi</button></div>';
     }).join('');
+    return out + (typOn(state.curDm) ? '<div class="msg pro typ" id="typ"><span class="dots"><i></i><i></i><i></i></span></div>' : '');
   }
   function viewDm() {
     var back = '<button class="ic" data-act="inbox" style="margin-left:-8px">&lsaquo; Messaggi</button>';
@@ -2304,9 +2443,9 @@ body.inchat nav.tabs { display: none !important; }
       : sentFirst ? '<p class="hint">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
       : '<form class="cmf" id="dmform"><button type="button" class="rm scan" data-act="dmattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="dmin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio" enterkeyhint="send"><button class="btn" type="submit">Invia</button></form>';
     return '<div class="chatpage"><div class="cpt"><button class="ic" data-act="inbox" aria-label="Torna ai messaggi"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>' +
-      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto')) + '</span></div></button>' +
+      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span id="dmsub" data-t="' + esc(x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + x.handle : 'Su Gusto')) + '">' + (typOn(c.id) ? 'sta scrivendo…' : (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto'))) + '</span></div></button>' +
       '<button class="ic" data-act="usermenu" data-u="' + esc(o) + '" data-c="' + c.id + '" aria-label="Altre azioni">' + DOTS + '</button></div>' +
-      '<div class="chat" id="dmchat">' + dmBubbles(msgs) + '</div><div class="cpb">' + bottom + '</div></div>';
+      '<div class="chat" id="dmchat">' + dmBubbles(msgs, o) + '</div><div class="cpb"><div id="replybar">' + replyBarHTML() + '</div>' + bottom + '</div></div>';
   }
   function dmMarkRead(cid) {
     var ids = state.dms.filter(function (m) { return m.conv_id === cid && m.sender_id !== state.user.id && !m.read_at; }).map(function (m) { return m.id; });
@@ -2317,6 +2456,7 @@ body.inchat nav.tabs { display: none !important; }
     });
   }
   function dmOpen(cid) {
+    if (state.curDm !== cid) { state.replyTo = null; state.selMsg = null; }
     state.curDm = cid; state.tab = 'dm'; closeSheet(); render(); window.scrollTo(0, 0);
     var c = document.getElementById('dmchat'); if (c) c.scrollTop = c.scrollHeight;
     dmMarkRead(cid);
@@ -2349,7 +2489,7 @@ body.inchat nav.tabs { display: none !important; }
       box.innerHTML = cs.length ? cs.map(function (c) { var o = otherOf(c), x = state.realP[o] || {}; return shareRow(o, pName(o), x.handle ? '@' + x.handle : 'Su Gusto', x.avatar_url); }).join('') : '<p class="hint">Cerca una persona a cui inviare il piatto.</p>';
       return;
     }
-    sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
+    sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
       if (state.shareQ !== q || !document.getElementById('shlist')) return;
       var rows = (r.data || []); rows.forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); });
       document.getElementById('shlist').innerHTML = rows.length ? rows.map(function (x) { return shareRow(x.id, x.display_name || (x.handle ? '@' + x.handle : 'Utente'), x.handle ? '@' + x.handle : 'Su Gusto', x.avatar_url); }).join('') : '<p class="hint">Nessuna persona trovata.</p>';
@@ -2373,9 +2513,10 @@ body.inchat nav.tabs { display: none !important; }
   }
   function dmSend(text) {
     var cid = state.curDm; if (!cid || !text) return;
-    sb.from('dm_messages').insert({ conv_id: cid, sender_id: state.user.id, body: text }).select('id,conv_id,sender_id,body,created_at,read_at').single().then(function (r) {
+    var row = { conv_id: cid, sender_id: state.user.id, body: text }; if (state.replyTo) row.reply_to = state.replyTo;
+    sb.from('dm_messages').insert(row).select('id,conv_id,sender_id,body,created_at,read_at,reply_to').single().then(function (r) {
       if (r.error) { toast(/gia inviata/.test(r.error.message || '') ? 'Aspetta che accetti la tua richiesta' : 'Messaggio non inviato'); return; }
-      state.dms.unshift(r.data); dmRefresh2();
+      state.replyTo = null; state.selMsg = null; state.dms.unshift(r.data); dmRefresh2();
     });
   }
   function dmRefresh2() { var c = state.convs.filter(function (x) { return x.id === state.curDm; })[0]; render(); var e = document.getElementById('dmchat'); if (e) e.scrollTop = e.scrollHeight; var i = document.getElementById('dmin'); if (i && c && c.status !== 'pending') i.focus(); }
@@ -2453,7 +2594,7 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode()) return Promise.resolve();
     var me = state.user.id;
     return Promise.all([
-      sb.from('recipes').select('id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,menu_id,menu_name,menu_pos,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url),likes(count),comments(count)').order('created_at', { ascending: false }).limit(80),
+      sb.from('recipes').select('id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,menu_id,menu_name,menu_pos,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts),likes(count),comments(count)').order('created_at', { ascending: false }).limit(80),
       sb.from('likes').select('recipe_id').eq('user_id', me),
       sb.from('saves').select('recipe_id,folder').eq('user_id', me)
     ]).then(function (a) {
@@ -2706,6 +2847,37 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'dmstart') { if (liveMode()) dmStart(el.getAttribute('data-u')); return true; }
     if (act === 'dmfind') { state.tab = 'home'; state.homeTab = 'dishes'; render(); var qq = document.getElementById('q'); if (qq) { qq.focus(); } toast('Scrivi il nome della persona'); return true; }
     if (act === 'dmattach') { openDmAttach(); return true; }
+    if (act === 'dmsel') {
+      var mid = parseInt(el.getAttribute('data-id'), 10); state.selMsg = state.selMsg === mid ? null : mid;
+      Array.prototype.forEach.call(document.querySelectorAll('#dmchat .msg'), function (m) { m.classList.toggle('sel', parseInt(m.getAttribute('data-mid'), 10) === state.selMsg); });
+      return true;
+    }
+    if (act === 'dmreply') { state.selMsg = null; Array.prototype.forEach.call(document.querySelectorAll('#dmchat .msg.sel'), function (m) { m.classList.remove('sel'); }); setReply(parseInt(el.getAttribute('data-id'), 10)); return true; }
+    if (act === 'dmreplyx') { state.replyTo = null; var rb0 = document.getElementById('replybar'); if (rb0) rb0.innerHTML = ''; return true; }
+    if (act === 'dmjump') {
+      var tg = document.querySelector('#dmchat .msg[data-mid="' + el.getAttribute('data-id') + '"]');
+      if (tg) { tg.scrollIntoView({ block: 'center', behavior: 'smooth' }); tg.classList.add('flash'); setTimeout(function () { tg.classList.remove('flash'); }, 1200); } else toast('Messaggio non più disponibile');
+      return true;
+    }
+    if (act === 'rrtoggle') {
+      var rv = !(state.profile.read_receipts !== false);
+      sb.from('profiles').update({ read_receipts: rv }).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast('Non riesco a cambiare l\'impostazione'); return; }
+        state.profile.read_receipts = rv; render(); toast(rv ? 'Conferme di lettura attive' : 'Conferme di lettura disattivate');
+      });
+      return true;
+    }
+    if (act === 'pushset') { state.tab = 'pushset'; closeSheet(); render(); window.scrollTo(0, 0); pushCheck(); return true; }
+    if (act === 'pushon') { pushEnable(); return true; }
+    if (act === 'pushoff') { pushDisable(); return true; }
+    if (act === 'pushcat') {
+      var pc = el.getAttribute('data-c'), np = Object.assign({}, state.profile.push_prefs || {}); np[pc] = np[pc] === false;
+      sb.from('profiles').update({ push_prefs: np }).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast('Non riesco a salvare'); return; }
+        state.profile.push_prefs = np; render();
+      });
+      return true;
+    }
     if (act === 'share') { openShare(id); return true; }
     if (act === 'shareto') { shareSend(el.getAttribute('data-u')); return true; }
     if (act === 'recmiss') { loadFeed().then(function () { render(); }); toast('Carico la ricetta…'); return true; }
@@ -3112,6 +3284,7 @@ body.inchat nav.tabs { display: none !important; }
       Array.prototype.forEach.call(sh.querySelectorAll('section'), function (sc) { sc.hidden = !sc.querySelector('.srow:not([hidden])'); });
       var pe = sh.querySelector('.pkempty'); if (pe) pe.hidden = any; return;
     }
+    if (e.target.id === 'dmin') { typSend(); return; }
     if (e.target.id === 'shq') { shareFind(e.target.value); return; }
     if (e.target.id === 'repd' && state.rep) { state.rep.details = e.target.value; return; }
     if (e.target.id === 'pcgoal' && state.pcmp) { state.pcmp.goal = e.target.value; return; }
@@ -3129,6 +3302,25 @@ body.inchat nav.tabs { display: none !important; }
 
   normPlan();
   render();
+  (function () {
+    var sx = 0, sy = 0, el = null, dx = 0, lock = false;
+    document.addEventListener('touchstart', function (e) {
+      var m = e.target.closest && e.target.closest('#dmchat .msg:not(.typ)'); if (!m || !e.touches[0]) { el = null; return; }
+      el = m; sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; lock = false; m.style.transition = 'none';
+    }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      if (!el || !e.touches[0]) return; var x = e.touches[0].clientX - sx, y = e.touches[0].clientY - sy;
+      if (!lock && Math.abs(y) > 12 && Math.abs(y) > Math.abs(x)) { el.style.transform = ''; el = null; return; }
+      if (Math.abs(x) > 8) lock = true;
+      if (lock) { dx = Math.max(0, Math.min(72, x)); el.style.transform = 'translateX(' + dx + 'px)'; }
+    }, { passive: true });
+    document.addEventListener('touchend', function () {
+      if (!el) return; var m = el; el = null; m.style.transition = 'transform .15s'; m.style.transform = '';
+      if (dx > 54) { var id = parseInt(m.getAttribute('data-mid'), 10); if (id) { try { navigator.vibrate && navigator.vibrate(10); } catch (e) {} setReply(id); } }
+      dx = 0; lock = false; lastSwipe = Date.now();
+    });
+  })();
+  var lastSwipe = 0;
   /* Tasto Indietro del telefono: naviga dentro l'app invece di chiuderla.
      Ogni "livello" aperto (scheda ricetta, modalita' cucina, pagina raggiunta da un'altra) corrisponde a una voce di cronologia. */
   (function () {
@@ -3187,7 +3379,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var BUILD = '202611041130';
+  var BUILD = '202611041300';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
