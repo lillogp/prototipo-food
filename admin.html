@@ -46,6 +46,7 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
 .empty b { display: block; color: var(--fg); font-family: var(--f-display); font-size: 18px; margin-bottom: 4px; }
 .note { background: var(--soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
 .acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.ver { text-align: center; font-size: 12px; color: var(--muted); margin: 26px 0 0; opacity: .8; }
 .muted { color: var(--muted); } small.muted { font-size: 13px; }
 
 /* shell */
@@ -191,6 +192,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
+  var ADMIN_VERSION = 3;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -438,7 +440,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   window.addEventListener('appinstalled', function () { deferredInstall = null; toast('App installata'); render(); });
   function viewShell() {
     var oc = (S.ov && S.ov.reports_open) || 0, cur = S.tab, title = (TABS.filter(function (t) { return t[0] === cur; })[0] || TABS[0])[1];
-    var body = cur === 'overview' ? overviewHTML() : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : reportsHTML();
+    var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : reportsHTML();
     return '<div class="shell"><aside class="side"><div class="logo">Gusto<small>Amministrazione</small></div><nav class="nav" aria-label="Sezioni">' + TABS.map(function (t) {
       return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + '</button>'; }).join('') +
       '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span>' + (isStandalone() ? '' : '<button class="btn sm" data-act="install">Installa app</button>') + '<button class="btn ghost sm" data-act="logout">Esci</button></div></aside>' +
