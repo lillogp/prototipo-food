@@ -285,6 +285,7 @@ input:disabled { opacity: .45; }
 .grid3 img, .grid3 video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prof { display: flex; gap: 14px; align-items: center; }
 .prof .av { width: 64px; height: 64px; font-size: 26px; }
+.bio { margin: 10px 2px 0; font-size: 15px; line-height: 1.45; overflow-wrap: anywhere; }
 .stats { display: flex; gap: 18px; margin-top: 12px; font-size: 13px; color: var(--muted); }
 .statbtn { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
 .stats b { display: block; color: var(--fg); font-family: var(--f-display); font-size: 20px; }
@@ -770,6 +771,12 @@ body.inchat nav.tabs { display: none !important; }
       '<div class="stats"><div><b>' + ps.length + '</b>piatti</div><div><b>' + nfmt(followersOf(h)) + '</b>seguaci</div><div><b>' + likes + '</b>mi piace</div></div>' +
       '<div class="grid3">' + ps.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>';
   }
+  function bioOwnHTML() {
+    if (!liveMode() || !state.profile) return '';
+    var b = state.profile.bio;
+    return b ? '<p class="bio">' + esc(b) + ' <button class="reset" data-act="tab" data-v="account" style="padding:2px 6px">Modifica</button></p>'
+      : '<p class="bio"><button class="reset" data-act="tab" data-v="account" style="padding:2px 0">Aggiungi una breve descrizione</button></p>';
+  }
   function viewProfile() {
     var mine = posts.filter(function (p) { return p.mine; });
     var saved = Object.keys(state.saved).filter(function (k) { return state.saved[k]; }).length;
@@ -779,7 +786,7 @@ body.inchat nav.tabs { display: none !important; }
     return '<div class="prof">' + avHTML(liveMode() && state.profile ? state.profile.avatar_url : null, pn) + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><div><b>0</b>seguaci</div><div><b>' + nf + '</b>seguiti</div><button class="statbtn" data-act="tab" data-v="saved" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
-      profMenu() +
+      bioOwnHTML() + profMenu() +
       (mine.length ? '<div class="grid3">' + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
         '<div class="empty" style="margin-top:18px"><b>Il tuo profilo è vuoto</b>Pubblica il primo piatto e comparirà qui.</div>');
   }
@@ -1096,6 +1103,7 @@ body.inchat nav.tabs { display: none !important; }
       '<div class="avbtns"><label class="reset avlab" for="avfile">' + (state.profile && state.profile.avatar_url ? 'Cambia foto' : 'Scegli foto') + '</label>' + (state.profile && state.profile.avatar_url ? '<button class="reset" data-act="avdel" style="color:var(--muted)">Rimuovi</button>' : '') + '</div>' +
       '<input type="file" id="avfile" accept="image/*" hidden></div></div>' +
       '<form class="new accf" id="nameform" novalidate><label class="f" for="acc-n">Nome<small>È il nome con cui gli altri ti cercano.</small><input id="acc-n" type="text" maxlength="40" autocomplete="name" value="' + esc(nm) + '"></label><button class="btn ghost" type="submit">Salva il nome</button></form>' +
+      '<form class="new accf" id="bioform" novalidate><label class="f" for="acc-b">Descrizione<small>Poche righe su di te: la vedono le persone che aprono il tuo profilo. Con il profilo privato la vedono solo i tuoi follower.</small><textarea id="acc-b" rows="3" maxlength="200" placeholder="Es. Cucina semplice e di stagione. Nutrizionista a Forlì.">' + esc((state.profile && state.profile.bio) || '') + '</textarea></label><button class="btn ghost" type="submit">Salva la descrizione</button></form>' +
       '<form class="new accf" id="emailform" novalidate><label class="f" for="acc-e">Email<small>Ora: ' + esc(state.user.email) + '. Ti mandiamo un\'email per confermare il nuovo indirizzo.</small><input id="acc-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Nuovo indirizzo" maxlength="120"></label><button class="btn ghost" type="submit">Cambia email</button></form>' +
       '<form class="new accf" id="passform" novalidate><label class="f" for="acc-p">Nuova password<small>Almeno 8 caratteri.</small><input id="acc-p" type="password" autocomplete="new-password" maxlength="72"></label><label class="f" for="acc-p2">Ripeti la password<input id="acc-p2" type="password" autocomplete="new-password" maxlength="72"></label><button class="btn ghost" type="submit">Cambia password</button></form>' +
       '<h3 class="shc">I tuoi dati</h3><p class="hint" style="margin:0 0 10px">Puoi scaricare una copia dei tuoi dati o eliminare l\'account. L\'eliminazione cancella profilo, piatti, commenti, storie e messaggi e non si può annullare.</p>' +
@@ -1611,7 +1619,7 @@ body.inchat nav.tabs { display: none !important; }
     var q = state.q.replace(/[^\p{L}\p{N} ._-]/gu, ' ').replace(/\s+/g, ' ').trim();
     if (!liveMode() || q.length < 2) { state.realRes = []; state.realQ = ''; return; }
     realT = setTimeout(function () {
-      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
+      sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
         if (r.error) return;
         state.realRes = (r.data || []).filter(function (x) { return x.display_name || x.handle; }); state.realQ = q;
         (state.realRes).forEach(function (x) { state.realP[x.id] = x; });
@@ -1633,6 +1641,7 @@ body.inchat nav.tabs { display: none !important; }
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
       '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
       (liveMode() && id !== state.user.id ? '<div style="margin-top:12px"><button class="btn ghost" data-act="dmstart" data-u="' + esc(id) + '">Scrivi un messaggio</button></div>' : '') +
+      (x.bio && (!x.is_private || state.following[h] || id === (state.user && state.user.id)) ? '<p class="bio">' + esc(x.bio) + '</p>' : '') +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
         : (function () {
@@ -1779,7 +1788,7 @@ body.inchat nav.tabs { display: none !important; }
       state.stories = (r && r.data) || [];
       sb.from('story_likes').select('story_id').eq('user_id', me).then(function (q) { state.slikes = {}; ((q && q.data) || []).forEach(function (x) { state.slikes[x.story_id] = true; }); });
       var miss = Object.keys(storiesBy()).filter(function (u) { return u !== me; });
-      var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : Promise.resolve();
+      var p = miss.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : Promise.resolve();
       p = p.then(function () { return miss.length ? sb.from('profiles').select('id,story_replies').in('id', miss).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); }); }) : null; });
       return p.then(function () {
         refreshStoryBar();
@@ -2267,7 +2276,7 @@ body.inchat nav.tabs { display: none !important; }
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
-    var PC = 'id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs';
+    var PC = 'id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs,bio';
     sb.from('profiles').select(PC + ',story_audience,story_replies,story_views_on').eq('id', state.user.id).maybeSingle().then(function (r) {
       if (r.error) return sb.from('profiles').select(PC).eq('id', state.user.id).maybeSingle();
       return r;
@@ -2522,7 +2531,7 @@ body.inchat nav.tabs { display: none !important; }
       state.reqs = (a[1].data || []).map(function (f) { return f.follower_id; });
       var ids = state.reqs.concat((a[0].data || []).map(function (f) { return f.followed_id; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
       if (!ids.length) return null;
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
     });
   }
   function liveClick(act, el, id) {
@@ -2554,7 +2563,7 @@ body.inchat nav.tabs { display: none !important; }
       Promise.all([sb.from('story_views').select('viewer_id,created_at').eq('story_id', vsid).order('created_at', { ascending: false }), sb.from('story_likes').select('user_id').eq('story_id', vsid)]).then(function (aa) {
         var q = aa[0], lk = {}; ((aa[1] && aa[1].data) || []).forEach(function (x) { lk[x.user_id] = true; });
         var rows = (q && q.data) || [], ids = rows.map(function (r) { return r.viewer_id; }).filter(function (u) { return !state.realP[u]; });
-        var pr = ids.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (z) { (z.data || []).forEach(function (x) { state.realP[x.id] = x; }); }) : Promise.resolve();
+        var pr = ids.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', ids).then(function (z) { (z.data || []).forEach(function (x) { state.realP[x.id] = x; }); }) : Promise.resolve();
         pr.then(function () {
           if (!pn.parentNode) return;
           pn.innerHTML = '<h3>Visto da ' + rows.length + '<button class="reset" data-act="stvx" aria-label="Chiudi" style="font-size:20px">✕</button></h3>' +
@@ -2720,7 +2729,7 @@ body.inchat nav.tabs { display: none !important; }
       var after = state.notifs.length ? state.notifs[0].id + ':' + unreadCount() : '';
       var done = function () { updateBell(); if (state.tab === 'notifs' && before !== after) render(); };
       if (!ids.length) { done(); return null; }
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (q) {
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', ids).then(function (q) {
         (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); done();
       });
     });
@@ -2915,7 +2924,7 @@ body.inchat nav.tabs { display: none !important; }
       var ids = state.convs.map(otherOf).filter(function (v, i, arr) { return arr.indexOf(v) === i && !state.realP[v]; });
       var fin = function () { updateDmBadge(); if (dmKey() !== old) dmRefresh(); };
       if (!ids.length) { fin(); return null; }
-      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').in('id', ids).then(function (q) {
+      return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', ids).then(function (q) {
         (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); fin();
       });
     });
@@ -3029,7 +3038,7 @@ body.inchat nav.tabs { display: none !important; }
       box.innerHTML = cs.length ? cs.map(function (c) { var o = otherOf(c), x = state.realP[o] || {}; return shareRow(o, pName(o), x.handle ? '@' + x.handle : 'Su Gusto', x.avatar_url); }).join('') : '<p class="hint">Cerca una persona a cui inviare il piatto.</p>';
       return;
     }
-    sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
+    sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
       if (state.shareQ !== q || !document.getElementById('shlist')) return;
       var rows = (r.data || []); rows.forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); });
       document.getElementById('shlist').innerHTML = rows.length ? rows.map(function (x) { return shareRow(x.id, x.display_name || (x.handle ? '@' + x.handle : 'Utente'), x.handle ? '@' + x.handle : 'Su Gusto', x.avatar_url); }).join('') : '<p class="hint">Nessuna persona trovata.</p>';
@@ -3130,7 +3139,7 @@ body.inchat nav.tabs { display: none !important; }
     var keep = posts.filter(function (p) { return !p.real && !p.sample; });
     Array.prototype.splice.apply(posts, [0, posts.length].concat(real, keep, SAMPLES));
   }
-  var RSEL = 'id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,menu_id,menu_name,menu_pos,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts),likes(count),comments(count)';
+  var RSEL = 'id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,menu_id,menu_name,menu_pos,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio),likes(count),comments(count)';
   function loadPriv() {
     if (!liveMode()) return Promise.resolve();
     return sb.from('recipes').select(RSEL + ',for_link_id').not('for_link_id', 'is', null).order('created_at', { ascending: false }).limit(300).then(function (r) {
@@ -3271,6 +3280,16 @@ body.inchat nav.tabs { display: none !important; }
     if (id === 'dmform') {
       e.preventDefault(); var di = document.getElementById('dmin'), dt = di.value.trim(); if (!dt || !liveMode()) return true;
       di.value = ''; dmSend(dt); return true;
+    }
+    if (id === 'bioform') {
+      e.preventDefault(); if (!liveMode()) return true;
+      var bt = document.getElementById('acc-b').value.trim().replace(/\s*\n\s*/g, ' ');
+      if (bt.length > 200) { toast('Massimo 200 caratteri'); return true; }
+      sb.from('profiles').update({ bio: bt || null }).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast('Non riesco a salvare la descrizione'); return; }
+        state.profile.bio = bt || null; toast(bt ? 'Descrizione salvata' : 'Descrizione rimossa');
+      });
+      return true;
     }
     if (id === 'nameform' || id === 'emailform' || id === 'passform') {
       e.preventDefault(); if (!liveMode()) return true;
@@ -3999,8 +4018,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 41; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051430';
+  var VERSION = 42; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051500';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}

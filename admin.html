@@ -198,7 +198,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 10;
+  var ADMIN_VERSION = 11;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -381,6 +381,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     var nm = u.name || u.email;
     return '<div class="dh">' + av(u.name, u.avatar, true) + '<div class="t"><h2>' + esc(u.name || 'Senza nome') + '</h2><span class="muted">' + (u.handle ? '@' + esc(u.handle) : '') + '</span></div>' + close + '</div>' +
       '<div class="acts">' + (S.ownerIds.indexOf(u.id) >= 0 ? '<span class="chip ok">Proprietario</span>' : u.admin ? '<span class="chip ok">Admin</span>' : '') + (u.type === 'pro' ? '<span class="chip ' + (u.verified ? 'ok' : 'warn') + '">Nutrizionista' + (u.verified ? ' verificato' : ' da verificare') + '</span>' : '') + (u.suspended ? '<span class="chip bad">Sospeso</span>' : '') + (u.private ? '<span class="chip">Profilo privato</span>' : '') + (u.confirmed ? '' : '<span class="chip warn">Email non confermata</span>') + '</div>' +
+      (u.bio ? '<p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)"><b>Descrizione:</b> ' + esc(u.bio) + '</p>' : '') +
       '<div class="facts">' + fact(u.recipes, 'piatti') + fact(u.followers, 'follower') + fact(u.following, 'seguiti') + fact(u.comments, 'commenti') + fact(u.likes_given, 'like dati') + fact(u.saves, 'salvati') + '</div>' +
       '<div class="kv"><div><span>Email</span><span>' + esc(u.email) + '</span></div><div><span>Iscritto</span><span>' + fdt(u.created_at) + '</span></div><div><span>Ultimo accesso</span><span>' + (u.last_sign_in ? ago(u.last_sign_in) : 'mai') + '</span></div>' +
       '<div><span>Termini accettati</span><span>' + (u.terms_version ? esc(u.terms_version) + (u.terms_at ? ' · ' + fdate(u.terms_at) : '') : 'non registrati') + '</span></div><div><span>Notifiche push</span><span>' + (u.push ? u.push + ' dispositivo/i' : 'nessuna') + '</span></div>' +
