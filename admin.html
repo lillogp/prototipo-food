@@ -198,7 +198,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 8;
+  var ADMIN_VERSION = 9;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -333,7 +333,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       '<span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + '</span>' +
       (st ? '<span><span class="chip ' + ALBO_ST[st][1] + '">' + ALBO_ST[st][0] + '</span> ' + esc(x.albo) + ' · n. <b>' + esc(x.albo_number) + '</b> · inviata ' + fdt(x.submitted_at) + '</span>' : (x.pro_verified ? '' : '<span class="muted">Nessun documento inviato.</span>')) +
       (st === 'rejected' && x.reject_reason ? '<span style="color:var(--fg)">Motivo: «' + esc(x.reject_reason) + '»</span>' : '') + '</div>' +
-      '<div class="acts" style="align-content:flex-start">' + (docNow ? '<button class="btn sm ghost" data-act="prodoc" data-u="' + esc(x.user_id) + '">Apri il documento</button>' : '') +
+      '<div class="acts" style="align-content:flex-start">' + (docNow ? '<button class="btn sm ghost" data-act="prodoc" data-u="' + esc(x.user_id) + '">Apri il documento</button>' : '') + (docNow && x.pro_verified ? '<button class="btn sm danger" data-act="prodocdel" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '">Elimina il file</button>' : '') +
       (!x.pro_verified && (st === 'pending') ? '<button class="btn sm" data-act="proreview" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="1">Approva</button><button class="btn sm danger" data-act="proreject" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '">Rifiuta</button>' : '') +
       (!x.pro_verified && st !== 'pending' ? '<button class="btn sm ghost" data-act="ver" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="1" title="Verifica senza documento">Verifica senza documento</button>' : '') +
       (x.pro_verified ? '<button class="btn sm ghost" data-act="ver" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="0">Revoca la verifica</button>' : '') + '</div></div>';
@@ -343,7 +343,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     var pend = S.pros.filter(function (x) { return x.status === 'pending' && !x.pro_verified; }), rest = S.pros.filter(function (x) { return !(x.status === 'pending' && !x.pro_verified); });
     var todo = rest.filter(function (x) { return !x.pro_verified; }), done = rest.filter(function (x) { return x.pro_verified; });
     var sec = function (t, l, e) { return l.length ? '<h3 style="margin:18px 0 10px">' + t + ' <span class="muted" style="font-weight:500">(' + l.length + ')</span></h3><div class="stack">' + l.map(proCard).join('') + '</div>' : (e || ''); };
-    return '<p class="note">Controlla il documento e il numero d\'iscrizione all\'albo, poi approva o rifiuta. Il file viene cancellato dopo la decisione. Solo i nutrizionisti verificati possono invitare clienti.</p>' +
+    return '<p class="note">Controlla il documento e il numero d\'iscrizione all\'albo, poi approva o rifiuta. Il documento approvato resta consultabile qui e nel profilo del nutrizionista (puoi eliminarlo); quello rifiutato viene cancellato. Solo i nutrizionisti verificati possono invitare clienti.</p>' +
       sec('Da esaminare', pend, '<div class="empty"><b>Nessun documento da esaminare</b>Quando un nutrizionista invia il documento compare qui.</div>') + sec('Senza documento o rifiutati', todo) + sec('Verificati', done);
   }
   function reportsHTML() {
@@ -358,7 +358,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
         '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div>';
     }).join('') + '</div>';
   }
-  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
+  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
   function logHTML() {
     if (!S.log.length) return '<div class="empty"><b>Registro vuoto</b>Qui compaiono le azioni di moderazione fatte dagli amministratori.</div>';
     return '<div class="panel"><div class="lst">' + S.log.map(function (x) { return '<div class="li"><span class="dot"></span><span class="t"><b>' + esc(ACT[x.action] || x.action) + '</b><span>' + esc(x.target || '') + '</span></span><span class="r">' + esc(x.admin_name || 'Admin') + ' · ' + fdt(x.created_at) + '</span></div>'; }).join('') + '</div></div>';
@@ -385,6 +385,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       '<div class="kv"><div><span>Email</span><span>' + esc(u.email) + '</span></div><div><span>Iscritto</span><span>' + fdt(u.created_at) + '</span></div><div><span>Ultimo accesso</span><span>' + (u.last_sign_in ? ago(u.last_sign_in) : 'mai') + '</span></div>' +
       '<div><span>Termini accettati</span><span>' + (u.terms_version ? esc(u.terms_version) + (u.terms_at ? ' · ' + fdate(u.terms_at) : '') : 'non registrati') + '</span></div><div><span>Notifiche push</span><span>' + (u.push ? u.push + ' dispositivo/i' : 'nessuna') + '</span></div>' +
       '<div><span>Storie / messaggi inviati</span><span>' + n(u.stories) + ' / ' + n(u.dms_sent) + '</span></div><div><span>Segnalazioni ricevute / fatte</span><span>' + n(u.reports_received) + ' / ' + n(u.reports_made) + '</span></div><div><span>Bloccato da</span><span>' + n(u.blocked_by) + ' utenti</span></div></div>' +
+      proVerifBlock(u) +
       (u.last_recipes.length ? '<h3>Ultimi piatti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_recipes.map(function (x) { return '<button class="li" data-act="recipe" data-id="' + x.id + '">' + (x.media_url ? '<img class="thumb" src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '') + '<span class="t"><b>' + esc(x.title) + '</b></span><span class="r">' + ago(x.created_at) + '</span></button>'; }).join('') + '</div>' : '') +
       (u.last_comments.length ? '<h3>Ultimi commenti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_comments.map(function (x) { return '<div class="li"><span class="t"><b style="white-space:normal">' + esc(x.body) + '</b><span>su «' + esc(x.title || 'piatto eliminato') + '» · ' + ago(x.created_at) + '</span></span><button class="btn sm danger" data-act="del" data-k="delcom" data-id="' + x.id + '">Elimina</button></div>'; }).join('') + '</div>' : '') +
       (u.reports.length ? '<h3>Segnalazioni ricevute</h3><div class="lst panel" style="padding:6px 10px">' + u.reports.map(function (x) { return '<div class="li"><span class="t"><b>' + esc(REASON[x.reason] || x.reason) + (x.content_type ? ' · ' + (x.content_type === 'recipe' ? 'piatto' : x.content_type) : '') + '</b><span>' + (x.details ? '«' + esc(x.details) + '» · ' : '') + fdt(x.created_at) + '</span></span><span class="chip ' + (x.status === 'open' ? 'bad' : '') + '">' + (x.status === 'open' ? 'aperta' : 'chiusa') + '</span></div>'; }).join('') + '</div>' : '') +
@@ -393,6 +394,13 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       (u.admin ? '' : '<div class="acts" style="margin-top:4px">' + (u.type === 'pro' ? '<button class="btn sm ghost" data-act="gotab" data-v="pros">' + (u.verified ? 'Gestisci la verifica' : 'Vai alla verifica') + '</button>' : '') +
         '<button class="btn sm ' + (u.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.suspended ? '0' : '1') + '">' + (u.suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
         '<a class="btn sm ghost" href="mailto:' + esc(u.email) + '" style="text-decoration:none">Scrivi email</a><button class="btn sm danger" data-act="del" data-k="deluser" data-id="' + esc(u.id) + '" data-n="' + esc(nm) + '">Elimina account</button></div>');
+  }
+  function proVerifBlock(u) {
+    if (u.type !== 'pro') return '';
+    var x = S.pros.filter(function (p) { return p.user_id === u.id; })[0]; if (!x) return '';
+    return '<h3>Verifica da nutrizionista</h3><div class="kv"><div><span>Stato</span><span>' + (x.pro_verified ? '<span class="chip ok">Verificato</span>' : x.status === 'pending' ? '<span class="chip warn">In esame</span>' : x.status === 'rejected' ? '<span class="chip bad">Rifiutata</span>' : '<span class="chip">Nessun documento</span>') + '</span></div>' +
+      (x.albo ? '<div><span>Albo</span><span>' + esc(x.albo) + '</span></div><div><span>Numero d\'iscrizione</span><span>' + esc(x.albo_number) + '</span></div><div><span>Inviata</span><span>' + fdt(x.submitted_at) + '</span></div>' + (x.reviewed_at ? '<div><span>Esaminata</span><span>' + fdt(x.reviewed_at) + '</span></div>' : '') : '') +
+      '<div><span>Documento</span><span>' + (x.doc_path ? '<button class="btn sm ghost" data-act="prodoc" data-u="' + esc(x.user_id) + '">Apri il documento</button>' : 'non archiviato') + '</span></div></div>';
   }
   function recipeDrawer(r, close) {
     if (!r) return '<div class="dh"><div class="t"><h2>Piatto non trovato</h2></div>' + close + '</div><p class="msg">Potrebbe essere stato rimosso.</p>';
@@ -607,12 +615,25 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
         if (r.error || !r.data) { toast('Documento non disponibile'); return; }
         var u = r.data.signedUrl, pdf = /\.pdf$/i.test(pr.doc_path);
         dlg('<h2>Documento di ' + esc(pr.name || pr.email) + '</h2><p class="msg">' + esc(pr.albo) + ' · n. ' + esc(pr.albo_number) + '</p>' + (pdf ? '<a class="btn" href="' + esc(u) + '" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Apri il PDF</a>' : '<img class="big" src="' + esc(u) + '" alt="Documento">') +
-          '<p class="msg">Il link vale 5 minuti. Verifica nome e numero sul sito dell\'albo, poi approva o rifiuta.</p><div class="acts"><button class="btn" data-act="proreview" data-u="' + esc(pr.user_id) + '" data-n="' + esc(pr.name || pr.email) + '" data-v="1">Approva</button><button class="btn danger" data-act="proreject" data-u="' + esc(pr.user_id) + '" data-n="' + esc(pr.name || pr.email) + '">Rifiuta</button><button class="btn ghost" data-act="close">Chiudi</button></div>');
+          '<p class="msg">Il link vale 5 minuti.' + (pr.pro_verified ? '' : ' Verifica nome e numero sul sito dell\'albo, poi approva o rifiuta.') + '</p><div class="acts">' + (pr.pro_verified ? '' : '<button class="btn" data-act="proreview" data-u="' + esc(pr.user_id) + '" data-n="' + esc(pr.name || pr.email) + '" data-v="1">Approva</button><button class="btn danger" data-act="proreject" data-u="' + esc(pr.user_id) + '" data-n="' + esc(pr.name || pr.email) + '">Rifiuta</button>') + '<button class="btn ghost" data-act="close">Chiudi</button></div>');
+      });
+      return;
+    }
+    if (act === 'prodocdel') {
+      dlg('<h2>Eliminare il file di ' + esc(el.getAttribute('data-n')) + '?</h2><p class="msg">Il documento viene cancellato per sempre. Restano albo, numero ed esito della verifica.</p><div class="acts"><button class="btn danger" data-act="prodocdelyes" data-u="' + esc(el.getAttribute('data-u')) + '" data-n="' + esc(el.getAttribute('data-n')) + '">Sì, elimina</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'prodocdelyes') {
+      var du = el.getAttribute('data-u'), dn2 = el.getAttribute('data-n') || du;
+      sb.rpc('admin_delete_pro_doc', { target: du }).then(function (r) {
+        closeDlg(); if (r.error) { err(r.error); return; }
+        var rm3 = r.data ? sb.storage.from('pro-docs').remove([r.data]).then(function () {}, function () {}) : Promise.resolve();
+        logAct('delete_pro_doc', dn2); toast('File eliminato'); rm3.then(function () { loadAll().then(refreshDrawer); });
       });
       return;
     }
     if (act === 'proreview') {
-      dlg('<h2>Approvare ' + esc(el.getAttribute('data-n')) + '?</h2><p class="msg">Il profilo diventa «Nutrizionista verificato» e può invitare clienti. Il documento viene cancellato.</p><div class="acts"><button class="btn" data-act="proreviewyes" data-u="' + esc(el.getAttribute('data-u')) + '" data-n="' + esc(el.getAttribute('data-n')) + '">Sì, approva</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      dlg('<h2>Approvare ' + esc(el.getAttribute('data-n')) + '?</h2><p class="msg">Il profilo diventa «Nutrizionista verificato» e può invitare clienti. Il documento resta archiviato nel suo profilo: puoi riaprirlo o eliminarlo quando vuoi.</p><div class="acts"><button class="btn" data-act="proreviewyes" data-u="' + esc(el.getAttribute('data-u')) + '" data-n="' + esc(el.getAttribute('data-n')) + '">Sì, approva</button><button class="btn ghost" data-act="close">Annulla</button></div>');
       return;
     }
     if (act === 'proreject') {

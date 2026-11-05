@@ -2241,13 +2241,13 @@ body.inchat nav.tabs { display: none !important; }
   function viewProVerify() {
     var pv = state.pv, h = '<div class="view-h"><h1>Verifica del profilo</h1><p>Per invitare clienti, confermiamo la tua iscrizione all\'albo.</p></div>';
     if (pv && pv.status === 'pending') return h + '<div class="empty"><b>Documento in esame</b>Hai inviato il documento il ' + new Date(pv.submitted_at).toLocaleDateString('it-IT') + ' (' + esc(pv.albo) + ', n. ' + esc(pv.albo_number) + '). Lo controlliamo appena possibile; quando è approvato trovi qui l\'elenco dei clienti.</div>' +
-      '<p class="hint" style="margin:10px 0 0">Il file viene cancellato subito dopo l\'esame.</p>';
+      '<p class="hint" style="margin:10px 0 0">Il documento lo vede solo l\'amministratore di Gusto.</p>';
     return h + (pv && pv.status === 'rejected' ? '<div class="note" style="margin:0 0 12px"><b>Verifica non riuscita.</b> ' + (pv.reject_reason ? esc(pv.reject_reason) : 'Controlla i dati e invia di nuovo il documento.') + '</div>' : '') +
       '<form id="pvform" class="new" novalidate>' +
       '<label class="f" for="pv-albo">Albo od ordine<select id="pv-albo">' + PV_ALBI.map(function (a) { return '<option' + (pv && pv.albo === a ? ' selected' : '') + '>' + a + '</option>'; }).join('') + '</select></label>' +
       '<label class="f" for="pv-num">Numero di iscrizione<input id="pv-num" type="text" maxlength="40" autocomplete="off" value="' + esc(pv ? pv.albo_number : '') + '" placeholder="Es. AA_012345"></label>' +
       '<div class="f"><span>Documento (PDF o foto, massimo 5 MB)</span><label class="reset avlab" for="pvfile" id="pvlab" style="display:inline-block;margin-top:6px">Scegli il file</label><input type="file" id="pvfile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>' +
-      '<p class="hint" style="margin:0">Carica la tessera o il certificato di iscrizione all\'albo. Lo vede solo l\'amministratore di Gusto, serve solo a verificare il profilo e viene cancellato subito dopo l\'esame.</p>' +
+      '<p class="hint" style="margin:0">Carica la tessera o il certificato di iscrizione all\'albo. Lo vede solo l\'amministratore di Gusto e serve a verificare il profilo. Lo conserviamo finché il profilo è attivo; puoi chiederne la cancellazione in ogni momento.</p>' +
       '<button class="btn" type="submit" style="width:100%">Invia per la verifica</button></form>';
   }
   function proLoad() {
@@ -3842,7 +3842,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 37; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 38; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611051130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
