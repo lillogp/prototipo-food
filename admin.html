@@ -5,7 +5,7 @@
 <title>Gusto · Amministrazione</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<link rel="manifest" href="admin.webmanifest?v=1">
+<link rel="manifest" href="admin.webmanifest?v=2">
 <link rel="icon" href="admin-icon-192.png">
 <link rel="apple-touch-icon" href="admin-apple-touch-icon.png">
 <meta name="theme-color" content="#222B16">
@@ -192,7 +192,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 4;
+  var ADMIN_VERSION = 5;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],

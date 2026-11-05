@@ -1,2 +1,2 @@
-{"id":"./admin.html","name":"Gusto Admin","short_name":"Gusto Admin","description":"Amministrazione di Gusto","start_url":"./admin.html","scope":"./","display":"standalone","background_color":"#222B16","theme_color":"#222B16","lang":"it",
+{"id":"./admin.html","name":"Gusto Admin","short_name":"Gusto Admin","description":"Amministrazione di Gusto","start_url":"./admin.html","scope":"./admin.html","display":"standalone","background_color":"#222B16","theme_color":"#222B16","lang":"it",
 "icons":[{"src":"admin-icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},{"src":"admin-icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}]}
