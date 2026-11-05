@@ -3492,7 +3492,7 @@ body.inchat nav.tabs { display: none !important; }
       });
       return true;
     }
-    if (act === 'menunext') { state.menuMore = true; var nf = document.getElementById('newform'); if (nf && nf.requestSubmit) nf.requestSubmit(); else if (nf) nf.dispatchEvent(new Event('submit', { cancelable: true })); return true; }
+    if (act === 'menunext') { state.menuMore = true; var nfm = document.getElementById('newform'); if (nfm && nfm.requestSubmit) nfm.requestSubmit(); else if (nfm) nfm.dispatchEvent(new Event('submit', { cancelable: true })); return true; }
     if (act === 'install') { if (window.__doInstall) window.__doInstall(); return true; }
     if (act === 'logout') {
       if (sb) sb.auth.signOut({ scope: 'local' }).then(function () { try { localStorage.removeItem('gusto-v1'); localStorage.removeItem('gusto-guest'); } catch (e) {} location.reload(); });
@@ -3537,9 +3537,9 @@ body.inchat nav.tabs { display: none !important; }
       var list = shopList(), cnt = 0;
       list.forEach(function (it) {
         if (!state.checked[it.key] || it.fam === 'nq' || !(it.need > 0)) return;
-        pantryAdd(it.n, it.need, nf(it.fam)); cnt++;
+        pantryAdd(it.n, it.need, nf(it.fam)); delete state.checked[it.key]; cnt++;
       });
-      state.checked = {}; persist(); render(); toast(cnt ? 'Messi in dispensa: ' + cnt : 'Spunta gli ingredienti presi'); return true;
+      persist(); render(); toast(cnt ? 'Messi in dispensa: ' + cnt : 'Gli articoli senza quantità non vanno in dispensa: aggiungili dalla Dispensa'); return true;
     }
     if (act === 'shopper') { state.shopper = el.getAttribute('data-pid'); render(); return true; }
     if (act === 'shopxdel') {
@@ -3964,8 +3964,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 39; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051240';
+  var VERSION = 40; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051320';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
