@@ -192,14 +192,14 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 5;
+  var ADMIN_VERSION = 6;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
     ['recipes', 'Piatti', 'M4 13h16a8 8 0 01-16 0zM12 5v4M8 6v3M16 6v3'], ['stories', 'Storie', 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v8M8 12h8'], ['comments', 'Commenti', 'M4 5h16v11H9l-5 4z'],
     ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
   var FRESH = { user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
-    recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, busy: false, msg: '' };
+    recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, owner: false, ownerIds: [], busy: false, msg: '' };
   var S = JSON.parse(JSON.stringify(FRESH));
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
 
@@ -340,7 +340,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
         '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div>';
     }).join('') + '</div>';
   }
-  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
+  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
   function logHTML() {
     if (!S.log.length) return '<div class="empty"><b>Registro vuoto</b>Qui compaiono le azioni di moderazione fatte dagli amministratori.</div>';
     return '<div class="panel"><div class="lst">' + S.log.map(function (x) { return '<div class="li"><span class="dot"></span><span class="t"><b>' + esc(ACT[x.action] || x.action) + '</b><span>' + esc(x.target || '') + '</span></span><span class="r">' + esc(x.admin_name || 'Admin') + ' · ' + fdt(x.created_at) + '</span></div>'; }).join('') + '</div></div>';
@@ -362,7 +362,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     if (!u) return '<div class="dh"><div class="t"><h2>Utente non trovato</h2></div>' + close + '</div><p class="msg">Potrebbe essere stato eliminato.</p>';
     var nm = u.name || u.email;
     return '<div class="dh">' + av(u.name, u.avatar, true) + '<div class="t"><h2>' + esc(u.name || 'Senza nome') + '</h2><span class="muted">' + (u.handle ? '@' + esc(u.handle) : '') + '</span></div>' + close + '</div>' +
-      '<div class="acts">' + (u.admin ? '<span class="chip ok">Admin</span>' : '') + (u.type === 'pro' ? '<span class="chip ' + (u.verified ? 'ok' : 'warn') + '">Nutrizionista' + (u.verified ? ' verificato' : ' da verificare') + '</span>' : '') + (u.suspended ? '<span class="chip bad">Sospeso</span>' : '') + (u.private ? '<span class="chip">Profilo privato</span>' : '') + (u.confirmed ? '' : '<span class="chip warn">Email non confermata</span>') + '</div>' +
+      '<div class="acts">' + (S.ownerIds.indexOf(u.id) >= 0 ? '<span class="chip ok">Proprietario</span>' : u.admin ? '<span class="chip ok">Admin</span>' : '') + (u.type === 'pro' ? '<span class="chip ' + (u.verified ? 'ok' : 'warn') + '">Nutrizionista' + (u.verified ? ' verificato' : ' da verificare') + '</span>' : '') + (u.suspended ? '<span class="chip bad">Sospeso</span>' : '') + (u.private ? '<span class="chip">Profilo privato</span>' : '') + (u.confirmed ? '' : '<span class="chip warn">Email non confermata</span>') + '</div>' +
       '<div class="facts">' + fact(u.recipes, 'piatti') + fact(u.followers, 'follower') + fact(u.following, 'seguiti') + fact(u.comments, 'commenti') + fact(u.likes_given, 'like dati') + fact(u.saves, 'salvati') + '</div>' +
       '<div class="kv"><div><span>Email</span><span>' + esc(u.email) + '</span></div><div><span>Iscritto</span><span>' + fdt(u.created_at) + '</span></div><div><span>Ultimo accesso</span><span>' + (u.last_sign_in ? ago(u.last_sign_in) : 'mai') + '</span></div>' +
       '<div><span>Termini accettati</span><span>' + (u.terms_version ? esc(u.terms_version) + (u.terms_at ? ' · ' + fdate(u.terms_at) : '') : 'non registrati') + '</span></div><div><span>Notifiche push</span><span>' + (u.push ? u.push + ' dispositivo/i' : 'nessuna') + '</span></div>' +
@@ -370,6 +370,8 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       (u.last_recipes.length ? '<h3>Ultimi piatti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_recipes.map(function (x) { return '<button class="li" data-act="recipe" data-id="' + x.id + '">' + (x.media_url ? '<img class="thumb" src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '') + '<span class="t"><b>' + esc(x.title) + '</b></span><span class="r">' + ago(x.created_at) + '</span></button>'; }).join('') + '</div>' : '') +
       (u.last_comments.length ? '<h3>Ultimi commenti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_comments.map(function (x) { return '<div class="li"><span class="t"><b style="white-space:normal">' + esc(x.body) + '</b><span>su «' + esc(x.title || 'piatto eliminato') + '» · ' + ago(x.created_at) + '</span></span><button class="btn sm danger" data-act="del" data-k="delcom" data-id="' + x.id + '">Elimina</button></div>'; }).join('') + '</div>' : '') +
       (u.reports.length ? '<h3>Segnalazioni ricevute</h3><div class="lst panel" style="padding:6px 10px">' + u.reports.map(function (x) { return '<div class="li"><span class="t"><b>' + esc(REASON[x.reason] || x.reason) + (x.content_type ? ' · ' + (x.content_type === 'recipe' ? 'piatto' : x.content_type) : '') + '</b><span>' + (x.details ? '«' + esc(x.details) + '» · ' : '') + fdt(x.created_at) + '</span></span><span class="chip ' + (x.status === 'open' ? 'bad' : '') + '">' + (x.status === 'open' ? 'aperta' : 'chiusa') + '</span></div>'; }).join('') + '</div>' : '') +
+      (S.owner && !u.admin && S.ownerIds.indexOf(u.id) < 0 && !u.suspended ? '<div class="panel"><b>Ruolo di amministratore</b><p class="msg" style="margin:4px 0 10px">Un amministratore può moderare contenuti e utenti, ma non può nominare altri amministratori: solo tu puoi.</p><button class="btn sm" data-act="setadmin" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="1">Rendi amministratore</button></div>' : '') +
+      (S.owner && u.admin && S.ownerIds.indexOf(u.id) < 0 ? '<div class="panel"><b>Amministratore</b><p class="msg" style="margin:4px 0 10px">Togliendo il ruolo, la persona torna un utente normale.</p><button class="btn sm danger" data-act="setadmin" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="0">Togli il ruolo di amministratore</button></div>' : '') +
       (u.admin ? '' : '<div class="acts" style="margin-top:4px">' + (u.type === 'pro' ? '<button class="btn sm' + (u.verified ? ' ghost' : '') + '" data-act="ver" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.verified ? '0' : '1') + '">' + (u.verified ? 'Revoca la verifica' : 'Verifica nutrizionista') + '</button>' : '') +
         '<button class="btn sm ' + (u.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.suspended ? '0' : '1') + '">' + (u.suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
         '<a class="btn sm ghost" href="mailto:' + esc(u.email) + '" style="text-decoration:none">Scrivi email</a><button class="btn sm danger" data-act="del" data-k="deluser" data-id="' + esc(u.id) + '" data-n="' + esc(nm) + '">Elimina account</button></div>');
@@ -469,8 +471,8 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   }
   function loadAll() {
     S.loading = true; render();
-    return Promise.all([sb.rpc('admin_overview'), sb.rpc('admin_pros'), sb.rpc('admin_reports2', { st: S.rtab })]).then(function (a) {
-      S.loading = false;
+    return Promise.all([sb.rpc('admin_overview'), sb.rpc('admin_pros'), sb.rpc('admin_reports2', { st: S.rtab }), sb.rpc('admin_roles')]).then(function (a) {
+      S.loading = false; var ro = a[3] && a[3].data; S.owner = !!(ro && ro.me_owner); S.ownerIds = (ro && ro.owner_ids) || [];
       if (a[0].error && /non autorizzato/.test(a[0].error.message || '')) { err(a[0].error); render(); return; }
       S.ovErr = !!a[0].error; S.ov = a[0].error ? null : a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; S.updated = new Date(); render();
       return loadTab();
@@ -569,6 +571,16 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
         if (dk === 'deluser' || (dk === 'delrec' && S.dr && S.dr.kind === 'recipe' && String(S.dr.id) === String(id))) { S.dr = null; renderDrawer(); }
         toast('Eliminato'); loadAll().then(refreshDrawer);
       });
+      return;
+    }
+    if (act === 'setadmin') {
+      var au = el.getAttribute('data-u'), an = el.getAttribute('data-n'), av2 = v === '1';
+      dlg('<h2>' + (av2 ? 'Nominare amministratore ' : 'Togliere il ruolo a ') + esc(an) + '?</h2><p class="msg">' + (av2 ? 'Potrà vedere il pannello admin, i dati di tutti gli utenti (email comprese), rimuovere contenuti e sospendere account. Non potrà nominare altri amministratori.' : 'Non potrà più accedere al pannello admin.') + '</p><div class="acts"><button class="btn' + (av2 ? '' : ' danger') + '" data-act="setadminyes" data-u="' + esc(au) + '" data-n="' + esc(an) + '" data-v="' + (av2 ? '1' : '0') + '">' + (av2 ? 'Sì, nomina' : 'Sì, togli il ruolo') + '</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'setadminyes') {
+      var bu = el.getAttribute('data-u'), bn = el.getAttribute('data-n') || bu, bv = v === '1';
+      sb.rpc('admin_set_admin', { target: bu, flag: bv }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } logAct(bv ? 'make_admin' : 'remove_admin', bn); toast(bv ? 'Amministratore nominato' : 'Ruolo tolto'); loadAll().then(refreshDrawer); });
       return;
     }
     if (act === 'ver') {
