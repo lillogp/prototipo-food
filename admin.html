@@ -192,7 +192,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 3;
+  var ADMIN_VERSION = 4;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -443,7 +443,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : reportsHTML();
     return '<div class="shell"><aside class="side"><div class="logo">Gusto<small>Amministrazione</small></div><nav class="nav" aria-label="Sezioni">' + TABS.map(function (t) {
       return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + '</button>'; }).join('') +
-      '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span>' + (isStandalone() ? '' : '<button class="btn sm" data-act="install">Installa app</button>') + '<button class="btn ghost sm" data-act="logout">Esci</button></div></aside>' +
+      '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span>' + '<button class="btn sm" data-act="install">' + (isStandalone() ? 'App' : 'Installa app') + '</button>' + '<button class="btn ghost sm" data-act="logout">Esci</button></div></aside>' +
       '<main class="main"><div class="top"><div><h2>' + title + '</h2><div class="sub">' + (S.updated ? 'Aggiornato alle ' + S.updated.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '') + '</div></div><button class="btn ghost sm" data-act="refresh"' + (S.loading ? ' disabled' : '') + '>' + (S.loading ? 'Aggiorno…' : 'Aggiorna') + '</button></div>' + body + '</main></div>' + bnavHTML(oc);
   }
   function render() {
@@ -527,6 +527,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     }
     if (act === 'mtab') { closeDlg(); S.dr = null; renderDrawer(); setTab(v); window.scrollTo(0, 0); return; }
     if (act === 'install') {
+      if (isStandalone()) { dlg('<h2>App già installata</h2><p class="msg">Stai usando Gusto Admin come app installata (a schermo intero, senza barra del browser).</p><button class="btn ghost" data-act="close">Ok</button>'); return; }
       if (deferredInstall) { deferredInstall.prompt(); deferredInstall.userChoice.then(function () { deferredInstall = null; }); return; }
       var ios = /iphone|ipad|ipod/i.test(navigator.userAgent), desk = window.innerWidth >= 900 && !/mobile|android|iphone|ipad/i.test(navigator.userAgent);
       dlg('<h2>Installa l\'app</h2>' + (ios ? '<p class="msg">Su iPhone e iPad si fa da Safari: tocca <b>Condividi</b> (il quadrato con la freccia), poi <b>Aggiungi alla schermata Home</b>.</p>'
