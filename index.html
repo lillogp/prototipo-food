@@ -2703,7 +2703,7 @@ body.inchat nav.tabs { display: none !important; }
   var NTXT = {
     follow: 'ha iniziato a seguirti', follow_request: 'ha chiesto di seguirti', follow_accepted: 'ha accettato la tua richiesta',
     like: 'ha messo mi piace a un tuo piatto', story_like: 'ha messo mi piace alla tua storia', comment_like: 'ha messo mi piace al tuo commento', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
-    plan: 'ti ha inviato un nuovo piano'
+    plan: 'ti ha inviato un nuovo piano', admin_warning: 'ti ha inviato un avviso'
   };
   function avHTML(url, nm) { return '<div class="av">' + (url ? '<img src="' + esc(url) + '" alt="" loading="lazy">' : esc(((nm || '?')[0] || '?').toUpperCase())) + '</div>'; }
   function ago(iso) {
@@ -2735,7 +2735,7 @@ body.inchat nav.tabs { display: none !important; }
     });
   }
   setInterval(function () { if (liveMode() && !document.hidden) { loadNotifs(); loadDMs(); } }, 20000);
-  function nActor(n) { var x = state.realP[n.actor_id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Qualcuno'); }
+  function nActor(n) { if (n.type === 'admin_warning') return 'Gusto'; var x = state.realP[n.actor_id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Qualcuno'); }
   function viewNotifs() {
     var head = '<div class="view-h"><h1>Notifiche</h1><p>Follow, richieste e novità.</p></div>';
     if (!liveMode()) return head + '<div class="empty"><b>Serve un account</b>Accedi per ricevere le notifiche.</div>';
@@ -2753,6 +2753,11 @@ body.inchat nav.tabs { display: none !important; }
   }
   function notifOpen(n) {
     var t = n.type, aid = n.actor_id;
+    if (t === 'admin_warning') {
+      var rf = n.ref || {};
+      sheetOpen('Avviso da Gusto', 'Avviso da Gusto', (rf.reason ? '<div class="meta"><span>' + esc(rf.reason) + '</span></div>' : '') + '<p style="margin:0;white-space:pre-wrap">' + esc(rf.body || '') + '</p><p class="hint" style="margin:0">È un messaggio dell\'amministrazione di Gusto, a senso unico. Per i dettagli leggi i <a href="termini.html" target="_blank" rel="noopener">Termini</a>.</p><button class="btn" data-act="close">Ho capito</button>');
+      return;
+    }
     if ((t === 'like' || t === 'comment' || t === 'comment_like') && n.ref && n.ref.recipe_id) {
       var rpid = RB + n.ref.recipe_id;
       if (byId(rpid)) { openSheet(rpid); return; }
@@ -4018,8 +4023,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 42; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051500';
+  var VERSION = 43; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051530';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}

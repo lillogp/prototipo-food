@@ -152,6 +152,9 @@ button.tr:hover { background: var(--bg); }
 ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
 .bg { position: fixed; inset: 0; background: rgba(20, 12, 8, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 40; }
 .dlg { background: var(--bg); border-radius: 18px; padding: 20px; max-width: 520px; width: 100%; max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.dlg .fld { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; }
+.dlg .fld select, .dlg .fld textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card, #fff); color: var(--fg); width: 100%; box-sizing: border-box; }
+.dlg .fld textarea { resize: vertical; line-height: 1.4; }
 .dlg img.big { width: 100%; max-height: 62vh; object-fit: contain; border-radius: 12px; background: #000; }
 .chat { display: flex; flex-direction: column; gap: 8px; }
 .m { max-width: 85%; border-radius: 14px; padding: 8px 12px; background: var(--soft); align-self: flex-start; }
@@ -198,7 +201,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 11;
+  var ADMIN_VERSION = 12;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -354,11 +357,19 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
         '<span><span class="chip warn">' + esc(REASON[r.reason] || r.reason) + '</span> segnalato da ' + esc(r.reporter_name || 'utente') + ' · ' + fdt(r.created_at) + '</span>' + (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') +
         (r.content_type === 'recipe' ? '<button class="li" data-act="recipe" data-id="' + esc(r.content_id) + '" style="border:1px solid var(--line);margin-top:4px;background:var(--bg)">' + (r.content_media ? '<img class="thumb" src="' + esc(r.content_media) + '" alt="">' : '') + '<span class="t"><b>' + esc(r.content_title || 'Piatto già rimosso') + '</b><span>Piatto segnalato · apri</span></span></button>' : '') + '</div>' +
         '<div class="acts" style="align-content:flex-start">' + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">Conversazione</button>' : '') +
+        '<button class="btn sm" data-act="warn" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-r="' + esc(r.reason) + '">Avvisa</button>' +
         '<button class="btn sm ' + (r.reported_suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-v="' + (r.reported_suspended ? '0' : '1') + '">' + (r.reported_suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
         '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div>';
     }).join('') + '</div>';
   }
-  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
+  var WARNTXT = {
+    contenuto: ['Contenuto inappropriato', 'Un tuo contenuto non rispetta le regole della community. Ti chiediamo di rimuoverlo o modificarlo. Se si ripete, potremmo sospendere l\'account.'],
+    molestie: ['Comportamento verso altri utenti', 'Abbiamo ricevuto segnalazioni sul tuo comportamento verso altri utenti. Ti chiediamo di rispettare le persone. Se si ripete, potremmo sospendere l\'account.'],
+    spam: ['Spam o pubblicità', 'Abbiamo notato contenuti promozionali o ripetitivi. Ti chiediamo di non pubblicarne altri. Se si ripete, potremmo sospendere l\'account.'],
+    falso: ['Profilo non conforme', 'Il tuo profilo non sembra corrispondere a quanto dichiarato. Ti chiediamo di correggere i dati. Se serve, scrivici.'],
+    altro: ['Avviso dall\'amministrazione', '']
+  };
+  var ACT = { warn: 'Avviso inviato', suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
   function logHTML() {
     if (!S.log.length) return '<div class="empty"><b>Registro vuoto</b>Qui compaiono le azioni di moderazione fatte dagli amministratori.</div>';
     return '<div class="panel"><div class="lst">' + S.log.map(function (x) { return '<div class="li"><span class="dot"></span><span class="t"><b>' + esc(ACT[x.action] || x.action) + '</b><span>' + esc(x.target || '') + '</span></span><span class="r">' + esc(x.admin_name || 'Admin') + ' · ' + fdt(x.created_at) + '</span></div>'; }).join('') + '</div></div>';
@@ -387,12 +398,13 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       '<div><span>Termini accettati</span><span>' + (u.terms_version ? esc(u.terms_version) + (u.terms_at ? ' · ' + fdate(u.terms_at) : '') : 'non registrati') + '</span></div><div><span>Notifiche push</span><span>' + (u.push ? u.push + ' dispositivo/i' : 'nessuna') + '</span></div>' +
       '<div><span>Storie / messaggi inviati</span><span>' + n(u.stories) + ' / ' + n(u.dms_sent) + '</span></div><div><span>Segnalazioni ricevute / fatte</span><span>' + n(u.reports_received) + ' / ' + n(u.reports_made) + '</span></div><div><span>Bloccato da</span><span>' + n(u.blocked_by) + ' utenti</span></div></div>' +
       proVerifBlock(u) +
+      ((u.warnings || []).length ? '<h3>Avvisi inviati</h3><div class="lst panel" style="padding:6px 10px">' + u.warnings.map(function (x) { return '<div class="li"><span class="t"><b style="white-space:normal">' + esc(x.reason || 'Avviso') + '</b><span style="white-space:normal">' + esc(x.body) + ' · ' + ago(x.created_at) + '</span></span></div>'; }).join('') + '</div>' : '') +
       (u.last_recipes.length ? '<h3>Ultimi piatti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_recipes.map(function (x) { return '<button class="li" data-act="recipe" data-id="' + x.id + '">' + (x.media_url ? '<img class="thumb" src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '') + '<span class="t"><b>' + esc(x.title) + '</b></span><span class="r">' + ago(x.created_at) + '</span></button>'; }).join('') + '</div>' : '') +
       (u.last_comments.length ? '<h3>Ultimi commenti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_comments.map(function (x) { return '<div class="li"><span class="t"><b style="white-space:normal">' + esc(x.body) + '</b><span>su «' + esc(x.title || 'piatto eliminato') + '» · ' + ago(x.created_at) + '</span></span><button class="btn sm danger" data-act="del" data-k="delcom" data-id="' + x.id + '">Elimina</button></div>'; }).join('') + '</div>' : '') +
       (u.reports.length ? '<h3>Segnalazioni ricevute</h3><div class="lst panel" style="padding:6px 10px">' + u.reports.map(function (x) { return '<div class="li"><span class="t"><b>' + esc(REASON[x.reason] || x.reason) + (x.content_type ? ' · ' + (x.content_type === 'recipe' ? 'piatto' : x.content_type) : '') + '</b><span>' + (x.details ? '«' + esc(x.details) + '» · ' : '') + fdt(x.created_at) + '</span></span><span class="chip ' + (x.status === 'open' ? 'bad' : '') + '">' + (x.status === 'open' ? 'aperta' : 'chiusa') + '</span></div>'; }).join('') + '</div>' : '') +
       (S.owner && !u.admin && S.ownerIds.indexOf(u.id) < 0 && !u.suspended ? '<div class="panel"><b>Ruolo di amministratore</b><p class="msg" style="margin:4px 0 10px">Un amministratore può moderare contenuti e utenti, ma non può nominare altri amministratori: solo tu puoi.</p><button class="btn sm" data-act="setadmin" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="1">Rendi amministratore</button></div>' : '') +
       (S.owner && u.admin && S.ownerIds.indexOf(u.id) < 0 ? '<div class="panel"><b>Amministratore</b><p class="msg" style="margin:4px 0 10px">Togliendo il ruolo, la persona torna un utente normale.</p><button class="btn sm danger" data-act="setadmin" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="0">Togli il ruolo di amministratore</button></div>' : '') +
-      (u.admin ? '' : '<div class="acts" style="margin-top:4px">' + (u.type === 'pro' ? '<button class="btn sm ghost" data-act="gotab" data-v="pros">' + (u.verified ? 'Gestisci la verifica' : 'Vai alla verifica') + '</button>' : '') +
+      (u.admin ? '' : '<div class="acts" style="margin-top:4px"><button class="btn sm" data-act="warn" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '">Invia un avviso</button>' + (u.type === 'pro' ? '<button class="btn sm ghost" data-act="gotab" data-v="pros">' + (u.verified ? 'Gestisci la verifica' : 'Vai alla verifica') + '</button>' : '') +
         '<button class="btn sm ' + (u.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.suspended ? '0' : '1') + '">' + (u.suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
         '<a class="btn sm ghost" href="mailto:' + esc(u.email) + '" style="text-decoration:none">Scrivi email</a><button class="btn sm danger" data-act="del" data-k="deluser" data-id="' + esc(u.id) + '" data-n="' + esc(nm) + '">Elimina account</button></div>');
   }
@@ -531,7 +543,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     else if (id === 'rq') { S.rq = e.target.value.trim(); document.getElementById('rlist').innerHTML = recipesListHTML(); }
     else if (id === 'cq') { S.cq = e.target.value.trim(); document.getElementById('clist').innerHTML = commentsListHTML(); }
   });
-  document.addEventListener('change', function (e) { if (e.target.id === 'us') { S.us = e.target.value; document.getElementById('ulist').innerHTML = usersListHTML(); } });
+  document.addEventListener('change', function (e) { if (e.target.id === 'wreason') { var wm = document.getElementById('wmsg'); if (wm && WARNTXT[e.target.value]) wm.value = WARNTXT[e.target.value][1]; return; } if (e.target.id === 'us') { S.us = e.target.value; document.getElementById('ulist').innerHTML = usersListHTML(); } });
   document.addEventListener('submit', function (e) {
     if (e.target.id !== 'loginform') return;
     e.preventDefault(); if (S.busy || !sb) return;
@@ -658,6 +670,21 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     if (act === 'ver') {
       var u = el.getAttribute('data-u'), ok = v === '1', vn = el.getAttribute('data-n') || u;
       sb.rpc('admin_set_pro_verified', { target: u, ok: ok }).then(function (r) { if (r.error) { err(r.error); return; } logAct(ok ? 'verify' : 'unverify', vn); toast(ok ? 'Nutrizionista verificato' : 'Verifica revocata'); loadAll().then(refreshDrawer); });
+      return;
+    }
+    if (act === 'warn') {
+      var wu = el.getAttribute('data-u'), wn = el.getAttribute('data-n'), wr = el.getAttribute('data-r');
+      var wk = wr === 'spam' ? 'spam' : wr === 'molestie' ? 'molestie' : wr === 'falso' ? 'falso' : wr === 'contenuto' ? 'contenuto' : 'altro';
+      dlg('<h2>Avviso a ' + esc(wn) + '</h2><p class="msg">L\'utente lo riceve come notifica in app da «Gusto». È a senso unico: non può rispondere. Resta nello storico dell\'utente.</p>' +
+        '<label class="fld">Motivo<select id="wreason">' + Object.keys(WARNTXT).map(function (k) { return '<option value="' + k + '"' + (k === wk ? ' selected' : '') + '>' + esc(WARNTXT[k][0]) + '</option>'; }).join('') + '</select></label>' +
+        '<label class="fld">Testo (max 300 caratteri)<textarea id="wmsg" rows="5" maxlength="300">' + esc(WARNTXT[wk][1]) + '</textarea></label>' +
+        '<div class="acts"><button class="btn" data-act="warnyes" data-u="' + esc(wu) + '" data-n="' + esc(wn) + '">Invia l\'avviso</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'warnyes') {
+      var xu = el.getAttribute('data-u'), xn = el.getAttribute('data-n') || xu, xm = (document.getElementById('wmsg').value || '').trim(), xk = document.getElementById('wreason').value;
+      if (!xm) { toast('Scrivi il testo dell\'avviso'); return; }
+      sb.rpc('admin_warn_user', { target: xu, reason: WARNTXT[xk][0], msg: xm }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } logAct('warn', xn); toast('Avviso inviato'); refreshDrawer(); });
       return;
     }
     if (act === 'susp') {
