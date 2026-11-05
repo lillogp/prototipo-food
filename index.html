@@ -1402,7 +1402,8 @@ body.inchat nav.tabs { display: none !important; }
       '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>' +
       '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>' +
       (p.mine ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
-      (p.mine && p.real ? '<button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina il piatto</button>' : '') + '</div></div>';
+      (p.mine && p.real ? '<button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina il piatto</button>' : '') +
+      (!p.mine && p.real && liveMode() ? '<button class="reset" data-act="reportrec" data-id="' + p.id + '" style="color:var(--muted);align-self:center;padding:8px">Segnala questo piatto</button>' : '') + '</div></div>';
     if (p.real && liveMode()) loadComments(p);
   }
   function closeSheet() { document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
@@ -2916,9 +2917,9 @@ body.inchat nav.tabs { display: none !important; }
       '<p class="hint" style="margin:0">Non diciamo a ' + esc(nm) + ' che l\'hai bloccato. Puoi sbloccarlo quando vuoi da Impostazioni, Privacy.</p>' +
       '<button class="btn" data-act="blockyes" data-u="' + esc(uid) + '">Sì, blocca</button><button class="btn ghost" data-act="close">Annulla</button>');
   }
-  function openReport(uid, cid) {
-    var rp = state.rep && state.rep.u === uid ? state.rep : (state.rep = { u: uid, c: cid || null, reason: '', details: '' });
-    sheetOpen('Segnala', 'Segnala ' + pName(uid),
+  function openReport(uid, cid, content) {
+    var rp = state.rep && state.rep.u === uid && (!content || (state.rep.ct && state.rep.ct.id === content.id)) ? state.rep : (state.rep = { u: uid, c: cid || null, reason: '', details: '', ct: content || null });
+    sheetOpen('Segnala', rp.ct ? 'Segnala il piatto «' + rp.ct.title + '»' : 'Segnala ' + pName(uid),
       '<p class="hint" style="margin:0">Scegli il motivo. La segnalazione è riservata: l\'altra persona non lo saprà.</p>' +
       '<div class="shgroup">' + REASONS.map(function (x) { return '<button class="shrow" role="radio" aria-checked="' + (rp.reason === x[0]) + '" data-act="reportreason" data-v="' + x[0] + '">' + x[1] + (rp.reason === x[0] ? ' &check;' : '') + '</button>'; }).join('') + '</div>' +
       '<label class="f" for="repd">Vuoi aggiungere qualcosa? <small>facoltativo</small><textarea id="repd" maxlength="500" style="min-height:84px">' + esc(rp.details) + '</textarea></label>' +
@@ -3183,12 +3184,13 @@ body.inchat nav.tabs { display: none !important; }
       return true;
     }
     if (act === 'usermenu') { openUserMenu(el.getAttribute('data-u'), parseInt(el.getAttribute('data-c'), 10) || null); return true; }
+    if (act === 'reportrec') { var rr = byId(id); if (rr && rr.authorId) { state.rep = null; openReport(rr.authorId, null, { t: 'recipe', id: rr.dbId, title: rr.title }); } return true; }
     if (act === 'reportopen') { state.rep = null; openReport(el.getAttribute('data-u'), parseInt(el.getAttribute('data-c'), 10) || null); return true; }
     if (act === 'reportreason') { var rd = document.getElementById('repd'); if (state.rep) { if (rd) state.rep.details = rd.value; state.rep.reason = el.getAttribute('data-v'); openReport(state.rep.u, state.rep.c); } return true; }
     if (act === 'reportsend') {
       var rp = state.rep, rd2 = document.getElementById('repd'); if (!rp) return true; if (rd2) rp.details = rd2.value;
       if (!rp.reason) { toast('Scegli un motivo'); return true; }
-      sb.from('reports').insert({ reporter_id: state.user.id, reported_id: rp.u, reason: rp.reason, details: rp.details.trim() || null, conv_id: rp.c }).then(function (r) {
+      sb.from('reports').insert(Object.assign({ reporter_id: state.user.id, reported_id: rp.u, reason: rp.reason, details: rp.details.trim() || null, conv_id: rp.c }, rp.ct ? { content_type: rp.ct.t, content_id: String(rp.ct.id) } : {})).then(function (r) {
         var dup = r.error && (r.error.code === '23505' || /duplicate/i.test(r.error.message || ''));
         if (r.error && !dup) { toast('Segnalazione non inviata'); return; }
         var u = rp.u; state.rep = null;
@@ -3802,8 +3804,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 32; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611050800';
+  var VERSION = 33; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611050900';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}

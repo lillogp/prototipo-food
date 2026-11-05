@@ -34,7 +34,11 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
 .login { max-width: 380px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 14px; }
 .msg { margin: 0; font-size: 14px; color: var(--muted); }
 .msg.err { color: var(--bad); }
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 6px 0 18px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 6px 0 18px; }
+.seg { flex-wrap: wrap; }
+.thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--soft); flex: none; }
+.thumb.wide { width: 72px; height: 96px; }
+input[type=search] { font: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
 .stat b { display: block; font-family: var(--f-display); font-size: 26px; }
 .stat span { font-size: 13px; color: var(--muted); }
@@ -60,7 +64,7 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
 .m.rep { background: var(--badbg); align-self: flex-end; }
 .m small { display: block; font-size: 12px; color: var(--muted); }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 20; }
-@media (max-width: 560px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+
 </style>
 </head>
 <body>
@@ -76,7 +80,7 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
   'use strict';
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
-  var S = { user: null, admin: null, tab: 'pros', rtab: 'open', stats: null, pros: [], reports: [], busy: false, msg: '' };
+  var S = { user: null, admin: null, tab: 'reports', rtab: 'open', stats: null, dash: null, pros: [], reports: [], users: [], uq: '', recipes: [], stories: [], comments: [], legacy: false, busy: false, msg: '' };
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -97,7 +101,47 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
   function viewDenied() {
     return '<div class="card" style="max-width:460px;margin:40px auto 0"><h2>Accesso non consentito</h2><p class="msg" style="margin:10px 0 14px">L\'account ' + esc(S.user.email) + ' non è un amministratore.</p><button class="btn ghost" data-act="logout">Esci</button></div>';
   }
+  function pathOf(url) { var m = /\/object\/public\/media\/(.+)$/.exec(url || ''); return m ? decodeURIComponent(m[1]) : null; }
+  function dashHTML() {
+    var d = S.dash; if (!d) return '';
+    var c = function (n, l) { return '<div class="stat"><b>' + n + '</b><span>' + l + '</span></div>'; };
+    return '<div class="stats">' + c(d.users, 'utenti') + c(d.new_users_7d, 'nuovi in 7 giorni') + c(d.pros + ' / ' + d.pros_verified, 'nutrizionisti / verificati') + c(d.recipes, 'piatti') + c(d.stories_active, 'storie attive') + c(d.open_reports, 'segnalazioni aperte') + '</div>';
+  }
+  function usersHTML() {
+    var h = '<form id="uform" style="margin-bottom:12px"><input type="search" id="uq" placeholder="Cerca per nome, @handle o email" value="' + esc(S.uq) + '"></form>';
+    if (!S.users.length) return h + '<div class="empty"><b>Nessun utente</b>Prova un\'altra ricerca.</div>';
+    return h + '<div class="list">' + S.users.map(function (x) {
+      return '<div class="card"><div class="row"><div class="info"><b>' + esc(x.name || 'Senza nome') + (x.handle ? ' <small style="color:var(--muted);font-weight:500">@' + esc(x.handle) + '</small>' : '') + '</b><span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + ' · ' + x.recipes + ' piatti</span><span>' +
+        (x.account_type === 'pro' ? '<span class="chip ' + (x.pro_verified ? 'ok' : '') + '">Nutrizionista' + (x.pro_verified ? ' verificato' : ' da verificare') + '</span> ' : '') + (x.is_admin ? '<span class="chip ok">Admin</span> ' : '') + (x.suspended ? '<span class="chip bad">Sospeso</span> ' : '') + (x.terms_version ? '<span class="chip">Termini ' + esc(x.terms_version) + '</span>' : '<span class="chip">Termini non registrati</span>') + '</span></div>' +
+        (x.is_admin ? '' : '<div class="acts"><button class="btn sm ' + (x.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="' + (x.suspended ? '0' : '1') + '">' + (x.suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
+        '<button class="btn sm danger" data-act="deluser" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '">Elimina</button></div>') + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function recipesHTML() {
+    if (!S.recipes.length) return '<div class="empty"><b>Nessun piatto</b>I piatti pubblicati compaiono qui.</div>';
+    return '<div class="list">' + S.recipes.map(function (x) {
+      return '<div class="card"><div class="row"><div style="display:flex;gap:12px;align-items:center;min-width:0;flex:1 1 260px">' + (x.media_url ? '<img class="thumb" src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '') +
+        '<div class="info"><b>' + esc(x.title) + '</b><span>di ' + esc(x.author_name || 'utente') + ' · ' + fdt(x.created_at) + '</span>' + (x.open_reports > 0 ? '<span><span class="chip bad">' + x.open_reports + ' segnalazioni aperte</span></span>' : '') + '</div></div>' +
+        '<div class="acts"><button class="btn sm danger" data-act="delrec" data-id="' + x.recipe_id + '" data-n="' + esc(x.title) + '">Rimuovi</button></div></div></div>';
+    }).join('') + '</div>';
+  }
+  function storiesHTML() {
+    if (!S.stories.length) return '<div class="empty"><b>Nessuna storia attiva</b>Le storie durano 24 ore.</div>';
+    return '<div class="list">' + S.stories.map(function (x) {
+      return '<div class="card"><div class="row"><div style="display:flex;gap:12px;align-items:center;min-width:0;flex:1 1 260px"><img class="thumb wide" src="' + esc(x.media_url) + '" alt="" loading="lazy">' +
+        '<div class="info"><b>' + esc(x.author_name || 'utente') + '</b><span>' + fdt(x.created_at) + '</span>' + (x.caption ? '<span style="color:var(--fg)">«' + esc(x.caption) + '»</span>' : '') + '</div></div>' +
+        '<div class="acts"><button class="btn sm danger" data-act="delstory" data-id="' + esc(x.story_id) + '">Rimuovi</button></div></div></div>';
+    }).join('') + '</div>';
+  }
+  function commentsHTML() {
+    if (!S.comments.length) return '<div class="empty"><b>Nessun commento</b>Gli ultimi commenti compaiono qui.</div>';
+    return '<div class="list">' + S.comments.map(function (x) {
+      return '<div class="card"><div class="row"><div class="info"><b>' + esc(x.author_name || 'utente') + '</b><span>su «' + esc(x.recipe_title || 'piatto eliminato') + '» · ' + fdt(x.created_at) + '</span><span style="color:var(--fg)">' + esc(x.body) + '</span></div>' +
+        '<div class="acts"><button class="btn sm danger" data-act="delcom" data-id="' + x.comment_id + '">Elimina</button></div></div></div>';
+    }).join('') + '</div>';
+  }
   function statsHTML() {
+    if (S.dash) return dashHTML();
     var st = S.stats; if (!st) return '';
     return '<div class="stats"><div class="stat"><b>' + st.users + '</b><span>utenti</span></div><div class="stat"><b>' + st.pros + '</b><span>nutrizionisti</span></div><div class="stat"><b>' + st.pros_verified + '</b><span>verificati</span></div><div class="stat"><b>' + st.open_reports + '</b><span>segnalazioni aperte</span></div></div>';
   }
@@ -116,15 +160,19 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
     return seg + '<div class="list">' + S.reports.map(function (r) {
       return '<div class="card"><div class="row"><div class="info"><b>' + esc(r.reported_name || 'Senza nome') + '</b><span>' + esc(r.reported_email) + (r.reported_suspended ? ' · <span class="chip bad">Sospeso</span>' : '') + '</span>' +
         '<span><span class="chip">' + esc(REASON[r.reason] || r.reason) + '</span> · segnalato da ' + esc(r.reporter_name || 'utente') + ' il ' + fdt(r.created_at) + '</span>' +
-        (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') + '</div>' +
-        '<div class="acts">' + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">Vedi la conversazione</button>' : '') +
+        (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') +
+        (r.content_type === 'recipe' ? '<span style="display:flex;gap:10px;align-items:center;margin-top:4px">' + (r.content_media ? '<img class="thumb" src="' + esc(r.content_media) + '" alt="">' : '') + '<span style="color:var(--fg)">Piatto segnalato: <b>' + esc(r.content_title || 'già rimosso') + '</b></span></span>' : '') + '</div>' +
+        '<div class="acts">' + (r.content_type === 'recipe' && r.content_title ? '<button class="btn sm danger" data-act="delrec" data-id="' + esc(r.content_id) + '" data-n="' + esc(r.content_title) + '">Rimuovi il piatto</button>' : '') + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">Vedi la conversazione</button>' : '') +
         '<button class="btn sm ' + (r.reported_suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-v="' + (r.reported_suspended ? '0' : '1') + '">' + (r.reported_suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
         '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div></div>';
     }).join('') + '</div>';
   }
   function viewDash() {
-    return statsHTML() + '<div class="seg" role="group" aria-label="Sezione"><button data-act="tab" data-v="pros" aria-pressed="' + (S.tab === 'pros') + '">Nutrizionisti</button><button data-act="tab" data-v="reports" aria-pressed="' + (S.tab === 'reports') + '">Segnalazioni' + (S.stats && S.stats.open_reports ? ' (' + S.stats.open_reports + ')' : '') + '</button></div>' +
-      (S.tab === 'pros' ? prosHTML() : reportsHTML());
+    var T = S.legacy ? [['pros', 'Nutrizionisti'], ['reports', 'Segnalazioni']] : [['reports', 'Segnalazioni'], ['users', 'Utenti'], ['recipes', 'Piatti'], ['stories', 'Storie'], ['comments', 'Commenti'], ['pros', 'Nutrizionisti']];
+    var oc = (S.dash && S.dash.open_reports) || (S.stats && S.stats.open_reports) || 0;
+    var seg = '<div class="seg" role="group" aria-label="Sezione">' + T.map(function (t) { return '<button data-act="tab" data-v="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + (t[0] === 'reports' && oc ? ' (' + oc + ')' : '') + '</button>'; }).join('') + '</div>';
+    return (S.legacy ? '<p class="note">Funzioni di moderazione avanzate non ancora attive: esegui la migrazione 018 su Supabase.</p>' : '') + statsHTML() + seg +
+      (S.tab === 'pros' ? prosHTML() : S.tab === 'users' ? usersHTML() : S.tab === 'recipes' ? recipesHTML() : S.tab === 'stories' ? storiesHTML() : S.tab === 'comments' ? commentsHTML() : reportsHTML());
   }
   function render() {
     var app = document.getElementById('app'), who = document.getElementById('who');
@@ -133,10 +181,27 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
   }
 
   function err(e) { toast(e && e.message && /non autorizzato/.test(e.message) ? 'Non sei autorizzato' : 'Operazione non riuscita'); }
+  function loadTab() {
+    var t = S.tab, p;
+    if (S.legacy) return Promise.resolve();
+    if (t === 'users') p = sb.rpc('admin_users', { q: S.uq, lim: 60, off: 0 }).then(function (r) { S.users = r.data || []; });
+    else if (t === 'recipes') p = sb.rpc('admin_recipes', { lim: 60, off: 0 }).then(function (r) { S.recipes = r.data || []; });
+    else if (t === 'stories') p = sb.rpc('admin_stories').then(function (r) { S.stories = r.data || []; });
+    else if (t === 'comments') p = sb.rpc('admin_comments', { lim: 60 }).then(function (r) { S.comments = r.data || []; });
+    else return Promise.resolve();
+    return p.then(function () { render(); });
+  }
   function loadAll() {
-    return Promise.all([sb.rpc('admin_stats'), sb.rpc('admin_pros'), sb.rpc('admin_reports', { st: S.rtab })]).then(function (a) {
-      if (a[0].error) { err(a[0].error); return; }
-      S.stats = (a[0].data && a[0].data[0]) || a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; render();
+    return Promise.all([sb.rpc('admin_dashboard'), sb.rpc('admin_pros'), sb.rpc('admin_reports2', { st: S.rtab })]).then(function (a) {
+      if (a[0].error || a[2].error) {
+        if (a[0].error && /non autorizzato/.test(a[0].error.message || '')) { err(a[0].error); return; }
+        S.legacy = true; if (['pros', 'reports'].indexOf(S.tab) < 0) S.tab = 'reports';
+        return Promise.all([sb.rpc('admin_stats'), sb.rpc('admin_reports', { st: S.rtab })]).then(function (b) {
+          if (b[0].error) { err(b[0].error); return; }
+          S.stats = (b[0].data && b[0].data[0]) || b[0].data; S.pros = a[1].data || []; S.reports = b[1].data || []; S.dash = null; render();
+        });
+      }
+      S.legacy = false; S.dash = (a[0].data && a[0].data[0]) || a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; render(); return loadTab();
     });
   }
   function start(user) {
@@ -147,6 +212,7 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
   }
 
   document.addEventListener('submit', function (e) {
+    if (e.target.id === 'uform') { e.preventDefault(); S.uq = document.getElementById('uq').value.trim(); loadTab(); return; }
     if (e.target.id !== 'loginform') return;
     e.preventDefault(); if (S.busy || !sb) return;
     var em = document.getElementById('e').value.trim(), pw = document.getElementById('p').value;
@@ -163,9 +229,26 @@ label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; fon
     var el = e.target.closest('[data-act]'); if (!el) return;
     var act = el.getAttribute('data-act');
     if (act === 'close') { if (el.classList.contains('bg') && e.target !== el) return; closeDlg(); return; }
-    if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = { user: null, admin: null, tab: 'pros', rtab: 'open', stats: null, pros: [], reports: [], busy: false, msg: '' }; closeDlg(); render(); }); return; }
-    if (act === 'tab') { S.tab = el.getAttribute('data-v'); render(); return; }
-    if (act === 'rtab') { S.rtab = el.getAttribute('data-v'); sb.rpc('admin_reports', { st: S.rtab }).then(function (r) { S.reports = r.data || []; render(); }); return; }
+    if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = { user: null, admin: null, tab: 'reports', rtab: 'open', stats: null, dash: null, pros: [], reports: [], users: [], uq: '', recipes: [], stories: [], comments: [], legacy: false, busy: false, msg: '' }; closeDlg(); render(); }); return; }
+    if (act === 'tab') { S.tab = el.getAttribute('data-v'); render(); loadTab(); return; }
+    if (act === 'rtab') { S.rtab = el.getAttribute('data-v'); sb.rpc(S.legacy ? 'admin_reports' : 'admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; render(); }); return; }
+    if (act === 'delrec' || act === 'delstory' || act === 'delcom' || act === 'deluser') {
+      var what = { delrec: ['il piatto', 'Il piatto e la sua foto vengono cancellati.'], delstory: ['la storia', 'La storia e la sua foto vengono cancellate.'], delcom: ['il commento', 'Il commento viene cancellato.'], deluser: ['l\'account', 'Profilo, piatti, commenti, storie e messaggi vengono cancellati per sempre.'] }[act];
+      var nm = el.getAttribute('data-n') || '';
+      dlg('<h2>Eliminare ' + what[0] + (nm ? ' «' + esc(nm) + '»' : '') + '?</h2><p class="msg">' + what[1] + ' Non si può annullare.</p>' +
+        '<div class="acts"><button class="btn danger" data-act="delyes" data-k="' + act + '" data-id="' + esc(el.getAttribute('data-id') || el.getAttribute('data-u')) + '">Sì, elimina</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'delyes') {
+      var k = el.getAttribute('data-k'), id = el.getAttribute('data-id');
+      var rm = function (url) { var p = pathOf(url) || url; if (p && p.indexOf('http') !== 0) return sb.storage.from('media').remove([p]).then(function () {}, function () {}); return Promise.resolve(); };
+      var call = k === 'delrec' ? sb.rpc('admin_delete_recipe', { rid: parseInt(id, 10) }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
+        : k === 'delstory' ? sb.rpc('admin_delete_story', { sid: id }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
+        : k === 'delcom' ? sb.rpc('admin_delete_comment', { cid: parseInt(id, 10) })
+        : sb.rpc('admin_delete_user', { target: id });
+      call.then(function (r) { closeDlg(); if (r && r.error) { err(r.error); return; } toast('Eliminato'); loadAll(); });
+      return;
+    }
     if (act === 'ver') {
       var u = el.getAttribute('data-u'), v = el.getAttribute('data-v') === '1';
       sb.rpc('admin_set_pro_verified', { target: u, ok: v }).then(function (r) { if (r.error) { err(r.error); return; } toast(v ? 'Nutrizionista verificato' : 'Verifica revocata'); loadAll(); });
