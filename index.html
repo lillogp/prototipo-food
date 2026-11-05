@@ -1897,6 +1897,8 @@ body.inchat nav.tabs { display: none !important; }
     sb.storage.from('media').list(me, { limit: 1000 }).then(function (r) {
       var paths = ((r && r.data) || []).map(function (x) { return me + '/' + x.name; });
       return paths.length ? sb.storage.from('media').remove(paths) : null;
+    }).catch(function () {}).then(function () {
+      return sb.storage.from('pro-docs').list(me, { limit: 100 }).then(function (r) { var q = ((r && r.data) || []).map(function (x) { return me + '/' + x.name; }); return q.length ? sb.storage.from('pro-docs').remove(q) : null; });
     }).catch(function () {}).then(function () { return sb.rpc('delete_my_account'); }).then(function (r) {
       if (r && r.error) { toast('Non riesco a eliminare l\'account. Scrivici per farlo a mano.'); return; }
       try { localStorage.clear(); } catch (e) {}
@@ -2231,6 +2233,23 @@ body.inchat nav.tabs { display: none !important; }
       });
     });
   }
+  function pvLoad() {
+    state.pv = null;
+    return sb.from('pro_verifications').select('albo,albo_number,status,reject_reason,submitted_at').eq('user_id', state.user.id).maybeSingle().then(function (r) { state.pv = r.error ? null : r.data; }, function () {});
+  }
+  var PV_ALBI = ['Ordine dei Biologi (sezione Nutrizionisti)', 'Albo dei Dietisti', 'Ordine dei Medici Chirurghi', 'Altro albo od ordine professionale'];
+  function viewProVerify() {
+    var pv = state.pv, h = '<div class="view-h"><h1>Verifica del profilo</h1><p>Per invitare clienti, confermiamo la tua iscrizione all\'albo.</p></div>';
+    if (pv && pv.status === 'pending') return h + '<div class="empty"><b>Documento in esame</b>Hai inviato il documento il ' + new Date(pv.submitted_at).toLocaleDateString('it-IT') + ' (' + esc(pv.albo) + ', n. ' + esc(pv.albo_number) + '). Lo controlliamo appena possibile; quando è approvato trovi qui l\'elenco dei clienti.</div>' +
+      '<p class="hint" style="margin:10px 0 0">Il file viene cancellato subito dopo l\'esame.</p>';
+    return h + (pv && pv.status === 'rejected' ? '<div class="note" style="margin:0 0 12px"><b>Verifica non riuscita.</b> ' + (pv.reject_reason ? esc(pv.reject_reason) : 'Controlla i dati e invia di nuovo il documento.') + '</div>' : '') +
+      '<form id="pvform" class="new" novalidate>' +
+      '<label class="f" for="pv-albo">Albo od ordine<select id="pv-albo">' + PV_ALBI.map(function (a) { return '<option' + (pv && pv.albo === a ? ' selected' : '') + '>' + a + '</option>'; }).join('') + '</select></label>' +
+      '<label class="f" for="pv-num">Numero di iscrizione<input id="pv-num" type="text" maxlength="40" autocomplete="off" value="' + esc(pv ? pv.albo_number : '') + '" placeholder="Es. AA_012345"></label>' +
+      '<div class="f"><span>Documento (PDF o foto, massimo 5 MB)</span><label class="reset avlab" for="pvfile" id="pvlab" style="display:inline-block;margin-top:6px">Scegli il file</label><input type="file" id="pvfile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>' +
+      '<p class="hint" style="margin:0">Carica la tessera o il certificato di iscrizione all\'albo. Lo vede solo l\'amministratore di Gusto, serve solo a verificare il profilo e viene cancellato subito dopo l\'esame.</p>' +
+      '<button class="btn" type="submit" style="width:100%">Invia per la verifica</button></form>';
+  }
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
@@ -2246,7 +2265,7 @@ body.inchat nav.tabs { display: none !important; }
           if (!x.error) state.profile.is_private = true; });
       }
       return null;
-    }).then(function () { return state.profile.account_type === 'pro' ? loadClients() : loadMyLink(); })
+    }).then(function () { return state.profile.account_type === 'pro' ? pvLoad().then(function () { return loadClients(); }) : loadMyLink(); })
       .then(function () { return loadSocial(); })
       .then(function () { return loadStories(); })
       .then(function () { return loadNotifs(); })
@@ -2306,7 +2325,7 @@ body.inchat nav.tabs { display: none !important; }
   function invLink(code) { return location.origin + location.pathname + '?invito=' + code; }
   function viewProDash() {
     var h = '<div class="view-h"><h1>I miei clienti</h1><p>Chi segui con Gusto.</p></div>';
-    if (!state.profile.pro_verified) return h + '<div class="empty"><b>Profilo in verifica</b>Prima di invitare clienti, il tuo profilo da nutrizionista deve essere verificato. Ti avvisiamo appena è pronto.</div>';
+    if (!state.profile.pro_verified) return viewProVerify();
     if (state.curClient) return viewClientDetail();
     var act = state.clients.filter(function (c) { return c.status === 'active'; }), pend = state.clients.filter(function (c) { return c.status === 'pending'; });
     return h + '<p class="hint" style="margin:0 0 10px">Di ogni cliente vedi solo il piano che gli invii e i vostri messaggi, non il suo planner personale.</p>' +
@@ -3069,10 +3088,29 @@ body.inchat nav.tabs { display: none !important; }
       storyResize(sf).then(function (b) { state.stdraft = { blob: b, url: URL.createObjectURL(b), caption: '', rid: null }; openStoryDraft(); }).catch(function () { toast('Foto non valida'); });
       return;
     }
+    if (e.target && e.target.id === 'pvfile') {
+      var pf = e.target.files && e.target.files[0], lab = document.getElementById('pvlab');
+      if (pf && (pf.size > 5242880 || !/^(application\/pdf|image\/(jpeg|png|webp))$/.test(pf.type))) { e.target.value = ''; state.pvFile = null; if (lab) lab.textContent = 'Scegli il file'; toast('File non valido: usa PDF o foto fino a 5 MB'); return; }
+      state.pvFile = pf || null; if (lab) lab.textContent = pf ? pf.name : 'Scegli il file'; return;
+    }
     if (e.target && e.target.id === 'avfile') { var fl = e.target.files && e.target.files[0]; e.target.value = ''; setAvatar(fl); }
   });
   function extraSubmit(e) {
     var id = e.target.id;
+    if (id === 'pvform') {
+      e.preventDefault(); if (!liveMode()) return true;
+      var pa = document.getElementById('pv-albo').value, pn = document.getElementById('pv-num').value.trim(), pf = state.pvFile;
+      if (!pn) { toast('Scrivi il numero di iscrizione'); return true; }
+      if (!pf) { toast('Scegli il documento da inviare'); return true; }
+      var btn = e.target.querySelector('button[type=submit]'); if (btn) { btn.disabled = true; btn.textContent = 'Invio in corso…'; }
+      var ext = pf.type === 'application/pdf' ? 'pdf' : pf.type === 'image/png' ? 'png' : pf.type === 'image/webp' ? 'webp' : 'jpg', path = state.user.id + '/' + Date.now() + '.' + ext;
+      sb.storage.from('pro-docs').upload(path, pf, { contentType: pf.type, upsert: false }).then(function (u) {
+        if (u.error) throw u.error;
+        return sb.rpc('pro_submit_verification', { p_albo: pa, p_number: pn, p_path: path }).then(function (r) { if (r.error) { sb.storage.from('pro-docs').remove([path]); throw r.error; } });
+      }).then(function () { state.pvFile = null; toast('Documento inviato'); return pvLoad(); }).then(function () { render(); })
+        .catch(function () { toast('Invio non riuscito. Riprova.'); if (btn) { btn.disabled = false; btn.textContent = 'Invia per la verifica'; } });
+      return true;
+    }
     if (id === 'dmform') {
       e.preventDefault(); var di = document.getElementById('dmin'), dt = di.value.trim(); if (!dt || !liveMode()) return true;
       di.value = ''; dmSend(dt); return true;
@@ -3804,8 +3842,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 36; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611050900';
+  var VERSION = 37; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}

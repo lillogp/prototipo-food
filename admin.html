@@ -192,7 +192,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 6;
+  var ADMIN_VERSION = 7;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -320,13 +320,25 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   function commentsHTML() { return '<div class="toolbar"><input class="grow" type="search" id="cq" placeholder="Cerca nei commenti caricati" value="' + esc(S.cq) + '" autocomplete="off"></div><div id="clist">' + commentsListHTML() + '</div>'; }
 
   /* ---------- Nutrizionisti, segnalazioni, registro ---------- */
+  var ALBO_ST = { pending: ['In esame', 'warn'], approved: ['Approvata', 'ok'], rejected: ['Rifiutata', 'bad'] };
+  function proCard(x) {
+    var st = x.status, docNow = !!x.doc_path;
+    return '<div class="rep"><div class="info"><b><button data-act="user" data-id="' + esc(x.user_id) + '" style="font-weight:700;text-decoration:underline">' + esc(x.name || 'Senza nome') + '</button> ' + (x.pro_verified ? '<span class="chip ok">Verificato</span>' : '') + (x.suspended ? '<span class="chip bad">Sospeso</span>' : '') + '</b>' +
+      '<span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + '</span>' +
+      (st ? '<span><span class="chip ' + ALBO_ST[st][1] + '">' + ALBO_ST[st][0] + '</span> ' + esc(x.albo) + ' · n. <b>' + esc(x.albo_number) + '</b> · inviata ' + fdt(x.submitted_at) + '</span>' : (x.pro_verified ? '' : '<span class="muted">Nessun documento inviato.</span>')) +
+      (st === 'rejected' && x.reject_reason ? '<span style="color:var(--fg)">Motivo: «' + esc(x.reject_reason) + '»</span>' : '') + '</div>' +
+      '<div class="acts" style="align-content:flex-start">' + (docNow ? '<button class="btn sm ghost" data-act="prodoc" data-u="' + esc(x.user_id) + '">Apri il documento</button>' : '') +
+      (!x.pro_verified && (st === 'pending') ? '<button class="btn sm" data-act="proreview" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="1">Approva</button><button class="btn sm danger" data-act="proreject" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '">Rifiuta</button>' : '') +
+      (!x.pro_verified && st !== 'pending' ? '<button class="btn sm ghost" data-act="ver" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="1" title="Verifica senza documento">Verifica senza documento</button>' : '') +
+      (x.pro_verified ? '<button class="btn sm ghost" data-act="ver" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="0">Revoca la verifica</button>' : '') + '</div></div>';
+  }
   function prosHTML() {
-    if (!S.pros.length) return '<div class="empty"><b>Nessun nutrizionista</b>Quando qualcuno si registra come nutrizionista compare qui, da verificare.</div>';
-    var l = S.pros.slice().sort(function (a, b) { return (a.pro_verified ? 1 : 0) - (b.pro_verified ? 1 : 0); });
-    return '<p class="note">Controlla l\'iscrizione all\'albo prima di verificare. Solo i nutrizionisti verificati possono invitare clienti.</p><div class="stack">' + l.map(function (x) {
-      return '<div class="rep"><div class="info"><b><button data-act="user" data-id="' + esc(x.user_id) + '" style="font-weight:700;text-decoration:underline">' + esc(x.name || 'Senza nome') + '</button></b><span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + '</span><span>' + (x.pro_verified ? '<span class="chip ok">Verificato</span>' : '<span class="chip warn">Da verificare</span>') + (x.suspended ? ' <span class="chip bad">Sospeso</span>' : '') + '</span></div>' +
-        '<div class="acts"><button class="btn sm' + (x.pro_verified ? ' ghost' : '') + '" data-act="ver" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="' + (x.pro_verified ? '0' : '1') + '">' + (x.pro_verified ? 'Revoca la verifica' : 'Verifica') + '</button></div></div>';
-    }).join('') + '</div>';
+    if (!S.pros.length) return '<div class="empty"><b>Nessun nutrizionista</b>Quando qualcuno si registra come nutrizionista compare qui.</div>';
+    var pend = S.pros.filter(function (x) { return x.status === 'pending' && !x.pro_verified; }), rest = S.pros.filter(function (x) { return !(x.status === 'pending' && !x.pro_verified); });
+    var todo = rest.filter(function (x) { return !x.pro_verified; }), done = rest.filter(function (x) { return x.pro_verified; });
+    var sec = function (t, l, e) { return l.length ? '<h3 style="margin:18px 0 10px">' + t + ' <span class="muted" style="font-weight:500">(' + l.length + ')</span></h3><div class="stack">' + l.map(proCard).join('') + '</div>' : (e || ''); };
+    return '<p class="note">Controlla il documento e il numero d\'iscrizione all\'albo, poi approva o rifiuta. Il file viene cancellato dopo la decisione. Solo i nutrizionisti verificati possono invitare clienti.</p>' +
+      sec('Da esaminare', pend, '<div class="empty"><b>Nessun documento da esaminare</b>Quando un nutrizionista invia il documento compare qui.</div>') + sec('Senza documento o rifiutati', todo) + sec('Verificati', done);
   }
   function reportsHTML() {
     var seg = '<div class="toolbar"><div class="pills"><button class="pill" data-act="rtab" data-v="open" aria-pressed="' + (S.rtab === 'open') + '">Aperte</button><button class="pill" data-act="rtab" data-v="closed" aria-pressed="' + (S.rtab === 'closed') + '">Chiuse</button></div></div>';
@@ -340,7 +352,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
         '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div>';
     }).join('') + '</div>';
   }
-  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
+  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
   function logHTML() {
     if (!S.log.length) return '<div class="empty"><b>Registro vuoto</b>Qui compaiono le azioni di moderazione fatte dagli amministratori.</div>';
     return '<div class="panel"><div class="lst">' + S.log.map(function (x) { return '<div class="li"><span class="dot"></span><span class="t"><b>' + esc(ACT[x.action] || x.action) + '</b><span>' + esc(x.target || '') + '</span></span><span class="r">' + esc(x.admin_name || 'Admin') + ' · ' + fdt(x.created_at) + '</span></div>'; }).join('') + '</div></div>';
@@ -372,7 +384,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       (u.reports.length ? '<h3>Segnalazioni ricevute</h3><div class="lst panel" style="padding:6px 10px">' + u.reports.map(function (x) { return '<div class="li"><span class="t"><b>' + esc(REASON[x.reason] || x.reason) + (x.content_type ? ' · ' + (x.content_type === 'recipe' ? 'piatto' : x.content_type) : '') + '</b><span>' + (x.details ? '«' + esc(x.details) + '» · ' : '') + fdt(x.created_at) + '</span></span><span class="chip ' + (x.status === 'open' ? 'bad' : '') + '">' + (x.status === 'open' ? 'aperta' : 'chiusa') + '</span></div>'; }).join('') + '</div>' : '') +
       (S.owner && !u.admin && S.ownerIds.indexOf(u.id) < 0 && !u.suspended ? '<div class="panel"><b>Ruolo di amministratore</b><p class="msg" style="margin:4px 0 10px">Un amministratore può moderare contenuti e utenti, ma non può nominare altri amministratori: solo tu puoi.</p><button class="btn sm" data-act="setadmin" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="1">Rendi amministratore</button></div>' : '') +
       (S.owner && u.admin && S.ownerIds.indexOf(u.id) < 0 ? '<div class="panel"><b>Amministratore</b><p class="msg" style="margin:4px 0 10px">Togliendo il ruolo, la persona torna un utente normale.</p><button class="btn sm danger" data-act="setadmin" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="0">Togli il ruolo di amministratore</button></div>' : '') +
-      (u.admin ? '' : '<div class="acts" style="margin-top:4px">' + (u.type === 'pro' ? '<button class="btn sm' + (u.verified ? ' ghost' : '') + '" data-act="ver" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.verified ? '0' : '1') + '">' + (u.verified ? 'Revoca la verifica' : 'Verifica nutrizionista') + '</button>' : '') +
+      (u.admin ? '' : '<div class="acts" style="margin-top:4px">' + (u.type === 'pro' ? '<button class="btn sm ghost" data-act="gotab" data-v="pros">' + (u.verified ? 'Gestisci la verifica' : 'Vai alla verifica') + '</button>' : '') +
         '<button class="btn sm ' + (u.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.suspended ? '0' : '1') + '">' + (u.suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
         '<a class="btn sm ghost" href="mailto:' + esc(u.email) + '" style="text-decoration:none">Scrivi email</a><button class="btn sm danger" data-act="del" data-k="deluser" data-id="' + esc(u.id) + '" data-n="' + esc(nm) + '">Elimina account</button></div>');
   }
@@ -430,7 +442,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   }
   function viewDenied() { return '<div class="card" style="max-width:460px;margin:60px auto 0"><h2>Accesso non consentito</h2><p class="msg" style="margin:10px 0 14px">L\'account ' + esc(S.user.email) + ' non è un amministratore.</p><button class="btn ghost" data-act="logout">Esci</button></div>'; }
   var MAIN = ['overview', 'reports', 'users', 'recipes'];
-  function bnavHTML(oc) {
+  function bnavHTML(oc, pc) {
     var cur = S.tab, other = MAIN.indexOf(cur) < 0;
     return '<nav class="bnav" aria-label="Sezioni">' + TABS.filter(function (t) { return MAIN.indexOf(t[0]) >= 0; }).map(function (t) {
       return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + (t[0] === 'overview' ? 'Home' : t[1]) + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + '</button>'; }).join('') +
@@ -441,12 +453,12 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferredInstall = e; });
   window.addEventListener('appinstalled', function () { deferredInstall = null; toast('App installata'); render(); });
   function viewShell() {
-    var oc = (S.ov && S.ov.reports_open) || 0, cur = S.tab, title = (TABS.filter(function (t) { return t[0] === cur; })[0] || TABS[0])[1];
+    var oc = (S.ov && S.ov.reports_open) || 0, pc = S.pros.filter(function (x) { return x.status === 'pending' && !x.pro_verified; }).length, cur = S.tab, title = (TABS.filter(function (t) { return t[0] === cur; })[0] || TABS[0])[1];
     var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : reportsHTML();
     return '<div class="shell"><aside class="side"><div class="logo">Gusto<small>Amministrazione</small></div><nav class="nav" aria-label="Sezioni">' + TABS.map(function (t) {
-      return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + '</button>'; }).join('') +
+      return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + (t[0] === 'pros' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }).join('') +
       '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span>' + '<button class="btn sm" data-act="install">' + (isStandalone() ? 'App' : 'Installa app') + '</button>' + '<button class="btn ghost sm" data-act="logout">Esci</button></div></aside>' +
-      '<main class="main"><div class="top"><div><h2>' + title + '</h2><div class="sub">' + (S.updated ? 'Aggiornato alle ' + S.updated.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '') + '</div></div><button class="btn ghost sm" data-act="refresh"' + (S.loading ? ' disabled' : '') + '>' + (S.loading ? 'Aggiorno…' : 'Aggiorna') + '</button></div>' + body + '</main></div>' + bnavHTML(oc);
+      '<main class="main"><div class="top"><div><h2>' + title + '</h2><div class="sub">' + (S.updated ? 'Aggiornato alle ' + S.updated.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '') + '</div></div><button class="btn ghost sm" data-act="refresh"' + (S.loading ? ' disabled' : '') + '>' + (S.loading ? 'Aggiorno…' : 'Aggiorna') + '</button></div>' + body + '</main></div>' + bnavHTML(oc, pc);
   }
   function render() {
     var app = document.getElementById('app'), y = window.scrollY;
@@ -471,7 +483,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   }
   function loadAll() {
     S.loading = true; render();
-    return Promise.all([sb.rpc('admin_overview'), sb.rpc('admin_pros'), sb.rpc('admin_reports2', { st: S.rtab }), sb.rpc('admin_roles')]).then(function (a) {
+    return Promise.all([sb.rpc('admin_overview'), sb.rpc('admin_pro_list').then(function (r) { return r.error ? sb.rpc('admin_pros') : r; }), sb.rpc('admin_reports2', { st: S.rtab }), sb.rpc('admin_roles')]).then(function (a) {
       S.loading = false; var ro = a[3] && a[3].data; S.owner = !!(ro && ro.me_owner); S.ownerIds = (ro && ro.owner_ids) || [];
       if (a[0].error && /non autorizzato/.test(a[0].error.message || '')) { err(a[0].error); render(); return; }
       S.ovErr = !!a[0].error; S.ov = a[0].error ? null : a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; S.updated = new Date(); render();
@@ -581,6 +593,34 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     if (act === 'setadminyes') {
       var bu = el.getAttribute('data-u'), bn = el.getAttribute('data-n') || bu, bv = v === '1';
       sb.rpc('admin_set_admin', { target: bu, flag: bv }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } logAct(bv ? 'make_admin' : 'remove_admin', bn); toast(bv ? 'Amministratore nominato' : 'Ruolo tolto'); loadAll().then(refreshDrawer); });
+      return;
+    }
+    if (act === 'prodoc') {
+      var pr = S.pros.filter(function (x) { return x.user_id === el.getAttribute('data-u'); })[0]; if (!pr || !pr.doc_path) return;
+      sb.storage.from('pro-docs').createSignedUrl(pr.doc_path, 300).then(function (r) {
+        if (r.error || !r.data) { toast('Documento non disponibile'); return; }
+        var u = r.data.signedUrl, pdf = /\.pdf$/i.test(pr.doc_path);
+        dlg('<h2>Documento di ' + esc(pr.name || pr.email) + '</h2><p class="msg">' + esc(pr.albo) + ' · n. ' + esc(pr.albo_number) + '</p>' + (pdf ? '<a class="btn" href="' + esc(u) + '" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Apri il PDF</a>' : '<img class="big" src="' + esc(u) + '" alt="Documento">') +
+          '<p class="msg">Il link vale 5 minuti. Verifica nome e numero sul sito dell\'albo, poi approva o rifiuta.</p><div class="acts"><button class="btn" data-act="proreview" data-u="' + esc(pr.user_id) + '" data-n="' + esc(pr.name || pr.email) + '" data-v="1">Approva</button><button class="btn danger" data-act="proreject" data-u="' + esc(pr.user_id) + '" data-n="' + esc(pr.name || pr.email) + '">Rifiuta</button><button class="btn ghost" data-act="close">Chiudi</button></div>');
+      });
+      return;
+    }
+    if (act === 'proreview') {
+      dlg('<h2>Approvare ' + esc(el.getAttribute('data-n')) + '?</h2><p class="msg">Il profilo diventa «Nutrizionista verificato» e può invitare clienti. Il documento viene cancellato.</p><div class="acts"><button class="btn" data-act="proreviewyes" data-u="' + esc(el.getAttribute('data-u')) + '" data-n="' + esc(el.getAttribute('data-n')) + '">Sì, approva</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'proreject') {
+      dlg('<h2>Rifiutare ' + esc(el.getAttribute('data-n')) + '?</h2><p class="msg">Scrivi un motivo breve: lo vedrà il nutrizionista e potrà inviare di nuovo il documento.</p><input type="search" id="prreason" maxlength="300" placeholder="Es. Il numero non risulta all\'albo" autocomplete="off"><div class="acts"><button class="btn danger" data-act="prorejectyes" data-u="' + esc(el.getAttribute('data-u')) + '" data-n="' + esc(el.getAttribute('data-n')) + '">Rifiuta</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'proreviewyes' || act === 'prorejectyes') {
+      var ok2 = act === 'proreviewyes', tu = el.getAttribute('data-u'), tn = el.getAttribute('data-n') || tu, rs = ok2 ? '' : ((document.getElementById('prreason') || {}).value || '').trim();
+      if (!ok2 && !rs) { toast('Scrivi il motivo'); return; }
+      sb.rpc('admin_review_pro', { target: tu, approve: ok2, reason: rs }).then(function (r) {
+        closeDlg(); if (r.error) { err(r.error); return; }
+        var rmP = r.data ? sb.storage.from('pro-docs').remove([r.data]).then(function () {}, function () {}) : Promise.resolve();
+        logAct(ok2 ? 'verify' : 'reject_pro', tn); toast(ok2 ? 'Nutrizionista verificato' : 'Richiesta rifiutata'); rmP.then(function () { loadAll().then(refreshDrawer); });
+      });
       return;
     }
     if (act === 'ver') {
