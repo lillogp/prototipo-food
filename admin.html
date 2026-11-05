@@ -198,7 +198,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 9;
+  var ADMIN_VERSION = 10;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -439,6 +439,10 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     }
     return '';
   }
+  function wipeUserFiles(uid) {
+    var one = function (bucket) { return sb.storage.from(bucket).list(uid, { limit: 1000 }).then(function (r) { var p = ((r && r.data) || []).map(function (x) { return uid + '/' + x.name; }); return p.length ? sb.storage.from(bucket).remove(p) : null; }).catch(function () {}); };
+    return one('media').then(function () { return one('pro-docs'); });
+  }
   function openDrawer(kind, id, k) {
     S.dr = { kind: kind, id: id, k: k, loading: kind !== 'kpi', data: null }; renderDrawer();
     if (kind === 'kpi') return;
@@ -590,7 +594,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       var rm = function (url) { var p = pathOf(url) || url; if (p && String(p).indexOf('http') !== 0) return sb.storage.from('media').remove([p]).then(function () {}, function () {}); return Promise.resolve(); };
       var call = dk === 'delrec' ? sb.rpc('admin_delete_recipe', { rid: parseInt(id, 10) }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
         : dk === 'delstory' ? sb.rpc('admin_delete_story', { sid: id }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
-        : dk === 'delcom' ? sb.rpc('admin_delete_comment', { cid: parseInt(id, 10) }) : sb.rpc('admin_delete_user', { target: id });
+        : dk === 'delcom' ? sb.rpc('admin_delete_comment', { cid: parseInt(id, 10) }) : wipeUserFiles(id).then(function () { return sb.rpc('admin_delete_user', { target: id }); });
       call.then(function (r) {
         closeDlg(); if (r && r.error) { err(r.error); return; }
         var key = { delrec: 'delete_recipe', delstory: 'delete_story', delcom: 'delete_comment', deluser: 'delete_user' }[dk]; logAct(key, dn || id);
