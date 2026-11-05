@@ -2169,6 +2169,7 @@ body.inchat nav.tabs { display: none !important; }
     if (/already registered|already been registered/i.test(m)) return 'Questa email è già registrata: accedi.';
     if (/password/i.test(m) && /(least|short|weak)/i.test(m)) return 'La password deve avere almeno 8 caratteri.';
     if (/not confirmed/i.test(m)) return 'Devi prima confermare l\'email: controlla la posta.';
+    if (/banned|suspend/i.test(m)) return 'Questo account è sospeso. Se pensi sia un errore, scrivici.';
     if (/rate limit|too many/i.test(m)) return 'Troppi tentativi: riprova tra qualche minuto.';
     return 'Operazione non riuscita. Riprova.';
   }
@@ -2276,12 +2277,13 @@ body.inchat nav.tabs { display: none !important; }
   function proLoad() {
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
-    var PC = 'id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs,bio';
+    var PC = 'id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs,bio,suspended,suspended_until';
     sb.from('profiles').select(PC + ',story_audience,story_replies,story_views_on').eq('id', state.user.id).maybeSingle().then(function (r) {
       if (r.error) return sb.from('profiles').select(PC).eq('id', state.user.id).maybeSingle();
       return r;
     }).then(function (r) {
       state.profile = r.data || { account_type: 'user', pro_verified: false, display_name: '' };
+      if (state.profile.suspended && (!state.profile.suspended_until || new Date(state.profile.suspended_until) > new Date())) { authMsg = 'Questo account è sospeso. Se pensi sia un errore, scrivici.'; sb.auth.signOut(); throw new Error('suspended'); }
       var code = null; try { code = localStorage.getItem('gusto-invite'); localStorage.removeItem('gusto-invite'); } catch (e) {}
       if (code && state.profile.account_type !== 'pro') {
         return sb.rpc('accept_invite', { code: code }).then(function (x) { toast(x.error ? 'Invito non valido o già usato' : 'Collegato al tuo nutrizionista. Il tuo profilo è privato: puoi cambiarlo dal Profilo.');
@@ -4023,8 +4025,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 43; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051530';
+  var VERSION = 44; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051600';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}

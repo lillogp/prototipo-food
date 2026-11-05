@@ -201,7 +201,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 12;
+  var ADMIN_VERSION = 13;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -362,6 +362,19 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
         '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div>';
     }).join('') + '</div>';
   }
+  function suspUntil() {
+    var u = document.getElementById('sdu').value, n = parseInt(document.getElementById('sdn').value, 10);
+    if (u === 'x') return null;
+    if (!(n >= 1 && n <= 999)) return false;
+    var d = new Date();
+    if (u === 'h') d = new Date(Date.now() + n * 3600e3); else if (u === 'd') d = new Date(Date.now() + n * 864e5); else d.setMonth(d.getMonth() + n);
+    return d;
+  }
+  function suspPrev() {
+    var e = document.getElementById('sdprev'); if (!e) return; var d = suspUntil(), nn = document.getElementById('sdn');
+    if (nn) nn.disabled = document.getElementById('sdu').value === 'x';
+    e.textContent = d === null ? 'Resta sospeso finché non lo riattivi tu.' : d === false ? 'Inserisci un numero da 1 a 999.' : 'Si riattiva da solo il ' + d.toLocaleString('it-IT', { dateStyle: 'medium', timeStyle: 'short' }) + '.';
+  }
   var WARNTXT = {
     contenuto: ['Contenuto inappropriato', 'Un tuo contenuto non rispetta le regole della community. Ti chiediamo di rimuoverlo o modificarlo. Se si ripete, potremmo sospendere l\'account.'],
     molestie: ['Comportamento verso altri utenti', 'Abbiamo ricevuto segnalazioni sul tuo comportamento verso altri utenti. Ti chiediamo di rispettare le persone. Se si ripete, potremmo sospendere l\'account.'],
@@ -391,7 +404,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     if (!u) return '<div class="dh"><div class="t"><h2>Utente non trovato</h2></div>' + close + '</div><p class="msg">Potrebbe essere stato eliminato.</p>';
     var nm = u.name || u.email;
     return '<div class="dh">' + av(u.name, u.avatar, true) + '<div class="t"><h2>' + esc(u.name || 'Senza nome') + '</h2><span class="muted">' + (u.handle ? '@' + esc(u.handle) : '') + '</span></div>' + close + '</div>' +
-      '<div class="acts">' + (S.ownerIds.indexOf(u.id) >= 0 ? '<span class="chip ok">Proprietario</span>' : u.admin ? '<span class="chip ok">Admin</span>' : '') + (u.type === 'pro' ? '<span class="chip ' + (u.verified ? 'ok' : 'warn') + '">Nutrizionista' + (u.verified ? ' verificato' : ' da verificare') + '</span>' : '') + (u.suspended ? '<span class="chip bad">Sospeso</span>' : '') + (u.private ? '<span class="chip">Profilo privato</span>' : '') + (u.confirmed ? '' : '<span class="chip warn">Email non confermata</span>') + '</div>' +
+      '<div class="acts">' + (S.ownerIds.indexOf(u.id) >= 0 ? '<span class="chip ok">Proprietario</span>' : u.admin ? '<span class="chip ok">Admin</span>' : '') + (u.type === 'pro' ? '<span class="chip ' + (u.verified ? 'ok' : 'warn') + '">Nutrizionista' + (u.verified ? ' verificato' : ' da verificare') + '</span>' : '') + (u.suspended ? '<span class="chip bad">Sospeso' + (u.suspended_until ? ' fino al ' + fdt(u.suspended_until) : '') + '</span>' : '') + (u.private ? '<span class="chip">Profilo privato</span>' : '') + (u.confirmed ? '' : '<span class="chip warn">Email non confermata</span>') + '</div>' +
       (u.bio ? '<p style="margin:10px 0 0;font-size:13.5px;color:var(--muted)"><b>Descrizione:</b> ' + esc(u.bio) + '</p>' : '') +
       '<div class="facts">' + fact(u.recipes, 'piatti') + fact(u.followers, 'follower') + fact(u.following, 'seguiti') + fact(u.comments, 'commenti') + fact(u.likes_given, 'like dati') + fact(u.saves, 'salvati') + '</div>' +
       '<div class="kv"><div><span>Email</span><span>' + esc(u.email) + '</span></div><div><span>Iscritto</span><span>' + fdt(u.created_at) + '</span></div><div><span>Ultimo accesso</span><span>' + (u.last_sign_in ? ago(u.last_sign_in) : 'mai') + '</span></div>' +
@@ -543,7 +556,8 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     else if (id === 'rq') { S.rq = e.target.value.trim(); document.getElementById('rlist').innerHTML = recipesListHTML(); }
     else if (id === 'cq') { S.cq = e.target.value.trim(); document.getElementById('clist').innerHTML = commentsListHTML(); }
   });
-  document.addEventListener('change', function (e) { if (e.target.id === 'wreason') { var wm = document.getElementById('wmsg'); if (wm && WARNTXT[e.target.value]) wm.value = WARNTXT[e.target.value][1]; return; } if (e.target.id === 'us') { S.us = e.target.value; document.getElementById('ulist').innerHTML = usersListHTML(); } });
+  document.addEventListener('input', function (e) { if (e.target.id === 'sdn') suspPrev(); });
+  document.addEventListener('change', function (e) { if (e.target.id === 'sdu') { suspPrev(); return; } if (e.target.id === 'wreason') { var wm = document.getElementById('wmsg'); if (wm && WARNTXT[e.target.value]) wm.value = WARNTXT[e.target.value][1]; return; } if (e.target.id === 'us') { S.us = e.target.value; document.getElementById('ulist').innerHTML = usersListHTML(); } });
   document.addEventListener('submit', function (e) {
     if (e.target.id !== 'loginform') return;
     e.preventDefault(); if (S.busy || !sb) return;
@@ -685,6 +699,24 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       var xu = el.getAttribute('data-u'), xn = el.getAttribute('data-n') || xu, xm = (document.getElementById('wmsg').value || '').trim(), xk = document.getElementById('wreason').value;
       if (!xm) { toast('Scrivi il testo dell\'avviso'); return; }
       sb.rpc('admin_warn_user', { target: xu, reason: WARNTXT[xk][0], msg: xm }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } logAct('warn', xn); toast('Avviso inviato'); refreshDrawer(); });
+      return;
+    }
+    if (act === 'susp' && v === '1') {
+      var tu = el.getAttribute('data-u'), tn = el.getAttribute('data-n');
+      dlg('<h2>Sospendere ' + esc(tn) + '?</h2><p class="msg">L\'account non potrà più accedere e non sarà più visibile agli altri. Alla scadenza torna attivo da solo; puoi riattivarlo prima quando vuoi.</p>' +
+        '<div class="pills" style="flex-wrap:wrap">' + [['1', 'h', '1 ora'], ['1', 'd', '1 giorno'], ['3', 'd', '3 giorni'], ['7', 'd', '7 giorni'], ['10', 'd', '10 giorni'], ['1', 'm', '1 mese'], ['0', 'x', 'Fino a revoca']].map(function (q) { return '<button class="pill" type="button" data-act="suspp" data-n="' + q[0] + '" data-u="' + q[1] + '">' + q[2] + '</button>'; }).join('') + '</div>' +
+        '<div class="acts" style="align-items:flex-end"><label class="fld" style="flex:1">Durata<input id="sdn" type="number" min="1" max="999" value="3" inputmode="numeric" style="font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:12px;width:100%;box-sizing:border-box"></label>' +
+        '<label class="fld" style="flex:1">Unità<select id="sdu"><option value="h">ore</option><option value="d" selected>giorni</option><option value="m">mesi</option><option value="x">fino a revoca</option></select></label></div>' +
+        '<p class="msg" id="sdprev" style="margin:0"></p>' +
+        '<label class="fld">Motivo (facoltativo, resta nello storico)<textarea id="sdr" rows="2" maxlength="200" placeholder="Es. Contenuti offensivi dopo l\'avviso"></textarea></label>' +
+        '<div class="acts"><button class="btn danger" data-act="suspgo" data-u="' + esc(tu) + '" data-n="' + esc(tn) + '">Sospendi</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      suspPrev(); return;
+    }
+    if (act === 'suspp') { document.getElementById('sdn').value = el.getAttribute('data-n'); document.getElementById('sdu').value = el.getAttribute('data-u'); suspPrev(); return; }
+    if (act === 'suspgo') {
+      var gd = suspUntil(); if (gd === false) { toast('Inserisci una durata da 1 a 999'); return; }
+      var gu = el.getAttribute('data-u'), gn = el.getAttribute('data-n') || gu, gr = (document.getElementById('sdr').value || '').trim();
+      sb.rpc('admin_suspend_user', { target: gu, until_at: gd ? gd.toISOString() : null, reason: gr }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } logAct('suspend', gn + (gd ? ' fino al ' + gd.toLocaleDateString('it-IT') : ' (a tempo indeterminato)')); toast('Account sospeso'); loadAll().then(refreshDrawer); });
       return;
     }
     if (act === 'susp') {
