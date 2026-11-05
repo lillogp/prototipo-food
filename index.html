@@ -604,7 +604,8 @@ body.inchat nav.tabs { display: none !important; }
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmtTime(m) { if (m >= 1440) return Math.round(m / 60) + ' h (con lievitazione)'; if (m >= 60) return Math.floor(m / 60) + ' h ' + (m % 60 ? (m % 60) + ' min' : ''); return m + ' min'; }
-  function byId(id) { return posts.filter(function (p) { return p.id === id; })[0]; }
+  var PRIV = [];
+  function byId(id) { return posts.filter(function (p) { return p.id === id; })[0] || PRIV.filter(function (p) { return p.id === id; })[0]; }
   function toastAct(msg, label, act, id) {
     var t = document.getElementById('toast'); t.innerHTML = esc(msg) + ' <button class="tbtn" data-act="' + act + '" data-id="' + id + '">' + esc(label) + '</button>'; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 4500);
   }
@@ -659,7 +660,7 @@ body.inchat nav.tabs { display: none !important; }
     }
     if (state.exDone || !liveMode()) { if (snt) snt.textContent = 'Hai visto tutto per ora'; return; }
     state.exBusy = true;
-    sb.from('recipes').select(RSEL).order('created_at', { ascending: false }).range(state.exOff, state.exOff + 39).then(function (r) {
+    sb.from('recipes').select(RSEL).is('for_link_id', null).order('created_at', { ascending: false }).range(state.exOff, state.exOff + 39).then(function (r) {
       state.exBusy = false;
       var rows = (r && r.data) || []; state.exOff += rows.length; if (rows.length < 40) state.exDone = true;
       var have = {}; posts.forEach(function (p) { have[p.id] = 1; });
@@ -1390,21 +1391,22 @@ body.inchat nav.tabs { display: none !important; }
       '<div class="sheet-top"><div><h2>' + esc(p.title) + '</h2><div class="meta" style="margin-top:6px"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>di ' + esc(hnd(p)) + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div></div>' +
       '<button class="x" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="sheetmedia">' + mediaTag(p.media, 'media') + '</div>' +
-      '<details class="cmbox"><summary id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</summary><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
-      '<form class="cmf" id="cmf" data-id="' + p.id + '" style="margin-top:12px"><input type="text" id="cmi" placeholder="Scrivi un commento" aria-label="Commento" maxlength="200"><button class="btn" type="submit">Invia</button></form></details>' +
+      (p.priv ? (p.from && p.from.note ? '<div class="note" style="margin:0"><b>Nota del nutrizionista</b><br>' + esc(p.from.note) + '</div>' : '') : '') +
+      (p.priv ? '' : '<details class="cmbox"><summary id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</summary><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
+      '<form class="cmf" id="cmf" data-id="' + p.id + '" style="margin-top:12px"><input type="text" id="cmi" placeholder="Scrivi un commento" aria-label="Commento" maxlength="200"><button class="btn" type="submit">Invia</button></form></details>') +
       warnHTML(p) +
       '<button class="btn" data-act="cook" data-id="' + p.id + '">Modalità cucina</button>' +
       '<section><h3>Ingredienti</h3>' + servBox(p) + '<ul class="ing" id="inglist">' + ingItems(p, state.sheetServ) + '</ul><p class="hint" id="scalehint"></p></section>' +
       nutriHTML(p) + allergenHTML(p) +
       '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></section>' +
-      '<button class="btn ghost" data-act="share" data-id="' + p.id + '">Invia in chat</button>' +
+      (p.priv ? '' : '<button class="btn ghost" data-act="share" data-id="' + p.id + '">Invia in chat</button>') +
       (state.saved[p.id] ? '<button class="btn ghost" data-act="fmove" data-id="' + p.id + '">' + (state.fof[p.id] ? 'Cartella: ' + esc(folderName(state.fof[p.id])) + ' (cambia)' : 'Metti in una cartella') + '</button>' : '') +
-      '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>' +
-      '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>' +
+      (p.priv ? '' : '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>') +
+      (p.priv ? '' : '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>') +
       (p.mine ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
-      (p.mine && p.real ? '<button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina il piatto</button>' : '') +
-      (!p.mine && p.real && liveMode() ? '<button class="reset" data-act="reportrec" data-id="' + p.id + '" style="color:var(--muted);align-self:center;padding:8px">Segnala questo piatto</button>' : '') + '</div></div>';
-    if (p.real && liveMode()) loadComments(p);
+      (p.mine && p.real && !p.priv ? '<button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina il piatto</button>' : '') +
+      (!p.mine && p.real && !p.priv && liveMode() ? '<button class="reset" data-act="reportrec" data-id="' + p.id + '" style="color:var(--muted);align-self:center;padding:8px">Segnala questo piatto</button>' : '') + '</div></div>';
+    if (p.real && !p.priv && liveMode()) loadComments(p);
   }
   function closeSheet() { document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
 
@@ -1952,7 +1954,10 @@ body.inchat nav.tabs { display: none !important; }
       cen: ['Merluzzo in crosta di pangrattato', 'Salmone al forno con patate', 'Gamberi aglio e peperoncino', 'Merluzzo in crosta di pangrattato', 'Salmone al forno con patate', 'Pollo al limone', 'Frittata di zucchine'],
       spu: ['Mela e burro di arachidi', 'Hummus di ceci', 'Mela e burro di arachidi', 'Hummus di ceci', 'Mela e burro di arachidi', 'Yogurt con noci e miele', 'Yogurt con noci e miele'] }
   ];
-  function postByTitle(t) { return posts.filter(function (p) { return p.title === t; })[0]; }
+  function postByTitle(t) {
+    var lk = liveMode() ? activeLinkId() : null;
+    return posts.filter(function (p) { return p.title === t; })[0] || PRIV.filter(function (p) { return p.title === t && (!lk || p.linkId === lk); })[0];
+  }
   function planDishes(pl, i) { return [pl.col[i], pl.pra[i], pl.cen[i], pl.spu[i]].filter(Boolean).map(postByTitle).filter(Boolean); }
   function planKcal(pl) {
     var tot = 0, n = 0;
@@ -2207,7 +2212,11 @@ body.inchat nav.tabs { display: none !important; }
   }
   function loadMsgs(lid) {
     return sb.from('messages').select('id,sender_id,body,created_at').eq('link_id', lid).order('created_at', { ascending: true }).limit(200)
-      .then(function (r) { if (!r.error) state.msgs = r.data || []; });
+      .then(function (r) {
+        if (r.error) return; state.msgs = r.data || [];
+        var miss = state.msgs.some(function (m) { var x = RECTOK.exec(m.body || ''); return x && x[1] && !byId(RB + parseInt(x[2], 10)); });
+        return miss ? loadPriv() : null;
+      });
   }
   function loadClients() {
     return sb.from('client_links').select('id,client_id,invite_code,status,created_at').eq('pro_id', state.user.id).neq('status', 'ended').order('created_at', { ascending: false })
@@ -2277,8 +2286,9 @@ body.inchat nav.tabs { display: none !important; }
     if (!state.msgs.length) return '<p class="hint" style="margin:8px">Ancora nessun messaggio. Scrivi per primo.</p>';
     return state.msgs.map(function (m) {
       var t = m.body || '', rec = RECTOK.exec(t), pp = rec ? recOf(rec) : null, txt = t.replace(RECTOK, '').trim();
+      var ask = pp && isPro() && m.sender_id !== state.user.id && !pp.priv ? '<button class="reset" data-act="verd" data-id="' + pp.id + '" style="align-self:flex-start;margin-top:6px">Rispondi: può mangiarlo?</button>' : '';
       return '<div class="msg ' + (m.sender_id === state.user.id ? 'me' : 'pro') + '">' + (txt ? '<p>' + esc(txt) + '</p>' : '') +
-        (pp ? '<button class="mrec" data-act="open" data-id="' + pp.id + '"><span class="mt">' + thumbTag(pp.media) + '</span><b>' + esc(pp.title) + '</b></button>' : (rec ? '<button class="mrec" data-act="recmiss"><span class="mt"></span><b>Ricetta condivisa</b></button>' : '')) + '<small>' + msgTime(m.created_at) + '</small></div>';
+        (pp ? '<button class="mrec" data-act="open" data-id="' + pp.id + '"><span class="mt">' + thumbTag(pp.media) + '</span><b>' + esc(pp.title) + '</b></button>' : (rec ? '<button class="mrec" data-act="recmiss"><span class="mt"></span><b>Ricetta condivisa</b></button>' : '')) + ask + '<small>' + msgTime(m.created_at) + '</small></div>';
     }).join('');
   }
   function liveSend(text) {
@@ -2358,19 +2368,97 @@ body.inchat nav.tabs { display: none !important; }
   function openCompose() {
     var c = state.pcmp, nm = state.names[c.link.client_id] || 'Cliente';
     var chips = '<div class="pchips">' + DAYN.map(function (d, i) { return '<button class="pc" data-act="pcday" data-d="' + i + '" aria-pressed="' + (c.day === i) + '">' + d + '</button>'; }).join('') + '</div>';
+    var pend = c.pend ? '<div class="note" style="margin:0"><b>Inserisci «' + esc(c.pend.title) + '»</b><br>Scegli il giorno qui sopra e poi il pasto:</div><div class="pchips">' + SLOTK.map(function (k) { return '<button class="pc" data-act="pcput" data-slot="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div>' : '';
     var rows = SLOTK.map(function (k) {
-      var t = c.data[k[0]][c.day];
-      return '<div class="plday"><b>' + k[1] + '</b>' + (t ? '<span>' + esc(t) + '</span><span><button class="reset" data-act="pcsel" data-slot="' + k[0] + '">Cambia</button> <button class="reset" data-act="pcclr" data-slot="' + k[0] + '" style="color:var(--muted)">Togli</button></span>'
+      var t = c.data[k[0]][c.day], pp = t && postByTitle(t);
+      return '<div class="plday"><b>' + k[1] + '</b>' + (t ? '<span>' + esc(t) + (pp && pp.priv ? ' <small style="color:var(--muted)">· adattato</small>' : '') + '</span><span><button class="reset" data-act="pcsel" data-slot="' + k[0] + '">Cambia</button> ' + (pp ? '<button class="reset" data-act="pcadapt" data-slot="' + k[0] + '">' + (pp.priv ? 'Modifica' : 'Adatta') + '</button> ' : '') + '<button class="reset" data-act="pcclr" data-slot="' + k[0] + '" style="color:var(--muted)">Togli</button></span>'
         : '<button class="addslot" data-act="pcsel" data-slot="' + k[0] + '">Scegli un piatto</button>') + '</div>';
     }).join('');
     var dk = dayKcal(c, c.day), done = 0; for (var i = 0; i < 7; i++) if (dayKcal(c, i) > 0) done++;
     sheetOpen('Piano per ' + nm, 'Piano per ' + nm,
-      chips + '<div class="slist">' + rows + '</div>' + '<p class="hint" style="margin:0">' + (dk ? 'Questo giorno: circa ' + dk + ' kcal.' : 'Nessun piatto in questo giorno.') + ' Giorni compilati: ' + done + ' su 7.</p>' +
+      chips + pend + '<div class="slist">' + rows + '</div>' + '<p class="hint" style="margin:0">' + (dk ? 'Questo giorno: circa ' + dk + ' kcal.' : 'Nessun piatto in questo giorno.') + ' Giorni compilati: ' + done + ' su 7. «Adatta» crea per ' + esc(nm) + ' una copia del piatto che puoi modificare: l\'originale non cambia e la copia la vede solo il cliente.</p>' +
       '<label class="f" for="pcgoal">Obiettivo giornaliero in kcal <small>facoltativo, il cliente lo vede nel planner</small><input id="pcgoal" type="number" inputmode="numeric" min="800" max="6000" step="50" value="' + esc(c.goal || '') + '"></label>' +
       '<button class="btn" data-act="pcsave">Invia il piano a ' + esc(nm) + '</button>');
   }
   function openCompPick() {
-    sheetOpen('Scegli un piatto', 'Scegli un piatto', pkBar() + '<p class="hint pkempty" hidden>Nessun piatto trovato.</p><div class="slist">' + posts.map(function (q) { return pickRow(q, '', '').replace('data-act="ppick"', 'data-act="pcpick"'); }).join('') + '</div>');
+    var c = state.pcmp, lk = c.link.id, nm = state.names[c.link.client_id] || 'Cliente';
+    var ad = PRIV.filter(function (p) { return p.linkId === lk; });
+    var isMine = function (p) { return (p.mine && !p.priv) || state.saved[p.id]; };
+    var mine = posts.filter(isMine), rest = posts.filter(function (p) { return !isMine(p); });
+    var rows = function (a) { return '<div class="slist">' + a.map(function (q) { return pickRow(q, '', '').replace('data-act="ppick"', 'data-act="pcpick"'); }).join('') + '</div>'; };
+    sheetOpen('Scegli un piatto', 'Scegli un piatto', pkBar() + '<p class="hint pkempty" hidden>Nessun piatto trovato.</p>' +
+      (ad.length ? '<section><h3>Adattati per ' + esc(nm) + '</h3>' + rows(ad) + '</section>' : '') +
+      (mine.length ? '<section><h3>La mia libreria</h3><p class="hint" style="margin:0 0 8px">I tuoi piatti e quelli che hai salvato.</p>' + rows(mine) + '</section>' : '') +
+      '<section><h3>' + (mine.length ? 'Tutti i piatti di Gusto' : 'Piatti di Gusto') + '</h3>' + rows(rest) + '</section>');
+  }
+  /* Adattamento di un piatto per un cliente: copia privata (visibile solo a nutrizionista e cliente) */
+  function adaptStart(src, mode) {
+    var known = UNITS.map(function (u) { return u[0]; });
+    state.pad = { src: src, mode: mode || 'plan', slot: state.pcmp && state.pcmp.slot, edit: src.priv ? src : null,
+      title: src.priv ? src.title : (src.title + ' (adattato)').slice(0, 80), serv: String(src.serv), note: src.priv && src.from && src.from.note ? src.from.note : '', stps: src.steps.join('\n'),
+      ings: src.ing.map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null }; }) };
+    openAdapt();
+  }
+  function padKeep() {
+    var d = state.pad, g = function (id) { var e = document.getElementById(id); return e ? e.value : null; };
+    if (!d || !document.getElementById('padform')) return;
+    var t = g('pa-t'); if (t != null) d.title = t; var sv = g('pa-s'); if (sv != null) d.serv = sv; var nt = g('pa-note'); if (nt != null) d.note = nt; var st = g('pa-st'); if (st != null) d.stps = st;
+    var rows = document.querySelectorAll('#padform .ingrow');
+    d.ings = Array.prototype.map.call(rows, function (r, i) { var o = d.ings[i] || {}; return { n: r.querySelector('.in-n').value, q: r.querySelector('.in-q').value, u: r.querySelector('.in-u').value, prod: o.prod || null }; });
+  }
+  function openAdapt() {
+    var d = state.pad, nm = state.names[(state.pcmp ? state.pcmp.link : state.curClient).client_id] || 'Cliente';
+    var rows = d.ings.map(function (r, i) {
+      return '<div class="ingrow"><input type="text" class="in-n" list="ingl" placeholder="Ingrediente" maxlength="40" aria-label="Ingrediente ' + (i + 1) + '" value="' + esc(r.n) + '">' +
+        '<input type="number" class="in-q" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità" value="' + esc(r.q) + '">' +
+        '<select class="in-u" aria-label="Unità">' + UNITS.map(function (u) { return '<option value="' + u[0] + '"' + (r.u === u[0] ? ' selected' : '') + '>' + u[1] + '</option>'; }).join('') + '</select>' +
+        '<button type="button" class="rm" data-act="padrm" data-i="' + i + '" aria-label="Rimuovi ingrediente"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+    }).join('');
+    sheetOpen('Adatta per ' + nm, 'Adatta per ' + nm,
+      '<form id="padform" class="new" novalidate><p class="hint" style="margin:0">Parti da «' + esc(d.src.title) + '» di ' + esc(d.src.priv ? ((d.src.from && d.src.from.name) || 'Gusto') : hnd(d.src)) + '. La copia la vedi tu e la vede ' + esc(nm) + ': non compare nel feed e l\'originale non cambia.</p>' +
+      '<label class="f" for="pa-t">Nome<input id="pa-t" type="text" maxlength="80" value="' + esc(d.title) + '"></label>' +
+      '<label class="f" for="pa-s">Porzioni<input id="pa-s" type="number" inputmode="numeric" min="1" max="50" value="' + esc(d.serv) + '"></label>' +
+      '<div class="fbox"><span>Ingredienti</span>' + rows + '<button type="button" class="btn ghost" data-act="padadd">Aggiungi ingrediente</button><datalist id="ingl">' + COMMON.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist></div>' +
+      '<label class="f" for="pa-st">Procedimento <small>un passaggio per riga</small><textarea id="pa-st" rows="5" maxlength="2400">' + esc(d.stps) + '</textarea></label>' +
+      '<label class="f" for="pa-note">Nota per ' + esc(nm) + ' <small>facoltativa, la vede nella ricetta</small><textarea id="pa-note" rows="3" maxlength="240" placeholder="Es. Senza lattosio: ho sostituito il parmigiano con lievito alimentare.">' + esc(d.note) + '</textarea></label>' +
+      '<button class="btn" type="submit">' + (d.mode === 'chat' ? 'Salva e invia in chat' : (d.edit ? 'Salva le modifiche' : 'Salva e usa nel piano')) + '</button></form>');
+  }
+  function padSave(btn) {
+    padKeep(); var d = state.pad, link = state.pcmp ? state.pcmp.link : state.curClient;
+    var title = (d.title || '').trim(); if (!title) { toast('Scrivi il nome del piatto'); return; }
+    if (posts.some(function (x) { return x.title === title; })) title = (title + ' (adattato)').slice(0, 80);
+    var ing = d.ings.filter(function (r) { return r.n.trim(); }).map(function (r) { var q = parseFloat(String(r.q).replace(',', '.')); return { n: r.n.trim(), q: q > 0 ? q : null, u: r.u, prod: r.prod || null }; });
+    var steps = String(d.stps || '').split('\n').map(function (x) { return x.trim().slice(0, 160); }).filter(Boolean);
+    if (!ing.length) { toast('Aggiungi almeno un ingrediente'); return; }
+    if (!steps.length) { toast('Aggiungi almeno un passaggio'); return; }
+    var src = d.src;
+    var row = { title: title, tag: src.tag || 'Altro', time_min: Math.max(1, src.time || 30), serv: Math.min(50, Math.max(1, parseInt(d.serv, 10) || src.serv || 2)), ingredients: ing, steps: steps, hide_nutrition: false,
+      media_type: src.media && src.media.type === 'video' ? 'video' : 'image', media_url: src.real && /^https?:/.test(src.media.src || '') ? src.media.src : null,
+      from_info: { name: src.priv ? (src.from && src.from.name) : hnd(src), title: src.priv ? (src.from && src.from.title) : src.title, note: (d.note || '').trim() || undefined } };
+    if (!src.priv && src.real) row.from_recipe_id = src.dbId;
+    if (d.edit) { delete row.media_url; delete row.media_type; }
+    if (btn) btn.disabled = true;
+    var q = d.edit ? sb.from('recipes').update(row).eq('id', d.edit.dbId).select('id') : sb.from('recipes').insert(Object.assign({ author_id: state.user.id, for_link_id: link.id }, row)).select('id');
+    q.single().then(function (r) {
+      if (r.error) { if (btn) btn.disabled = false; toast('Non riesco a salvare la versione adattata'); return; }
+      return loadPriv().then(function () {
+        var np = byId(RB + r.data.id); if (!np) { toast('Salvato, ma non riesco a mostrarlo. Riapri la pagina.'); return; }
+        if (d.mode === 'chat') { closeSheet(); liveSend('[[rid:' + r.data.id + ']]' + (d.msg ? ' ' + d.msg : ' Ti propongo questa versione adattata.')); toast('Versione adattata inviata'); return; }
+        if (state.pcmp && d.slot) state.pcmp.data[d.slot][state.pcmp.day] = np.title;
+        state.pad = null; openCompose(); toast('Versione adattata salvata');
+      });
+    });
+  }
+  var VERD = [['ok', 'Va bene', 'Puoi mangiarlo.'], ['mod', 'Con modifiche', 'Va bene con qualche modifica.'], ['no', 'Meglio di no', 'Meglio evitarlo.']];
+  function openVerdict() {
+    var v = state.verd, p = byId(v.rid); if (!p) return;
+    sheetOpen('Rispondi al cliente', 'Può mangiarlo?',
+      '<div class="meta"><span>' + esc(p.title) + '</span>' + (kcalPP(p) ? '<span>circa ' + kcalPP(p) + ' kcal a porzione</span>' : '') + '</div>' +
+      '<div class="pchips">' + VERD.map(function (x) { return '<button class="pc" data-act="verdset" data-v="' + x[0] + '" aria-pressed="' + (v.v === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<label class="f" for="verdnote">Nota <small>facoltativa</small><textarea id="verdnote" rows="3" maxlength="200" placeholder="Es. Una porzione a pranzo, senza pane.">' + esc(v.note || '') + '</textarea></label>' +
+      '<button class="btn" data-act="verdsend">Invia la risposta</button>' +
+      '<button class="btn ghost" data-act="verdadapt">Adatta il piatto e invia la versione</button>' +
+      '<button class="btn ghost" data-act="verdplan">Inserisci nel piano</button>');
   }
   function openEndLink(lid) {
     sheetOpen('Scollega', 'Scollegare?', '<p style="margin:0">Il collegamento tra nutrizionista e cliente si chiude: non potete più scrivervi né inviarvi piani. Per riattivarlo serve un nuovo invito.</p>' +
@@ -2510,7 +2598,7 @@ body.inchat nav.tabs { display: none !important; }
       sb.from('client_links').update({ status: 'ended' }).eq('id', id).then(function (r) {
         closeSheet();
         if (r.error) { toast('Non riesco a scollegare'); return; }
-        state.curClient = null; state.msgs = []; state.myLink = null; state.pro = null; PLANS.length = 0; state.clients = state.clients.filter(function (x) { return x.id !== id; });
+        state.curClient = null; state.msgs = []; state.myLink = null; state.pro = null; PLANS.length = 0; PRIV.length = 0; state.clients = state.clients.filter(function (x) { return x.id !== id; });
         toast('Scollegato'); render();
       });
       return true;
@@ -2527,6 +2615,31 @@ body.inchat nav.tabs { display: none !important; }
       var pk = byId(id); if (pk && state.pcmp.slot) state.pcmp.data[state.pcmp.slot][state.pcmp.day] = pk.title;
       openCompose(); return true;
     }
+    if (act === 'pcput') { var pd = state.pcmp.pend; if (pd) { state.pcmp.data[el.getAttribute('data-slot')][state.pcmp.day] = pd.title; state.pcmp.pend = null; } openCompose(); return true; }
+    if (act === 'pcadapt') {
+      state.pcmp.slot = el.getAttribute('data-slot'); var at = state.pcmp.data[state.pcmp.slot][state.pcmp.day], ap = at && postByTitle(at);
+      if (ap) adaptStart(ap, 'plan'); return true;
+    }
+    if (act === 'verd') { state.verd = { rid: id, v: 'ok', note: '' }; openVerdict(); return true; }
+    if (act === 'verdset') { var vn = document.getElementById('verdnote'); if (vn) state.verd.note = vn.value; state.verd.v = el.getAttribute('data-v'); openVerdict(); return true; }
+    if (act === 'verdsend') {
+      var vn2 = document.getElementById('verdnote'), vv = state.verd, vx = VERD.filter(function (x) { return x[0] === vv.v; })[0], note = vn2 ? vn2.value.trim() : '';
+      var vp = byId(vv.rid); if (!vp) return true;
+      var tok = vp.real ? '[[rid:' + vp.dbId + ']]' : '[[r:' + vp.title + ']]';
+      liveSend((tok + ' ' + vx[1] + '. ' + (note || vx[2])).slice(0, 300)); closeSheet(); state.verd = null; toast('Risposta inviata'); return true;
+    }
+    if (act === 'verdadapt') {
+      var vn3 = document.getElementById('verdnote'), vv3 = state.verd, vp3 = byId(vv3.rid); if (!vp3 || !state.curClient) return true;
+      var vx3 = VERD.filter(function (x) { return x[0] === vv3.v; })[0];
+      adaptStart(vp3, 'chat'); state.pad.msg = vx3[1] + '. ' + ((vn3 && vn3.value.trim()) || 'Ecco la versione adattata per te.'); return true;
+    }
+    if (act === 'verdplan') {
+      var vp4 = byId(state.verd.rid), cl4 = state.curClient; if (!vp4 || !cl4) return true;
+      state.pcmp = { link: cl4, day: 0, data: normData(state.lastPlan && state.lastPlan.data), goal: state.lastPlan && state.lastPlan.kcal_goal ? String(state.lastPlan.kcal_goal) : '', pend: vp4 };
+      state.verd = null; openCompose(); return true;
+    }
+    if (act === 'padrm') { padKeep(); state.pad.ings.splice(parseInt(el.getAttribute('data-i'), 10), 1); openAdapt(); return true; }
+    if (act === 'padadd') { padKeep(); state.pad.ings.push({ n: '', q: '', u: 'g' }); openAdapt(); return true; }
     if (act === 'pcsave') {
       var c2 = state.pcmp, any = false; for (var i = 0; i < 7; i++) if (dayKcal(c2, i) > 0 || SLOTK.some(function (k) { return c2.data[k[0]][i]; })) any = true;
       if (!any) { toast('Aggiungi almeno un piatto'); return true; }
@@ -2974,7 +3087,7 @@ body.inchat nav.tabs { display: none !important; }
     var nl = r.likes && r.likes[0] ? r.likes[0].count : 0, nc = r.comments && r.comments[0] ? r.comments[0].count : 0;
     return { id: RB + r.id, dbId: r.id, real: true, authorId: r.author_id, user: a.display_name || (a.handle ? '@' + a.handle : 'Utente'), handle: 'u:' + r.author_id,
       avatar: a.avatar_url || null, menuId: r.menu_id || null, menuName: r.menu_name || '', menuPos: r.menu_pos || 0, hd: a.handle ? '@' + a.handle : 'Su Gusto', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
-      title: r.title, tag: r.tag, time: r.time_min, serv: r.serv, media: { type: r.media_type === 'video' ? 'video' : 'image', src: r.media_url }, mediaPath: pathOf(r.media_url),
+      title: r.title, tag: r.tag, time: r.time_min, serv: r.serv, media: { type: r.media_type === 'video' ? 'video' : 'image', src: r.media_url || plate(['#A9B8B2', '#8FB86B', '#F4E7C5', '#C8472B'], r.id % 97) }, mediaPath: pathOf(r.media_url), priv: !!r.for_link_id, linkId: r.for_link_id || null,
       ing: Array.isArray(r.ingredients) ? r.ingredients : [], steps: Array.isArray(r.steps) ? r.steps : [], hideN: !!r.hide_nutrition,
       from: r.from_info || null, likes: nl, ccount: nc, comments: [], mine: me };
   }
@@ -2983,14 +3096,22 @@ body.inchat nav.tabs { display: none !important; }
     Array.prototype.splice.apply(posts, [0, posts.length].concat(real, keep, SAMPLES));
   }
   var RSEL = 'id,author_id,title,tag,time_min,serv,media_url,media_type,ingredients,steps,hide_nutrition,from_recipe_id,from_info,menu_id,menu_name,menu_pos,created_at,author:profiles!author_id(id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts),likes(count),comments(count)';
+  function loadPriv() {
+    if (!liveMode()) return Promise.resolve();
+    return sb.from('recipes').select(RSEL + ',for_link_id').not('for_link_id', 'is', null).order('created_at', { ascending: false }).limit(300).then(function (r) {
+      if (r.error) return;
+      PRIV.length = 0; (r.data || []).forEach(function (x) { PRIV.push(mapRecipe(x)); });
+    }, function () {});
+  }
   function loadFeed() {
     if (!liveMode()) return Promise.resolve();
     var me = state.user.id;
     return Promise.all([
-      sb.from('recipes').select(RSEL).order('created_at', { ascending: false }).limit(80),
+      loadPriv(),
+      sb.from('recipes').select(RSEL).is('for_link_id', null).order('created_at', { ascending: false }).limit(80),
       sb.from('likes').select('recipe_id').eq('user_id', me),
       sb.from('saves').select('recipe_id,folder').eq('user_id', me)
-    ]).then(function (a) {
+    ]).then(function (z) { return [z[1], z[2], z[3]]; }).then(function (a) {
       if (a[0].error) return null;
       [state.liked, state.saved, state.fof].forEach(function (o) { Object.keys(o).forEach(function (k) { if (+k >= RB) delete o[k]; }); });
       var lk = {}, sv = {}; (a[1].data || []).forEach(function (x) { lk[RB + x.recipe_id] = 1; }); (a[2].data || []).forEach(function (x) { sv[RB + x.recipe_id] = x.folder || null; });
@@ -3111,6 +3232,7 @@ body.inchat nav.tabs { display: none !important; }
         .catch(function () { toast('Invio non riuscito. Riprova.'); if (btn) { btn.disabled = false; btn.textContent = 'Invia per la verifica'; } });
       return true;
     }
+    if (id === 'padform') { e.preventDefault(); if (liveMode() && state.pad) padSave(e.target.querySelector('button[type=submit]')); return true; }
     if (id === 'dmform') {
       e.preventDefault(); var di = document.getElementById('dmin'), dt = di.value.trim(); if (!dt || !liveMode()) return true;
       di.value = ''; dmSend(dt); return true;
@@ -3842,8 +3964,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 38; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051130';
+  var VERSION = 39; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051240';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
