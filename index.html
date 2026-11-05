@@ -1079,6 +1079,7 @@ body.inchat nav.tabs { display: none !important; }
     if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
     if (liveMode() && state.profile) rows.push(['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']);
     rows.push(['install', 'Installa l\'app', window.__canInstall && window.__canInstall() ? 'Aggiungila alla schermata Home' : 'Già installata su questo telefono']);
+    rows.push(['legalterms', 'Termini d\'uso', 'Le regole di Gusto'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
       ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
@@ -1096,6 +1097,8 @@ body.inchat nav.tabs { display: none !important; }
       '<form class="new accf" id="nameform" novalidate><label class="f" for="acc-n">Nome<small>È il nome con cui gli altri ti cercano.</small><input id="acc-n" type="text" maxlength="40" autocomplete="name" value="' + esc(nm) + '"></label><button class="btn ghost" type="submit">Salva il nome</button></form>' +
       '<form class="new accf" id="emailform" novalidate><label class="f" for="acc-e">Email<small>Ora: ' + esc(state.user.email) + '. Ti mandiamo un\'email per confermare il nuovo indirizzo.</small><input id="acc-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Nuovo indirizzo" maxlength="120"></label><button class="btn ghost" type="submit">Cambia email</button></form>' +
       '<form class="new accf" id="passform" novalidate><label class="f" for="acc-p">Nuova password<small>Almeno 8 caratteri.</small><input id="acc-p" type="password" autocomplete="new-password" maxlength="72"></label><label class="f" for="acc-p2">Ripeti la password<input id="acc-p2" type="password" autocomplete="new-password" maxlength="72"></label><button class="btn ghost" type="submit">Cambia password</button></form>' +
+      '<h3 class="shc">I tuoi dati</h3><p class="hint" style="margin:0 0 10px">Puoi scaricare una copia dei tuoi dati o eliminare l\'account. L\'eliminazione cancella profilo, piatti, commenti, storie e messaggi e non si può annullare.</p>' +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><button class="btn ghost" data-act="accexp">Scarica i miei dati</button><button class="btn ghost" data-act="accdel" style="color:#B3261E">Elimina il mio account</button></div>' +
       '<button class="btn" data-act="logout">Esci</button>';
   }
   function reqListHTML() {
@@ -1878,6 +1881,27 @@ body.inchat nav.tabs { display: none !important; }
       state.convs.push(r.data); send(r.data.id);
     });
   }
+  function exportMyData() {
+    if (!liveMode()) return; toast('Preparo i tuoi dati…');
+    var me = state.user.id, T = [['profilo', 'profiles', 'id'], ['piatti', 'recipes', 'author_id'], ['commenti', 'comments', 'author_id'], ['mi_piace', 'likes', 'user_id'], ['salvati', 'saves', 'user_id'], ['seguiti', 'follows', 'follower_id'], ['storie', 'stories', 'author_id'], ['mi_piace_storie', 'story_likes', 'user_id'], ['messaggi_inviati', 'dm_messages', 'sender_id'], ['planner_e_preferenze', 'user_data', 'user_id'], ['persone_bloccate', 'blocks', 'blocker_id']];
+    Promise.all(T.map(function (t) { return sb.from(t[1]).select('*').eq(t[2], me).then(function (r) { return [t[0], (r && r.data) || []]; }, function () { return [t[0], []]; }); })).then(function (a) {
+      var out = { esportato_il: new Date().toISOString(), email: state.user.email, account_id: me }; a.forEach(function (x) { out[x[0]] = x[1]; });
+      var blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), l = document.createElement('a');
+      l.href = url; l.download = 'i-miei-dati-gusto.json'; document.body.appendChild(l); l.click(); l.remove(); setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      toast('Dati scaricati');
+    });
+  }
+  function deleteMyAccount() {
+    if (!liveMode()) return; var me = state.user.id; toast('Elimino l\'account…');
+    sb.storage.from('media').list(me, { limit: 1000 }).then(function (r) {
+      var paths = ((r && r.data) || []).map(function (x) { return me + '/' + x.name; });
+      return paths.length ? sb.storage.from('media').remove(paths) : null;
+    }).catch(function () {}).then(function () { return sb.rpc('delete_my_account'); }).then(function (r) {
+      if (r && r.error) { toast('Non riesco a eliminare l\'account. Scrivici per farlo a mano.'); return; }
+      try { localStorage.clear(); } catch (e) {}
+      sb.auth.signOut({ scope: 'local' }).then(function () { closeSheet(); state.user = null; state.profile = null; toast('Account eliminato'); location.reload(); }, function () { location.reload(); });
+    });
+  }
   function openFolderAdd(fid) {
     var rows = function (a) { return a.map(function (p) { return pickRow(p, '', '').replace('data-act="ppick"', 'data-act="fadd" data-f="' + fid + '"'); }).join(''); };
     var sv = posts.filter(function (p) { return state.saved[p.id] && state.fof[p.id] !== fid; }), rest = posts.filter(function (p) { return !state.saved[p.id]; });
@@ -1906,6 +1930,7 @@ body.inchat nav.tabs { display: none !important; }
         return '<button class="pc" data-act="pall" data-v="' + x[0] + '" aria-pressed="' + (pr.allergens.indexOf(x[0]) > -1) + '">' + x[0] + '</button>'; }).join('') + '</div></section>' +
       '<button class="mchk" style="border:0" role="checkbox" aria-checked="' + pr.hide + '" data-act="phide"><span class="box">' + (pr.hide ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Nascondi dal feed i piatti non adatti</span></button>' +
       '<p class="hint" style="margin:0">Il controllo si basa sugli ingredienti scritti nella ricetta. Con un\'allergia seria verifica sempre le etichette dei prodotti.</p>' +
+      '<p class="hint" style="margin:0">Allergie e intolleranze sono dati sulla salute: scegliendole acconsenti a usarli per mostrarti gli avvisi. Puoi toglierli quando vuoi (vedi <a href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a>).</p>' +
       '<button class="btn" data-act="close">Fatto</button>');
   }
   function openGoal() {
@@ -2125,14 +2150,16 @@ body.inchat nav.tabs { display: none !important; }
     if (/rate limit|too many/i.test(m)) return 'Troppi tentativi: riprova tra qualche minuto.';
     return 'Operazione non riuscita. Riprova.';
   }
+  var LEGAL_VER = '2026-11-05', AUD = {};
   function viewAuth() {
     var up = state.authMode === 'up';
     return (hasInvite() ? '<div class="note" style="margin-top:14px"><span>Hai ricevuto un invito da un nutrizionista. Accedi o registrati per collegarti.</span></div>' : '') + '<div class="view-h" style="margin-top:18px"><h1>' + (up ? 'Crea il tuo account' : 'Accedi') + '</h1><p>' + (up ? 'Così planner, spesa e dispensa restano con te su ogni dispositivo.' : 'Bentornato su Gusto.') + '</p></div>' +
       '<form class="new" id="authform" novalidate>' +
-      (up ? '<label class="f" for="au-n">Il tuo nome<input id="au-n" type="text" autocomplete="name" maxlength="40"></label>' : '') +
-      '<label class="f" for="au-e">Email<input id="au-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" maxlength="120"></label>' +
-      '<label class="f" for="au-p">Password' + (up ? ' <small>almeno 8 caratteri</small>' : '') + '<input id="au-p" type="password" autocomplete="' + (up ? 'new-password' : 'current-password') + '" maxlength="72"></label>' +
+      (up ? '<label class="f" for="au-n">Il tuo nome<input id="au-n" type="text" autocomplete="name" maxlength="40" value="' + esc(AUD['au-n'] || '') + '"></label>' : '') +
+      '<label class="f" for="au-e">Email<input id="au-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" maxlength="120" value="' + esc(AUD['au-e'] || '') + '"></label>' +
+      '<label class="f" for="au-p">Password' + (up ? ' <small>almeno 8 caratteri</small>' : '') + '<input id="au-p" type="password" autocomplete="' + (up ? 'new-password' : 'current-password') + '" maxlength="72" value="' + esc(AUD['au-p'] || '') + '"></label>' +
       (up ? '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + !!state.authPro + '" data-act="authpro"><span class="box">' + (state.authPro ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Sono un nutrizionista (il profilo viene verificato prima di attivare i clienti)</span></button>' : '') +
+      (up ? '<div style="display:flex;gap:10px;align-items:flex-start"><button type="button" class="mchk" style="border:0;width:auto;flex:none;padding:2px" role="checkbox" aria-checked="' + !!state.authTerms + '" aria-label="Accetto Termini e Informativa privacy" data-act="authterms"><span class="box">' + (state.authTerms ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span></button><span style="font-size:14px">Ho almeno 16 anni e accetto i <a href="termini.html" target="_blank" rel="noopener">Termini d\'uso</a> e l\'<a href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a>.</span></div>' : '') +
       (authMsg ? '<p class="hint" role="status" style="margin:0">' + esc(authMsg) + '</p>' : '') +
       '<button class="btn" type="submit" style="padding:14px 16px"' + (authBusy ? ' disabled' : '') + '>' + (up ? 'Registrati' : 'Accedi') + '</button></form>' +
       '<p style="text-align:center;margin:14px 0 4px"><button class="reset" data-act="authmode">' + (up ? 'Ho già un account' : 'Non ho un account: registrati') + '</button></p>' +
@@ -2152,7 +2179,7 @@ body.inchat nav.tabs { display: none !important; }
     sb.auth.onAuthStateChange(function (ev, session) {
       setTimeout(function () {
         var u = session && session.user;
-        if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email }; authBusy = false; authMsg = ''; cloudReady = false; cloudLoad(); }
+        if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email }; authBusy = false; authMsg = ''; AUD = {}; cloudReady = false; cloudLoad(); }
         else if (!u && state.user && ev === 'SIGNED_OUT') { state.user = null; render(); }
       }, 0);
     });
@@ -2362,6 +2389,15 @@ body.inchat nav.tabs { display: none !important; }
   function liveClick(act, el, id) {
     if (act === 'stnew') { var f0 = document.getElementById('stfile'); if (f0) f0.click(); return true; }
     if (act === 'stopen') { openStory(el.getAttribute('data-u')); return true; }
+    if (act === 'accexp') { exportMyData(); return true; }
+    if (act === 'accdel') {
+      sheetOpen('Elimina account', 'Elimina il tuo account',
+        '<p style="margin:0">Cancelleremo il tuo profilo, i piatti, i commenti, le storie, i messaggi e tutto il resto. <b>Non si può annullare.</b></p>' +
+        '<p class="hint" style="margin:0">Se vuoi, prima scarica i tuoi dati da Impostazioni → Account.</p>' +
+        '<form id="accdelform" class="new" novalidate><label class="f" for="accdelin">Scrivi ELIMINA per confermare<input id="accdelin" autocomplete="off" autocapitalize="characters"></label>' +
+        '<button class="btn" type="submit" style="background:#B3261E">Elimina definitivamente</button></form>');
+      return true;
+    }
     if (act === 'stx') { closeStory(); return true; }
     if (act === 'stlike') {
       var lid = el.getAttribute('data-s'), was = !!state.slikes[lid];
@@ -3074,9 +3110,10 @@ body.inchat nav.tabs { display: none !important; }
       var em = document.getElementById('au-e').value.trim(), pw = document.getElementById('au-p').value, up = state.authMode === 'up';
       if (!/^\S+@\S+\.\S+$/.test(em)) { authMsg = 'Scrivi un\'email valida.'; render(); return true; }
       if (pw.length < 8) { authMsg = 'La password deve avere almeno 8 caratteri.'; render(); return true; }
+      if (up && !state.authTerms) { authMsg = 'Per registrarti accetta i Termini d\'uso e l\'Informativa privacy.'; render(); return true; }
       var nm = up ? document.getElementById('au-n').value.trim() : '';
       authBusy = true; authMsg = 'Un momento…'; render();
-      var req = up ? sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.origin + location.pathname, data: { display_name: nm, account_type: state.authPro ? 'pro' : 'user' } } }) : sb.auth.signInWithPassword({ email: em, password: pw });
+      var req = up ? sb.auth.signUp({ email: em, password: pw, options: { emailRedirectTo: location.origin + location.pathname, data: { display_name: nm, account_type: state.authPro ? 'pro' : 'user', terms_version: LEGAL_VER, terms_at: new Date().toISOString() } } }) : sb.auth.signInWithPassword({ email: em, password: pw });
       req.then(function (r) {
         authBusy = false;
         if (r.error) { authMsg = authErr(r.error.message); render(); return; }
@@ -3111,6 +3148,10 @@ body.inchat nav.tabs { display: none !important; }
       e.preventDefault(); var g = parseInt(document.getElementById('goalin').value, 10);
       if (!(g >= 800 && g <= 6000)) { toast('Scrivi un valore tra 800 e 6000'); return true; }
       state.goal = g; state.goalBy = null; persist(); closeSheet(); render(); toast('Obiettivo salvato'); return true;
+    }
+    if (id === 'accdelform') {
+      e.preventDefault(); var cv = document.getElementById('accdelin').value.trim().toUpperCase(); if (cv !== 'ELIMINA') { toast('Scrivi ELIMINA per confermare'); return true; }
+      deleteMyAccount(); return true;
     }
     if (id === 'stpubform') { e.preventDefault(); if (state.stdraft) state.stdraft.caption = document.getElementById('stcap').value.trim(); storyPublish(); return true; }
     if (id === 'stform') {
@@ -3273,6 +3314,7 @@ body.inchat nav.tabs { display: none !important; }
     }
     if (act === 'notiftap') { var nn = state.notifs[parseInt(el.getAttribute('data-i'), 10)]; if (nn) notifOpen(nn); return true; }
     if (act === 'authmode') { state.authMode = state.authMode === 'up' ? 'in' : 'up'; authMsg = ''; render(); return true; }
+    if (act === 'authterms') { var e2 = document.getElementById('au-e'), p2 = document.getElementById('au-n'), q2 = document.getElementById('au-p'); var ev2 = e2 ? e2.value : '', nv2 = p2 ? p2.value : '', pv2 = q2 ? q2.value : ''; state.authTerms = !state.authTerms; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev2; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv2; if (document.getElementById('au-p')) document.getElementById('au-p').value = pv2; return true; }
     if (act === 'authpro') { var e1 = document.getElementById('au-e'), p1 = document.getElementById('au-n'); var ev1 = e1 ? e1.value : '', nv1 = p1 ? p1.value : ''; state.authPro = !state.authPro; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev1; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv1; return true; }
     if (act === 'authguest') { state.guest = true; try { localStorage.setItem('gusto-guest', '1'); } catch (e) {} render(); return true; }
     if (act === 'authopen') { state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {} closeSheet(); render(); return true; }
@@ -3316,6 +3358,7 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'maxt') { state.maxT = parseInt(el.getAttribute('data-v'), 10); render(); return true; }
     if (act === 'showhidden') { state.prefs.hide = false; persist(); render(); return true; }
     if (act === 'prefs') { openPrefs(); return true; }
+    if (act === 'legalterms' || act === 'legalpriv') { window.open(act === 'legalterms' ? 'termini.html' : 'privacy.html', '_blank', 'noopener'); return true; }
     if (act === 'pdiet') { state.prefs.diet = el.getAttribute('data-v'); persist(); openPrefs(); return true; }
     if (act === 'pall') {
       var a = el.getAttribute('data-v'), ix = state.prefs.allergens.indexOf(a);
@@ -3656,6 +3699,7 @@ body.inchat nav.tabs { display: none !important; }
     ids.splice(i, 1); ids.splice(j, 0, id); state.order[dt] = ids; persist(); render();
     var ng = document.querySelector('.slot[data-sid="' + id + '"] .grip'); if (ng) ng.focus();
   });
+  document.addEventListener('input', function (e) { var t = e.target && e.target.id; if (t === 'au-n' || t === 'au-e' || t === 'au-p') AUD[t] = e.target.value; });
   document.addEventListener('input', function (e) {
     if (e.target.id === 'pksearch') {
       var w = e.target.value.toLowerCase().split(/\s+/).filter(Boolean), sh = e.target.closest('.sheet'), any = false;
@@ -3758,8 +3802,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 31; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611041930';
+  var VERSION = 32; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611050800';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
