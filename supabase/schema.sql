@@ -1,4 +1,4 @@
--- Gusto: schema iniziale. Tutte le tabelle hanno RLS attiva.
+-- Frog’s: schema iniziale. Tutte le tabelle hanno RLS attiva.
 
 -- Profili ---------------------------------------------------------------
 create table public.profiles (

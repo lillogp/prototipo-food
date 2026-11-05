@@ -2,15 +2,16 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>Gusto</title>
+<title>Frog’s</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<link rel="manifest" href="manifest.webmanifest?v=4">
-<link rel="icon" type="image/png" href="icon-192.png?v=2">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<link rel="manifest" href="manifest.webmanifest?v=5">
+<link rel="icon" type="image/png" href="icon-192.png?v=3">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <meta name="theme-color" content="#45802A">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Gusto">
+<meta name="apple-mobile-web-app-title" content="Frog’s">
+<link rel="preload" href="fredoka-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500;600&display=swap">
 <style>
 /* Layout: colonna unica mobile-first, header in alto, barra di navigazione fissa in basso, schede e sheet per la ricetta. */
@@ -51,8 +52,14 @@ header.top {
   display: flex; align-items: center; justify-content: space-between; padding-block: 12px;
 }
 .ver { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
-.logo { font-family: var(--f-display); font-weight: 700; font-size: 26px; letter-spacing: -0.02em; line-height: 1; }
-.logo .lo { width: .74em; height: .74em; vertical-align: -.07em; margin-left: .04em; color: var(--accent); }
+@font-face { font-family: 'Fredoka'; font-weight: 600; font-style: normal; font-display: swap; src: url('fredoka-600.woff2') format('woff2'); }
+.logo { font-family: 'Fredoka', var(--f-display); font-weight: 600; font-size: 28px; letter-spacing: -0.01em; line-height: 1; display: inline-flex; align-items: center; color: var(--accent); }
+.logo .ey { display: inline-block; width: .6em; height: .6em; border-radius: 50%; background: #fff; border: .08em solid currentColor; position: relative; margin: 0 .02em; box-sizing: border-box; flex: none; top: .03em; }
+.logo .ey::after { content: ''; position: absolute; width: .27em; height: .27em; border-radius: 50%; background: #173B1F; left: 50%; top: 50%; transform: translate(calc(-50% + .08em), calc(-50% - .06em)); }
+#splash { position: fixed; inset: 0; z-index: 9999; background: #3B8A4A; display: flex; align-items: center; justify-content: center; transition: opacity .45s; }
+#splash.out { opacity: 0; pointer-events: none; }
+#splash .logo { color: #fff; font-size: 52px; }
+#splash .logo .ey { border-color: #fff; }
 .chip { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; }
 
 .note { background: var(--soft); border-radius: 12px; padding: 10px 12px; font-size: 13px; color: var(--muted); display: flex; gap: 10px; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
@@ -484,10 +491,12 @@ body.inchat nav.tabs { display: none !important; }
 </style>
 </head>
 <body>
+<div id="splash" aria-hidden="true"><div class="logo">Fr<i class="ey"></i>g’s</div></div>
+<script>(function(){var sp=document.getElementById('splash');try{var st=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;if(!st||sessionStorage.getItem('fg-splash')){sp.remove();return;}sessionStorage.setItem('fg-splash','1');}catch(e){}setTimeout(function(){sp.classList.add('out');setTimeout(function(){sp.remove();},500);},900);})();</script>
 
 <div class="col">
   <header class="top">
-    <div style="display:flex;align-items:baseline;gap:6px"><div class="logo" role="img" aria-label="Gusto">Gust<svg class="lo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10.6" fill="none" stroke="currentColor" stroke-width="2.8"/><circle cx="12" cy="12" r="6.6" fill="currentColor" opacity=".22"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/></svg></div><small class="ver" id="ver"></small></div>
+    <div style="display:flex;align-items:baseline;gap:6px"><div class="logo" role="img" aria-label="Frog’s">Fr<i class="ey"></i>g’s</div><small class="ver" id="ver"></small></div>
     <div style="display:flex;align-items:center;gap:6px"><button id="dmbtn" class="ic bell" data-act="inbox" aria-label="Messaggi" hidden><svg viewBox="0 0 24 24"><path d="M21 4L3 11l7 3 3 7z"/><path d="M10 14L21 4"/></svg><i id="dmb" class="bdg" hidden></i></button><button id="bell" class="ic bell" data-act="notifs" aria-label="Notifiche" hidden><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0112 0v6l1.5 2h-15z"/><path d="M10 21h4"/></svg><i id="bellb" class="bdg" hidden></i></button><button id="pubtop" class="pubtop" data-act="tab" data-v="new" aria-label="Pubblica un piatto" hidden><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div>
   </header>
   <main id="app"></main>
@@ -782,7 +791,7 @@ body.inchat nav.tabs { display: none !important; }
     var saved = Object.keys(state.saved).filter(function (k) { return state.saved[k]; }).length;
     var nf = Object.keys(state.following).filter(function (k) { return state.following[k]; }).length;
     var pn = liveMode() && state.profile ? (state.profile.display_name || 'Il tuo nome') : ME.name;
-    var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : 'Su Gusto')) : '@' + ME.handle;
+    var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : 'Su Frog’s')) : '@' + ME.handle;
     return '<div class="prof">' + avHTML(liveMode() && state.profile ? state.profile.avatar_url : null, pn) + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><div><b>0</b>seguaci</div><div><b>' + nf + '</b>seguiti</div><button class="statbtn" data-act="tab" data-v="saved" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
@@ -1087,7 +1096,7 @@ body.inchat nav.tabs { display: none !important; }
     if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
     if (liveMode() && state.profile) rows.push(['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']);
     rows.push(['install', 'Installa l\'app', window.__canInstall && window.__canInstall() ? 'Aggiungila alla schermata Home' : 'Già installata su questo telefono']);
-    rows.push(['legalterms', 'Termini d\'uso', 'Le regole di Gusto'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']);
+    rows.push(['legalterms', 'Termini d\'uso', 'Le regole di Frog’s'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
       ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
@@ -1632,14 +1641,14 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode() || !state.realRes.length) return '';
     return state.realRes.map(function (x) {
       var nm = x.display_name || ('@' + x.handle), h = 'u:' + x.id;
-      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0">' + avHTML(x.avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0">' + avHTML(x.avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Frog’s') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
     }).join('');
   }
   function viewRealUser(id) {
     var x = state.realP[id]; if (!x) return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button><div class="empty"><b>Profilo non trovato</b></div>';
     var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
-      '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Gusto') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
+      '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Frog’s') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
       (liveMode() && id !== state.user.id ? '<div style="margin-top:12px"><button class="btn ghost" data-act="dmstart" data-u="' + esc(id) + '">Scrivi un messaggio</button></div>' : '') +
       (x.bio && (!x.is_private || state.following[h] || id === (state.user && state.user.id)) ? '<p class="bio">' + esc(x.bio) + '</p>' : '') +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
@@ -2091,7 +2100,7 @@ body.inchat nav.tabs { display: none !important; }
     var back = '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button>';
     if (!state.pro) return back + '<div class="view-h"><h1>Il mio nutrizionista</h1><p>Collegati al professionista che ti segue.</p></div>' +
       '<div class="invite"><div class="prof"><div class="av">M</div><div><b style="font-family:var(--f-display);font-size:19px">Marco</b><div style="color:var(--muted);font-size:13px">Nutrizionista · iscrizione all\'albo verificata (dato di esempio)</div></div></div>' +
-      '<p style="margin:0">Marco ti ha invitato a collegarti su Gusto.</p><ul class="inv"><li>Può inviarti un piano settimanale e scriverti.</li><li>Non vede il tuo planner personale, la dispensa e i tuoi salvati.</li><li>Puoi scollegarti quando vuoi.</li></ul><button class="btn" data-act="proaccept">Accetta l\'invito</button></div>' +
+      '<p style="margin:0">Marco ti ha invitato a collegarti su Frog’s.</p><ul class="inv"><li>Può inviarti un piano settimanale e scriverti.</li><li>Non vede il tuo planner personale, la dispensa e i tuoi salvati.</li><li>Puoi scollegarti quando vuoi.</li></ul><button class="btn" data-act="proaccept">Accetta l\'invito</button></div>' +
       '<p class="hint">Nel prototipo l\'invito è di esempio. Nell\'app vera arriva da un link che ti manda il tuo nutrizionista.</p>';
     var pl = PLANS[0], nm = state.pro.name;
     return back + '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0]) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">Il tuo nutrizionista</div></div><button class="reset" data-act="prodrop">Scollega</button></div>' +
@@ -2176,7 +2185,7 @@ body.inchat nav.tabs { display: none !important; }
   var LEGAL_VER = '2026-11-05', AUD = {};
   function viewAuth() {
     var up = state.authMode === 'up';
-    return (hasInvite() ? '<div class="note" style="margin-top:14px"><span>Hai ricevuto un invito da un nutrizionista. Accedi o registrati per collegarti.</span></div>' : '') + '<div class="view-h" style="margin-top:18px"><h1>' + (up ? 'Crea il tuo account' : 'Accedi') + '</h1><p>' + (up ? 'Così planner, spesa e dispensa restano con te su ogni dispositivo.' : 'Bentornato su Gusto.') + '</p></div>' +
+    return (hasInvite() ? '<div class="note" style="margin-top:14px"><span>Hai ricevuto un invito da un nutrizionista. Accedi o registrati per collegarti.</span></div>' : '') + '<div class="view-h" style="margin-top:18px"><h1>' + (up ? 'Crea il tuo account' : 'Accedi') + '</h1><p>' + (up ? 'Così planner, spesa e dispensa restano con te su ogni dispositivo.' : 'Bentornato su Frog’s.') + '</p></div>' +
       '<form class="new" id="authform" novalidate>' +
       (up ? '<label class="f" for="au-n">Il tuo nome<input id="au-n" type="text" autocomplete="name" maxlength="40" value="' + esc(AUD['au-n'] || '') + '"></label>' : '') +
       '<label class="f" for="au-e">Email<input id="au-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" maxlength="120" value="' + esc(AUD['au-e'] || '') + '"></label>' +
@@ -2191,7 +2200,7 @@ body.inchat nav.tabs { display: none !important; }
   function openAccount() {
     sheetOpen('Account', 'Account',
       (state.user ? '<p style="margin:0">Hai effettuato l\'accesso come <b>' + esc(state.user.email) + '</b>.</p><p class="hint" style="margin:0">Planner, dispensa e preferenze si salvano online e li ritrovi su ogni dispositivo.</p><button class="btn" data-act="logout">Esci</button>'
-        : '<p style="margin:0">Stai usando Gusto senza account: i dati restano solo su questo dispositivo.</p><button class="btn" data-act="authopen">Accedi o registrati</button>'));
+        : '<p style="margin:0">Stai usando Frog’s senza account: i dati restano solo su questo dispositivo.</p><button class="btn" data-act="authopen">Accedi o registrati</button>'));
   }
   if (sb) {
     sb.auth.getSession().then(function (r) {
@@ -2265,13 +2274,13 @@ body.inchat nav.tabs { display: none !important; }
   function viewProVerify() {
     var pv = state.pv, h = '<div class="view-h"><h1>Verifica del profilo</h1><p>Per invitare clienti, confermiamo la tua iscrizione all\'albo.</p></div>';
     if (pv && pv.status === 'pending') return h + '<div class="empty"><b>Documento in esame</b>Hai inviato il documento il ' + new Date(pv.submitted_at).toLocaleDateString('it-IT') + ' (' + esc(pv.albo) + ', n. ' + esc(pv.albo_number) + '). Lo controlliamo appena possibile; quando è approvato trovi qui l\'elenco dei clienti.</div>' +
-      '<p class="hint" style="margin:10px 0 0">Il documento lo vede solo l\'amministratore di Gusto.</p>';
+      '<p class="hint" style="margin:10px 0 0">Il documento lo vede solo l\'amministratore di Frog’s.</p>';
     return h + (pv && pv.status === 'rejected' ? '<div class="note" style="margin:0 0 12px"><b>Verifica non riuscita.</b> ' + (pv.reject_reason ? esc(pv.reject_reason) : 'Controlla i dati e invia di nuovo il documento.') + '</div>' : '') +
       '<form id="pvform" class="new" novalidate>' +
       '<label class="f" for="pv-albo">Albo od ordine<select id="pv-albo">' + PV_ALBI.map(function (a) { return '<option' + (pv && pv.albo === a ? ' selected' : '') + '>' + a + '</option>'; }).join('') + '</select></label>' +
       '<label class="f" for="pv-num">Numero di iscrizione<input id="pv-num" type="text" maxlength="40" autocomplete="off" value="' + esc(pv ? pv.albo_number : '') + '" placeholder="Es. AA_012345"></label>' +
       '<div class="f"><span>Documento (PDF o foto, massimo 5 MB)</span><label class="reset avlab" for="pvfile" id="pvlab" style="display:inline-block;margin-top:6px">Scegli il file</label><input type="file" id="pvfile" accept="application/pdf,image/jpeg,image/png,image/webp" hidden></div>' +
-      '<p class="hint" style="margin:0">Carica la tessera o il certificato di iscrizione all\'albo. Lo vede solo l\'amministratore di Gusto e serve a verificare il profilo. Lo conserviamo finché il profilo è attivo; puoi chiederne la cancellazione in ogni momento.</p>' +
+      '<p class="hint" style="margin:0">Carica la tessera o il certificato di iscrizione all\'albo. Lo vede solo l\'amministratore di Frog’s e serve a verificare il profilo. Lo conserviamo finché il profilo è attivo; puoi chiederne la cancellazione in ogni momento.</p>' +
       '<button class="btn" type="submit" style="width:100%">Invia per la verifica</button></form>';
   }
   function proLoad() {
@@ -2370,7 +2379,7 @@ body.inchat nav.tabs { display: none !important; }
   }
   function invLink(code) { return location.origin + location.pathname + '?invito=' + code; }
   function viewProDash() {
-    var h = '<div class="view-h"><h1>I miei clienti</h1><p>Chi segui con Gusto.</p></div>';
+    var h = '<div class="view-h"><h1>I miei clienti</h1><p>Chi segui con Frog’s.</p></div>';
     if (!state.profile.pro_verified) return viewProVerify();
     if (state.curClient) return viewClientDetail();
     var act = state.clients.filter(function (c) { return c.status === 'active'; }), pend = state.clients.filter(function (c) { return c.status === 'pending'; });
@@ -2400,7 +2409,7 @@ body.inchat nav.tabs { display: none !important; }
     var link = invLink(code);
     sheetOpen('Invita un cliente', 'Invita un cliente',
       '<p class="hint" style="margin:0">Manda questo link al cliente. Quando lo apre, accede (o si registra) e diventa tuo cliente. Il link vale per una sola persona.</p>' +
-      '<textarea id="invbox" readonly style="min-height:84px">' + esc('Ti invito a seguire il piano alimentare su Gusto: ' + link) + '</textarea>' +
+      '<textarea id="invbox" readonly style="min-height:84px">' + esc('Ti invito a seguire il piano alimentare su Frog’s: ' + link) + '</textarea>' +
       '<button class="btn" data-act="invcopy" data-code="' + esc(code) + '">Copia il messaggio</button>' +
       (navigator.share ? '<button class="btn ghost" data-act="invshare" data-code="' + esc(code) + '">Condividi</button>' : ''));
   }
@@ -2431,7 +2440,7 @@ body.inchat nav.tabs { display: none !important; }
     sheetOpen('Scegli un piatto', 'Scegli un piatto', pkBar() + '<p class="hint pkempty" hidden>Nessun piatto trovato.</p>' +
       (ad.length ? '<section><h3>Adattati per ' + esc(nm) + '</h3>' + rows(ad) + '</section>' : '') +
       (mine.length ? '<section><h3>La mia libreria</h3><p class="hint" style="margin:0 0 8px">I tuoi piatti e quelli che hai salvato.</p>' + rows(mine) + '</section>' : '') +
-      '<section><h3>' + (mine.length ? 'Tutti i piatti di Gusto' : 'Piatti di Gusto') + '</h3>' + rows(rest) + '</section>');
+      '<section><h3>' + (mine.length ? 'Tutti i piatti di Frog’s' : 'Piatti di Frog’s') + '</h3>' + rows(rest) + '</section>');
   }
   /* Adattamento di un piatto per un cliente: copia privata (visibile solo a nutrizionista e cliente) */
   function adaptStart(src, mode) {
@@ -2457,7 +2466,7 @@ body.inchat nav.tabs { display: none !important; }
         '<button type="button" class="rm" data-act="padrm" data-i="' + i + '" aria-label="Rimuovi ingrediente"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
     }).join('');
     sheetOpen('Adatta per ' + nm, 'Adatta per ' + nm,
-      '<form id="padform" class="new" novalidate><p class="hint" style="margin:0">Parti da «' + esc(d.src.title) + '» di ' + esc(d.src.priv ? ((d.src.from && d.src.from.name) || 'Gusto') : hnd(d.src)) + '. La copia la vedi tu e la vede ' + esc(nm) + ': non compare nel feed e l\'originale non cambia.</p>' +
+      '<form id="padform" class="new" novalidate><p class="hint" style="margin:0">Parti da «' + esc(d.src.title) + '» di ' + esc(d.src.priv ? ((d.src.from && d.src.from.name) || 'Frog’s') : hnd(d.src)) + '. La copia la vedi tu e la vede ' + esc(nm) + ': non compare nel feed e l\'originale non cambia.</p>' +
       '<label class="f" for="pa-t">Nome<input id="pa-t" type="text" maxlength="80" value="' + esc(d.title) + '"></label>' +
       '<label class="f" for="pa-s">Porzioni<input id="pa-s" type="number" inputmode="numeric" min="1" max="50" value="' + esc(d.serv) + '"></label>' +
       '<div class="fbox"><span>Ingredienti</span>' + rows + '<button type="button" class="btn ghost" data-act="padadd">Aggiungi ingrediente</button><datalist id="ingl">' + COMMON.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist></div>' +
@@ -2621,7 +2630,7 @@ body.inchat nav.tabs { display: none !important; }
       return true;
     }
     if (act === 'invcopy' || act === 'invshare') {
-      var msg = 'Ti invito a seguire il piano alimentare su Gusto: ' + invLink(el.getAttribute('data-code'));
+      var msg = 'Ti invito a seguire il piano alimentare su Frog’s: ' + invLink(el.getAttribute('data-code'));
       if (act === 'invshare') { try { navigator.share({ text: msg }); } catch (e) {} return true; }
       if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(function () { toast('Copiato'); }, function () { showText(msg); }); else showText(msg);
       return true;
@@ -2737,7 +2746,7 @@ body.inchat nav.tabs { display: none !important; }
     });
   }
   setInterval(function () { if (liveMode() && !document.hidden) { loadNotifs(); loadDMs(); } }, 20000);
-  function nActor(n) { if (n.type === 'admin_warning') return 'Gusto'; var x = state.realP[n.actor_id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Qualcuno'); }
+  function nActor(n) { if (n.type === 'admin_warning') return 'Frog’s'; var x = state.realP[n.actor_id] || {}; return x.display_name || (x.handle ? '@' + x.handle : 'Qualcuno'); }
   function viewNotifs() {
     var head = '<div class="view-h"><h1>Notifiche</h1><p>Follow, richieste e novità.</p></div>';
     if (!liveMode()) return head + '<div class="empty"><b>Serve un account</b>Accedi per ricevere le notifiche.</div>';
@@ -2757,7 +2766,7 @@ body.inchat nav.tabs { display: none !important; }
     var t = n.type, aid = n.actor_id;
     if (t === 'admin_warning') {
       var rf = n.ref || {};
-      sheetOpen('Avviso da Gusto', 'Avviso da Gusto', (rf.reason ? '<div class="meta"><span>' + esc(rf.reason) + '</span></div>' : '') + '<p style="margin:0;white-space:pre-wrap">' + esc(rf.body || '') + '</p><p class="hint" style="margin:0">È un messaggio dell\'amministrazione di Gusto, a senso unico. Per i dettagli leggi i <a href="termini.html" target="_blank" rel="noopener">Termini</a>.</p><button class="btn" data-act="close">Ho capito</button>');
+      sheetOpen('Avviso da Frog’s', 'Avviso da Frog’s', (rf.reason ? '<div class="meta"><span>' + esc(rf.reason) + '</span></div>' : '') + '<p style="margin:0;white-space:pre-wrap">' + esc(rf.body || '') + '</p><p class="hint" style="margin:0">È un messaggio dell\'amministrazione di Frog’s, a senso unico. Per i dettagli leggi i <a href="termini.html" target="_blank" rel="noopener">Termini</a>.</p><button class="btn" data-act="close">Ho capito</button>');
       return;
     }
     if ((t === 'like' || t === 'comment' || t === 'comment_like') && n.ref && n.ref.recipe_id) {
@@ -2999,7 +3008,7 @@ body.inchat nav.tabs { display: none !important; }
       : sentFirst ? '<p class="hint">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
       : '<form class="cmf" id="dmform"><button type="button" class="rm scan" data-act="dmattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="dmin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio" enterkeyhint="send"><button class="btn" type="submit">Invia</button></form>';
     return '<div class="chatpage"><div class="cpt"><button class="ic" data-act="inbox" aria-label="Torna ai messaggi"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>' +
-      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span id="dmsub" data-t="' + esc(x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + x.handle : 'Su Gusto')) + '">' + (typOn(c.id) ? 'sta scrivendo…' : (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Gusto'))) + '</span></div></button>' +
+      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span id="dmsub" data-t="' + esc(x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + x.handle : 'Su Frog’s')) + '">' + (typOn(c.id) ? 'sta scrivendo…' : (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Frog’s'))) + '</span></div></button>' +
       '<button class="ic" data-act="usermenu" data-u="' + esc(o) + '" data-c="' + c.id + '" aria-label="Altre azioni">' + DOTS + '</button></div>' +
       '<div class="chat" id="dmchat">' + dmBubbles(msgs, o) + '</div><div class="cpb"><div id="replybar">' + replyBarHTML() + '</div>' + bottom + '</div></div>';
   }
@@ -3042,13 +3051,13 @@ body.inchat nav.tabs { display: none !important; }
     if (q.length < 2) {
       var me = state.user.id, t = function (c) { var l = lastOf(c.id); return l ? l.created_at : c.created_at; };
       var cs = state.convs.filter(function (c) { return c.status !== 'declined'; }).sort(function (a, b) { return t(b) < t(a) ? -1 : 1; }).slice(0, 10);
-      box.innerHTML = cs.length ? cs.map(function (c) { var o = otherOf(c), x = state.realP[o] || {}; return shareRow(o, pName(o), x.handle ? '@' + x.handle : 'Su Gusto', x.avatar_url); }).join('') : '<p class="hint">Cerca una persona a cui inviare il piatto.</p>';
+      box.innerHTML = cs.length ? cs.map(function (c) { var o = otherOf(c), x = state.realP[o] || {}; return shareRow(o, pName(o), x.handle ? '@' + x.handle : 'Su Frog’s', x.avatar_url); }).join('') : '<p class="hint">Cerca una persona a cui inviare il piatto.</p>';
       return;
     }
     sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
       if (state.shareQ !== q || !document.getElementById('shlist')) return;
       var rows = (r.data || []); rows.forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); });
-      document.getElementById('shlist').innerHTML = rows.length ? rows.map(function (x) { return shareRow(x.id, x.display_name || (x.handle ? '@' + x.handle : 'Utente'), x.handle ? '@' + x.handle : 'Su Gusto', x.avatar_url); }).join('') : '<p class="hint">Nessuna persona trovata.</p>';
+      document.getElementById('shlist').innerHTML = rows.length ? rows.map(function (x) { return shareRow(x.id, x.display_name || (x.handle ? '@' + x.handle : 'Utente'), x.handle ? '@' + x.handle : 'Su Frog’s', x.avatar_url); }).join('') : '<p class="hint">Nessuna persona trovata.</p>';
     });
   }
   function shareSend(uid) {
@@ -3137,7 +3146,7 @@ body.inchat nav.tabs { display: none !important; }
     var me = liveMode() && r.author_id === state.user.id;
     var nl = r.likes && r.likes[0] ? r.likes[0].count : 0, nc = r.comments && r.comments[0] ? r.comments[0].count : 0;
     return { id: RB + r.id, dbId: r.id, real: true, authorId: r.author_id, user: a.display_name || (a.handle ? '@' + a.handle : 'Utente'), handle: 'u:' + r.author_id,
-      avatar: a.avatar_url || null, menuId: r.menu_id || null, menuName: r.menu_name || '', menuPos: r.menu_pos || 0, hd: a.handle ? '@' + a.handle : 'Su Gusto', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
+      avatar: a.avatar_url || null, menuId: r.menu_id || null, menuName: r.menu_name || '', menuPos: r.menu_pos || 0, hd: a.handle ? '@' + a.handle : 'Su Frog’s', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
       title: r.title, tag: r.tag, time: r.time_min, serv: r.serv, media: { type: r.media_type === 'video' ? 'video' : 'image', src: r.media_url || plate(['#A9B8B2', '#8FB86B', '#F4E7C5', '#C8472B'], r.id % 97) }, mediaPath: pathOf(r.media_url), priv: !!r.for_link_id, linkId: r.for_link_id || null,
       ing: Array.isArray(r.ingredients) ? r.ingredients : [], steps: Array.isArray(r.steps) ? r.steps : [], hideN: !!r.hide_nutrition,
       from: r.from_info || null, likes: nl, ccount: nc, comments: [], mine: me };
@@ -4020,13 +4029,13 @@ body.inchat nav.tabs { display: none !important; }
   window.__doInstall = function () {
     if (isStandalone) { toast('Stai già usando l\'app installata'); return; }
     if (deferredInstall) { var d = deferredInstall; deferredInstall = null; d.prompt(); return; }
-    sheetOpen('Installa Gusto', 'Installa',
+    sheetOpen('Installa Frog’s', 'Installa',
       '<p class="hint" style="margin:0 0 10px">' + (isIos ? 'Su iPhone: tocca il tasto Condividi in basso in Safari, poi “Aggiungi alla schermata Home”.' : 'Su Android: apri il menu del browser (tre puntini in alto a destra) e scegli “Installa app” oppure “Aggiungi a schermata Home”.') + '</p><button class="btn" data-act="close">Ho capito</button>');
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 44; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051600';
+  var VERSION = 45; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051930';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}

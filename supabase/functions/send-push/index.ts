@@ -62,8 +62,8 @@ Deno.serve(async (req) => {
   const { data: prof } = await db.from("profiles").select("push_prefs").eq("id", to).maybeSingle();
   if (!prof || (prof.push_prefs && prof.push_prefs[cat] === false)) return json({ ok: true });
   const { data: who } = await db.from("profiles").select("display_name,handle").eq("id", actor).maybeSingle();
-  const name = who?.display_name || (who?.handle ? "@" + who.handle : "Gusto");
-  const title = table === "dm_messages" ? name : "Gusto";
+  const name = who?.display_name || (who?.handle ? "@" + who.handle : "Frog’s");
+  const title = table === "dm_messages" ? name : "Frog’s";
   const body = table === "dm_messages" ? text : name + " " + text;
 
   const { data: subs } = await db.from("push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id", to);

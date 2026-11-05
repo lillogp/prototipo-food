@@ -4,8 +4,8 @@ self.addEventListener('activate', function (e) { e.waitUntil(self.clients.claim(
 self.addEventListener('fetch', function () {});
 self.addEventListener('push', function (e) {
   var d = {};
-  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Gusto', body: e.data ? e.data.text() : '' }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Gusto', {
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Frog’s', body: e.data ? e.data.text() : '' }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Frog’s', {
     body: d.body || '', tag: d.tag || undefined, icon: 'icon-192.png', badge: 'icon-192.png', data: { url: d.url || './index.html' }
   }));
 });
