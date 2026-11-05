@@ -906,7 +906,7 @@ body.inchat nav.tabs { display: none !important; }
     var cards = list.map(function (x) {
       var p = x.p, en = x.e, on = en.on !== false, at = 'data-dt="' + dt + '" data-s="' + s[0] + '" data-i="' + x.i + '"';
       return '<div class="meal' + (on ? '' : ' off') + '"><div class="mthumb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ricetta ' + esc(p.title) + '">' + thumbTag(p.media) + '</div><div class="mmid"><button class="mtitle" data-act="open" data-id="' + p.id + '">' + esc(p.title) + '</button>' +
-        '<div class="mser"><button class="mb" data-act="pserv" ' + at + ' data-v="-1" aria-label="Meno porzioni">&minus;</button><span>' + en.serv + ' porzioni</span><button class="mb" data-act="pserv" ' + at + ' data-v="1" aria-label="Più porzioni">+</button></div>' + (kcalPP(p) ? '<div class="mk">≈ ' + kcalPP(p) + ' kcal a porzione</div>' : '') + (en.by === 'pro' ? '<div class="mk">Dal piano di ' + esc(state.pro ? state.pro.name : 'Marco') + '</div>' : '') + warnHTML(p) + '</div>' +
+        '<div class="mser"><button class="mb" data-act="pserv" ' + at + ' data-v="-1" aria-label="Meno porzioni">&minus;</button><span>' + en.serv + ' porzioni</span><button class="mb" data-act="pserv" ' + at + ' data-v="1" aria-label="Più porzioni">+</button></div>' + (kcalPP(p) ? '<div class="mk">≈ ' + kcalPP(p) + ' kcal a porzione</div>' : '') + (en.by === 'pro' ? '<div class="mk">Dal piano di ' + esc(state.pro ? state.pro.name : 'Marco') + '</div>' : '') + warnHTML(p) + (en.by === 'pro' && conflicts(p).length ? '<div class="mk">Parlane con il tuo nutrizionista</div>' : '') + '</div>' +
         '<button class="mx" data-act="prm" ' + at + ' aria-label="Togli dal planner"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>' +
         '<button class="mchk" role="checkbox" aria-checked="' + on + '" data-act="pon" ' + at + '><span class="box">' + (on ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Conta nella spesa e nei valori</span></button>' + whoRow(en, at) + '</div>';
     }).join('');
@@ -1526,8 +1526,13 @@ body.inchat nav.tabs { display: none !important; }
     if (names.some(function (n) { return /miele/.test(n); })) f.miele = 1;
     return (p._f = f);
   }
+  /* Per il nutrizionista che lavora su un cliente valgono le intolleranze che il cliente ha scelto di condividere, non le sue */
+  function ctxAllergens() {
+    if (liveMode() && isPro() && state.curClient && (state.pcmp || state.tab === 'prochat' || state.tab === 'pro')) return state.curClient.shared_allergens || [];
+    return state.prefs.allergens;
+  }
   function conflicts(p) {
-    var f = flagsOf(p), pr = state.prefs, out = [], al = pr.allergens.filter(function (a) { return f[a]; });
+    var f = flagsOf(p), out = [], al = ctxAllergens().filter(function (a) { return f[a]; });
     if (al.length) out.push('contiene ' + al.join(', '));
     return out;
   }
@@ -1536,7 +1541,7 @@ body.inchat nav.tabs { display: none !important; }
     var t = c.join(' · '); return '<span class="warn ' + (cls || '') + '">' + esc(t.charAt(0).toUpperCase() + t.slice(1)) + '</span>';
   }
   function allergenHTML(p) {
-    var f = flagsOf(p), mine = state.prefs.allergens, keys = FLAGS.map(function (x) { return x[0]; }).filter(function (k) { return f[k]; });
+    var f = flagsOf(p), mine = ctxAllergens(), keys = FLAGS.map(function (x) { return x[0]; }).filter(function (k) { return f[k]; });
     var veg = !f.carne && !f.pesce && !f['crostacei e molluschi'], vegan = veg && !f.latticini && !f.uova && !f.miele;
     return '<section><h3>Allergeni e dieta</h3><p style="margin:0 0 6px">' + (keys.length ? 'Contiene: ' + keys.map(function (k) { return mine.indexOf(k) > -1 ? '<b class="warnt">' + k + '</b>' : k; }).join(', ') + '.' : 'Nessun allergene comune tra gli ingredienti.') + '</p>' +
       '<p class="hint" style="margin:0">' + (vegan ? 'Adatta a vegani. ' : veg ? 'Adatta a vegetariani. ' : '') + 'Stima dagli ingredienti: controlla sempre le etichette dei prodotti.</p></section>';
@@ -2219,7 +2224,7 @@ body.inchat nav.tabs { display: none !important; }
       });
   }
   function loadClients() {
-    return sb.from('client_links').select('id,client_id,invite_code,status,created_at').eq('pro_id', state.user.id).neq('status', 'ended').order('created_at', { ascending: false })
+    return sb.from('client_links').select('id,client_id,invite_code,status,created_at,shared_allergens,shared_allergens_at').eq('pro_id', state.user.id).neq('status', 'ended').order('created_at', { ascending: false })
       .then(function (r) {
         state.clients = r.data || [];
         var ids = state.clients.map(function (c) { return c.client_id; }).filter(Boolean);
@@ -2228,7 +2233,7 @@ body.inchat nav.tabs { display: none !important; }
       });
   }
   function loadMyLink() {
-    return sb.from('client_links').select('id,pro_id,status').eq('client_id', state.user.id).eq('status', 'active').limit(1).then(function (r) {
+    return sb.from('client_links').select('id,pro_id,status,shared_allergens').eq('client_id', state.user.id).eq('status', 'active').limit(1).then(function (r) {
       var l = r.data && r.data[0]; state.myLink = l || null; state.msgs = [];
       if (!l) return null;
       return Promise.all([
@@ -2330,7 +2335,27 @@ body.inchat nav.tabs { display: none !important; }
     return '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0]) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">Il tuo nutrizionista</div></div><button class="reset" data-act="clientend" data-id="' + state.myLink.id + '">Scollega</button></div>' +
       '<p class="hint" style="margin:8px 0 0">Il tuo nutrizionista vede solo il piano e i messaggi tra voi. Il tuo planner, la dispensa e i salvati restano privati.</p>' +
       '<section class="procard">' + (pl ? '<h3>Piano di ' + esc(nm) + '</h3><p class="hint" style="margin:0 0 10px">Circa ' + (pl.goal || planKcal(pl)) + ' kcal al giorno.</p><div class="shopact"><button class="btn ghost" data-act="plan" data-pl="mp">Vedi il piano</button><button class="btn" data-act="planapply" data-pl="mp">Applica alla settimana</button></div>'
-        : '<h3>Piano settimanale</h3><p class="hint" style="margin:0">Il tuo nutrizionista non ha ancora inviato un piano.</p>') + '</section>' + chatSection(nm);
+        : '<h3>Piano settimanale</h3><p class="hint" style="margin:0">Il tuo nutrizionista non ha ancora inviato un piano.</p>') + '</section>' + allergenShareSection(nm) + chatSection(nm);
+  }
+  function allergenShareSection(nm) {
+    var sh = state.myLink && state.myLink.shared_allergens, on = Array.isArray(sh), mine = state.prefs.allergens;
+    return '<section class="procard"><h3>Le mie intolleranze</h3>' +
+      (on ? '<p class="hint" style="margin:0 0 10px">Le condividi con ' + esc(nm) + (sh.length ? ': <b>' + esc(sh.join(', ')) + '</b>' : ': al momento non ne hai impostate') + '. Se le cambi in Impostazioni, si aggiornano da sole.</p><button class="btn ghost" data-act="allshareoff">Smetti di condividerle</button>'
+        : '<p class="hint" style="margin:0 0 10px">' + esc(nm) + ' non le vede. Se vuoi, puoi condividere con lui le tue allergie e intolleranze: così sceglie i piatti giusti per te e ti avvisa dei conflitti.</p><button class="btn ghost" data-act="allshare">Condividi le mie intolleranze</button>') + '</section>';
+  }
+  function openAllShare() {
+    var nm = (state.myLink && state.myLink.proName) || 'il tuo nutrizionista', mine = state.prefs.allergens;
+    sheetOpen('Condividi le intolleranze', 'Condividi le intolleranze',
+      '<p style="margin:0">Condividi con <b>' + esc(nm) + '</b> questo elenco: ' + (mine.length ? '<b>' + esc(mine.join(', ')) + '</b>' : 'al momento non hai impostato nessuna intolleranza (puoi farlo da Impostazioni)') + '.</p>' +
+      '<p class="hint" style="margin:0">Sono dati sulla salute: li vede solo ' + esc(nm) + ', non gli altri utenti. Servono a preparare il piano e a segnalarti i conflitti. Se cambi l\'elenco, si aggiorna da solo. Puoi smettere di condividerli quando vuoi, e spariscono anche se scolleghi il nutrizionista. Vedi l\'<a href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a>.</p>' +
+      '<button class="btn" data-act="allshareyes">Acconsento e condividi</button><button class="btn ghost" data-act="close">Annulla</button>');
+  }
+  function syncAllShare(on) {
+    var l = state.myLink; if (!l || !liveMode()) return Promise.resolve(false);
+    var arg = on ? state.prefs.allergens.slice() : null;
+    return sb.rpc('set_allergen_sharing', { link: l.id, allergens: arg }).then(function (r) {
+      if (r.error) return false; l.shared_allergens = arg; return true;
+    });
   }
   function invLink(code) { return location.origin + location.pathname + '?invito=' + code; }
   function viewProDash() {
@@ -2352,7 +2377,13 @@ body.inchat nav.tabs { display: none !important; }
     return '<button class="ic" data-act="clientback" style="margin-left:-8px">&lsaquo; Clienti</button>' +
       '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0]) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">Cliente</div></div><button class="reset" data-act="clientend" data-id="' + c.id + '">Scollega</button></div>' +
       '<section class="procard"><h3>Piano settimanale</h3><p class="hint" style="margin:0 0 10px">' + (lp ? 'Ultimo piano inviato il ' + new Date(lp.created_at).toLocaleDateString('it-IT') + (lp.kcal_goal ? ' · obiettivo ' + lp.kcal_goal + ' kcal' : '') + '.' : 'Non hai ancora inviato un piano.') + '</p>' +
-      '<button class="btn" data-act="pcopen">' + (lp ? 'Modifica e invia un nuovo piano' : 'Componi il piano') + '</button></section>' + chatSection(nm);
+      '<button class="btn" data-act="pcopen">' + (lp ? 'Modifica e invia un nuovo piano' : 'Componi il piano') + '</button></section>' + clientAllergenSection(c, nm) + chatSection(nm);
+  }
+  function clientAllergenSection(c, nm) {
+    var sh = c.shared_allergens;
+    return '<section class="procard"><h3>Intolleranze di ' + esc(nm) + '</h3>' + (Array.isArray(sh)
+      ? (sh.length ? '<div class="pchips">' + sh.map(function (a) { return '<span class="pc" aria-pressed="true">' + esc(a) + '</span>'; }).join('') + '</div><p class="hint" style="margin:8px 0 0">Condivise da ' + esc(nm) + (c.shared_allergens_at ? ' il ' + new Date(c.shared_allergens_at).toLocaleDateString('it-IT') : '') + '. Nel piano i piatti che le toccano sono segnalati.</p>' : '<p class="hint" style="margin:0">' + esc(nm) + ' non ha indicato intolleranze.</p>')
+      : '<p class="hint" style="margin:0">' + esc(nm) + ' non ha condiviso le sue intolleranze. Se ne ha, chiedigliele in chat: la condivisione è una sua scelta.</p>') + '</section>';
   }
   function openInvite(code) {
     var link = invLink(code);
@@ -2371,12 +2402,12 @@ body.inchat nav.tabs { display: none !important; }
     var pend = c.pend ? '<div class="note" style="margin:0"><b>Inserisci «' + esc(c.pend.title) + '»</b><br>Scegli il giorno qui sopra e poi il pasto:</div><div class="pchips">' + SLOTK.map(function (k) { return '<button class="pc" data-act="pcput" data-slot="' + k[0] + '">' + k[1] + '</button>'; }).join('') + '</div>' : '';
     var rows = SLOTK.map(function (k) {
       var t = c.data[k[0]][c.day], pp = t && postByTitle(t);
-      return '<div class="plday"><b>' + k[1] + '</b>' + (t ? '<span>' + esc(t) + (pp && pp.priv ? ' <small style="color:var(--muted)">· adattato</small>' : '') + '</span><span><button class="reset" data-act="pcsel" data-slot="' + k[0] + '">Cambia</button> ' + (pp ? '<button class="reset" data-act="pcadapt" data-slot="' + k[0] + '">' + (pp.priv ? 'Modifica' : 'Adatta') + '</button> ' : '') + '<button class="reset" data-act="pcclr" data-slot="' + k[0] + '" style="color:var(--muted)">Togli</button></span>'
+      return '<div class="plday"><b>' + k[1] + '</b>' + (t ? '<span>' + esc(t) + (pp && pp.priv ? ' <small style="color:var(--muted)">· adattato</small>' : '') + (pp ? warnHTML(pp) : '') + '</span><span><button class="reset" data-act="pcsel" data-slot="' + k[0] + '">Cambia</button> ' + (pp ? '<button class="reset" data-act="pcadapt" data-slot="' + k[0] + '">' + (pp.priv ? 'Modifica' : 'Adatta') + '</button> ' : '') + '<button class="reset" data-act="pcclr" data-slot="' + k[0] + '" style="color:var(--muted)">Togli</button></span>'
         : '<button class="addslot" data-act="pcsel" data-slot="' + k[0] + '">Scegli un piatto</button>') + '</div>';
     }).join('');
     var dk = dayKcal(c, c.day), done = 0; for (var i = 0; i < 7; i++) if (dayKcal(c, i) > 0) done++;
     sheetOpen('Piano per ' + nm, 'Piano per ' + nm,
-      chips + pend + '<div class="slist">' + rows + '</div>' + '<p class="hint" style="margin:0">' + (dk ? 'Questo giorno: circa ' + dk + ' kcal.' : 'Nessun piatto in questo giorno.') + ' Giorni compilati: ' + done + ' su 7. «Adatta» crea per ' + esc(nm) + ' una copia del piatto che puoi modificare: l\'originale non cambia e la copia la vede solo il cliente.</p>' +
+      chips + pend + '<div class="slist">' + rows + '</div>' + '<p class="hint" style="margin:0">' + (dk ? 'Questo giorno: circa ' + dk + ' kcal.' : 'Nessun piatto in questo giorno.') + ' Giorni compilati: ' + done + ' su 7. ' + (Array.isArray(c.link.shared_allergens) ? (c.link.shared_allergens.length ? 'Avvisi rossi in base alle intolleranze condivise da ' + esc(nm) + '. ' : '') : esc(nm) + ' non ha condiviso le intolleranze: nessun avviso. ') + '«Adatta» crea per ' + esc(nm) + ' una copia del piatto che puoi modificare: l\'originale non cambia e la copia la vede solo il cliente.</p>' +
       '<label class="f" for="pcgoal">Obiettivo giornaliero in kcal <small>facoltativo, il cliente lo vede nel planner</small><input id="pcgoal" type="number" inputmode="numeric" min="800" max="6000" step="50" value="' + esc(c.goal || '') + '"></label>' +
       '<button class="btn" data-act="pcsave">Invia il piano a ' + esc(nm) + '</button>');
   }
@@ -2453,7 +2484,7 @@ body.inchat nav.tabs { display: none !important; }
   function openVerdict() {
     var v = state.verd, p = byId(v.rid); if (!p) return;
     sheetOpen('Rispondi al cliente', 'Può mangiarlo?',
-      '<div class="meta"><span>' + esc(p.title) + '</span>' + (kcalPP(p) ? '<span>circa ' + kcalPP(p) + ' kcal a porzione</span>' : '') + '</div>' +
+      '<div class="meta"><span>' + esc(p.title) + '</span>' + (kcalPP(p) ? '<span>circa ' + kcalPP(p) + ' kcal a porzione</span>' : '') + '</div>' + warnHTML(p) +
       '<div class="pchips">' + VERD.map(function (x) { return '<button class="pc" data-act="verdset" data-v="' + x[0] + '" aria-pressed="' + (v.v === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>' +
       '<label class="f" for="verdnote">Nota <small>facoltativa</small><textarea id="verdnote" rows="3" maxlength="200" placeholder="Es. Una porzione a pranzo, senza pane.">' + esc(v.note || '') + '</textarea></label>' +
       '<button class="btn" data-act="verdsend">Invia la risposta</button>' +
@@ -2587,7 +2618,8 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'client') {
       var c = state.clients.filter(function (x) { return x.id === id; })[0]; if (!c) return true;
       state.curClient = c; state.msgs = []; state.lastPlan = null; render();
-      Promise.all([loadMsgs(c.id), sb.from('plans').select('data,kcal_goal,created_at').eq('link_id', c.id).order('created_at', { ascending: false }).limit(1)]).then(function (a) {
+      Promise.all([loadMsgs(c.id), sb.from('plans').select('data,kcal_goal,created_at').eq('link_id', c.id).order('created_at', { ascending: false }).limit(1), sb.from('client_links').select('shared_allergens,shared_allergens_at').eq('id', c.id).maybeSingle()]).then(function (a) {
+        if (a[2] && a[2].data) { c.shared_allergens = a[2].data.shared_allergens; c.shared_allergens_at = a[2].data.shared_allergens_at; }
         state.lastPlan = (a[1].data && a[1].data[0]) || null; if (state.curClient && state.curClient.id === c.id) render();
       });
       return true;
@@ -2620,6 +2652,9 @@ body.inchat nav.tabs { display: none !important; }
       state.pcmp.slot = el.getAttribute('data-slot'); var at = state.pcmp.data[state.pcmp.slot][state.pcmp.day], ap = at && postByTitle(at);
       if (ap) adaptStart(ap, 'plan'); return true;
     }
+    if (act === 'allshare') { openAllShare(); return true; }
+    if (act === 'allshareyes') { syncAllShare(true).then(function (ok) { closeSheet(); toast(ok ? 'Intolleranze condivise' : 'Non riesco a condividerle'); render(); }); return true; }
+    if (act === 'allshareoff') { syncAllShare(false).then(function (ok) { toast(ok ? 'Condivisione interrotta' : 'Non riesco a interrompere'); render(); }); return true; }
     if (act === 'verd') { state.verd = { rid: id, v: 'ok', note: '' }; openVerdict(); return true; }
     if (act === 'verdset') { var vn = document.getElementById('verdnote'); if (vn) state.verd.note = vn.value; state.verd.v = el.getAttribute('data-v'); openVerdict(); return true; }
     if (act === 'verdsend') {
@@ -3525,7 +3560,7 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'pall') {
       var a = el.getAttribute('data-v'), ix = state.prefs.allergens.indexOf(a);
       if (ix > -1) state.prefs.allergens.splice(ix, 1); else state.prefs.allergens.push(a);
-      persist(); openPrefs(); return true;
+      persist(); openPrefs(); if (state.myLink && Array.isArray(state.myLink.shared_allergens)) syncAllShare(true); return true;
     }
     if (act === 'phide') { state.prefs.hide = !state.prefs.hide; persist(); openPrefs(); return true; }
     if (act === 'goalopen') { openGoal(); return true; }
@@ -3964,8 +3999,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 40; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051320';
+  var VERSION = 41; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611051430';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
