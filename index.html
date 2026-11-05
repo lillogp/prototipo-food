@@ -3804,7 +3804,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 33; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 34; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611050900';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {

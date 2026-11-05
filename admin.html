@@ -9,69 +9,162 @@
 <style>
 :root {
   color-scheme: light;
-  --bg: #F8FAEC; --surface: #FFFFFF; --fg: #222B16; --muted: #626E50; --line: #E2E8CC;
-  --accent: #45802A; --accent-fg: #FFFFFF; --soft: #E4F0C9; --ok: #1F7A4D; --okbg: #E4F4EA; --bad: #B3261E; --badbg: #FDE8E6;
+  --bg: #F4F7E8; --surface: #FFFFFF; --fg: #222B16; --muted: #626E50; --line: #E2E8CC;
+  --accent: #45802A; --accent-fg: #FFFFFF; --soft: #E8F1D2; --ok: #1F7A4D; --okbg: #E4F4EA; --bad: #B3261E; --badbg: #FDE8E6; --warn: #8A5A00; --warnbg: #FFF1D6;
   --f-display: "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif;
   --f-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.45; padding: 0 max(16px, env(safe-area-inset-left)) 60px; }
-.wrap { max-width: 880px; margin: 0 auto; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--f-body); font-size: 15px; line-height: 1.45; }
 button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
-button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 h1, h2, h3 { font-family: var(--f-display); margin: 0; line-height: 1.15; }
-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; gap: 12px; }
-.logo { font-family: var(--f-display); font-weight: 700; font-size: 24px; letter-spacing: -0.02em; }
-.logo small { font-family: var(--f-body); font-weight: 500; font-size: 13px; color: var(--muted); margin-left: 8px; letter-spacing: 0; }
-.btn { background: var(--accent); color: var(--accent-fg); font-weight: 600; border-radius: 12px; padding: 10px 16px; }
+h2 { font-size: 22px; } h3 { font-size: 16px; }
+.btn { background: var(--accent); color: var(--accent-fg); font-weight: 600; border-radius: 11px; padding: 10px 16px; white-space: nowrap; }
 .btn.ghost { background: var(--soft); color: var(--fg); }
 .btn.sm { padding: 7px 12px; font-size: 14px; border-radius: 10px; }
 .btn.danger { background: var(--badbg); color: var(--bad); }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
-input[type=email], input[type=password], textarea { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 11px 12px; width: 100%; }
+input[type=email], input[type=password], input[type=search], select { font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 10px 12px; width: 100%; }
+select { width: auto; }
 label.f { display: flex; flex-direction: column; gap: 6px; font-weight: 600; font-size: 14px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; }
-.login { max-width: 380px; margin: 40px auto 0; display: flex; flex-direction: column; gap: 14px; }
-.msg { margin: 0; font-size: 14px; color: var(--muted); }
-.msg.err { color: var(--bad); }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 6px 0 18px; }
-.seg { flex-wrap: wrap; }
-.thumb { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; background: var(--soft); flex: none; }
-.thumb.wide { width: 72px; height: 96px; }
-input[type=search] { font: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; width: 100%; }
-.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px; }
-.stat b { display: block; font-family: var(--f-display); font-size: 26px; }
-.stat span { font-size: 13px; color: var(--muted); }
-.seg { display: flex; width: fit-content; max-width: 100%; background: var(--soft); border-radius: 12px; padding: 4px; gap: 4px; margin-bottom: 14px; }
-.seg button { padding: 8px 16px; border-radius: 9px; font-weight: 600; color: var(--muted); }
-.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(60, 30, 10, .12); }
-.list { display: flex; flex-direction: column; gap: 10px; }
-.row { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; }
-.row .info { min-width: 0; flex: 1 1 260px; display: flex; flex-direction: column; gap: 3px; }
-.row .info b { font-size: 16px; }
-.row .info span { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
-.acts { display: flex; gap: 8px; flex-wrap: wrap; }
-.chip { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 99px; padding: 2px 10px; background: var(--soft); color: var(--muted); }
-.chip.ok { background: var(--okbg); color: var(--ok); }
-.chip.bad { background: var(--badbg); color: var(--bad); }
-.empty { border: 1px dashed var(--line); border-radius: 16px; padding: 28px 18px; text-align: center; color: var(--muted); }
+.msg { margin: 0; font-size: 14px; color: var(--muted); } .msg.err { color: var(--bad); }
+.login { max-width: 380px; margin: 60px auto 0; display: flex; flex-direction: column; gap: 14px; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; border-radius: 99px; padding: 2px 10px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+.chip.ok { background: var(--okbg); color: var(--ok); } .chip.bad { background: var(--badbg); color: var(--bad); } .chip.warn { background: var(--warnbg); color: var(--warn); }
+.empty { border: 1px dashed var(--line); border-radius: 16px; padding: 28px 18px; text-align: center; color: var(--muted); background: var(--surface); }
 .empty b { display: block; color: var(--fg); font-family: var(--f-display); font-size: 18px; margin-bottom: 4px; }
 .note { background: var(--soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; color: var(--muted); margin-bottom: 14px; }
-.bg { position: fixed; inset: 0; background: rgba(20, 12, 8, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
-.dlg { background: var(--bg); border-radius: 18px; padding: 20px; max-width: 520px; width: 100%; max-height: 86vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; }
+.muted { color: var(--muted); } small.muted { font-size: 13px; }
+
+/* shell */
+.shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+.side { background: var(--surface); border-right: 1px solid var(--line); padding: 18px 12px; position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; gap: 4px; }
+.logo { font-family: var(--f-display); font-weight: 700; font-size: 24px; letter-spacing: -0.02em; padding: 0 10px 14px; }
+.logo small { display: block; font-family: var(--f-body); font-weight: 500; font-size: 12px; color: var(--muted); letter-spacing: 0; }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav button { display: flex; align-items: center; gap: 10px; text-align: left; padding: 9px 10px; border-radius: 10px; font-weight: 600; color: var(--muted); }
+.nav button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.nav button:hover { background: var(--bg); }
+.nav button[aria-current="page"] { background: var(--soft); color: var(--fg); }
+.nav .badge { margin-left: auto; background: var(--bad); color: #fff; font-size: 12px; border-radius: 99px; padding: 0 7px; min-width: 20px; text-align: center; }
+.side .me { margin-top: auto; padding: 10px; font-size: 13px; color: var(--muted); overflow-wrap: anywhere; display: flex; flex-direction: column; gap: 8px; }
+.main { padding: 22px clamp(14px, 3vw, 34px) 70px; min-width: 0; max-width: 1240px; width: 100%; }
+.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.top .sub { font-size: 13px; color: var(--muted); }
+
+/* KPI */
+.kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.kpi { text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px; transition: border-color .15s, transform .15s; position: relative; }
+.kpi:hover { border-color: var(--accent); transform: translateY(-1px); }
+.kpi .kl { font-size: 13px; font-weight: 600; color: var(--muted); }
+.kpi b { font-family: var(--f-display); font-size: 32px; line-height: 1.1; }
+.kpi small { font-size: 13px; color: var(--muted); }
+.kpi small i { font-style: normal; font-weight: 700; } .up { color: var(--ok); } .down { color: var(--bad); } .flat { color: var(--muted); }
+.kpi.alert { border-color: var(--bad); background: #FFF8F7; }
+.kpi .go { position: absolute; top: 12px; right: 14px; width: 16px; height: 16px; stroke: var(--muted); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.bar { height: 7px; border-radius: 99px; background: var(--soft); overflow: hidden; margin: 6px 0 2px; }
+.bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.bar.hot > i { background: var(--bad); } .bar.mid > i { background: #D9A100; }
+
+.grid2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; margin-bottom: 14px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 16px; min-width: 0; }
+.panel h3 { margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tabs { display: inline-flex; background: var(--soft); border-radius: 10px; padding: 3px; gap: 3px; }
+.tabs button { padding: 5px 11px; border-radius: 8px; font-weight: 600; font-size: 13px; color: var(--muted); }
+.tabs button[aria-pressed="true"] { background: var(--surface); color: var(--fg); box-shadow: 0 1px 2px rgba(40, 40, 10, .12); }
+.chart { width: 100%; height: auto; display: block; }
+.chart rect { fill: var(--accent); } .chart rect:hover { fill: #2f5f1b; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: var(--f-body); }
+.chart line { stroke: var(--line); }
+.lst { display: flex; flex-direction: column; }
+.li { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-top: 1px solid var(--line); text-align: left; width: 100%; border-radius: 8px; }
+.li:first-child { border-top: 0; }
+button.li:hover { background: var(--bg); }
+.li .t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.li .t b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li .t span { font-size: 13px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.li .r { font-size: 13px; color: var(--muted); white-space: nowrap; }
+.thumb { width: 44px; height: 44px; border-radius: 10px; object-fit: cover; background: var(--soft); flex: none; }
+.av { width: 38px; height: 38px; border-radius: 50%; background: var(--soft); color: var(--accent); display: grid; place-items: center; font-weight: 700; flex: none; object-fit: cover; font-family: var(--f-display); }
+.av.lg { width: 64px; height: 64px; font-size: 24px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; } .dot.r { background: var(--bad); } .dot.b { background: #3B7DD8; }
+
+/* toolbar + lists */
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.toolbar .grow { flex: 1 1 240px; }
+.pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.pill { padding: 6px 12px; border-radius: 99px; background: var(--surface); border: 1px solid var(--line); font-weight: 600; font-size: 13px; color: var(--muted); }
+.pill[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tbl { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.tr { display: grid; grid-template-columns: minmax(180px, 2.2fr) minmax(160px, 2fr) 130px 70px 110px; gap: 12px; align-items: center; padding: 10px 14px; border-top: 1px solid var(--line); width: 100%; text-align: left; }
+.tr.th { border-top: 0; background: var(--bg); font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding-top: 8px; padding-bottom: 8px; }
+button.tr:hover { background: var(--bg); }
+.tr .who { display: flex; gap: 10px; align-items: center; min-width: 0; }
+.tr .who span { min-width: 0; display: flex; flex-direction: column; }
+.tr .who b, .tr .em { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tr .em { color: var(--muted); font-size: 14px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+.tile { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; text-align: left; display: flex; flex-direction: column; transition: border-color .15s; }
+.tile:hover { border-color: var(--accent); }
+.tile img { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--soft); display: block; }
+.tile.story img { aspect-ratio: 9/14; }
+.tile .tb { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.tile .tb b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tile .tb span { font-size: 13px; color: var(--muted); }
+.rep { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+.rep .info { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.rep .info span { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.more { display: block; margin: 16px auto 0; }
+
+/* drawer */
+.dov { position: fixed; inset: 0; background: rgba(20, 26, 10, .45); z-index: 30; display: flex; justify-content: flex-end; animation: fade .15s; }
+.drawer { background: var(--bg); width: min(560px, 100%); height: 100%; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 14px; animation: slide .2s; }
+@keyframes slide { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+.dh { display: flex; gap: 12px; align-items: center; }
+.dh .t { flex: 1; min-width: 0; } .dh .t h2 { overflow-wrap: anywhere; }
+.x { width: 36px; height: 36px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line); display: grid; place-items: center; flex: none; }
+.x svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.fact { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+.fact b { display: block; font-family: var(--f-display); font-size: 21px; } .fact span { font-size: 12px; color: var(--muted); }
+.kv { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; }
+.kv > div { display: flex; justify-content: space-between; gap: 12px; padding: 9px 14px; border-top: 1px solid var(--line); font-size: 14px; }
+.kv > div:first-child { border-top: 0; } .kv > div span:first-child { color: var(--muted); } .kv > div span:last-child { text-align: right; overflow-wrap: anywhere; font-weight: 500; }
+.hero { width: 100%; max-height: 340px; object-fit: cover; border-radius: 14px; background: var(--soft); }
+ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.bg { position: fixed; inset: 0; background: rgba(20, 12, 8, .55); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 40; }
+.dlg { background: var(--bg); border-radius: 18px; padding: 20px; max-width: 520px; width: 100%; max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+.dlg img.big { width: 100%; max-height: 62vh; object-fit: contain; border-radius: 12px; background: #000; }
 .chat { display: flex; flex-direction: column; gap: 8px; }
 .m { max-width: 85%; border-radius: 14px; padding: 8px 12px; background: var(--soft); align-self: flex-start; }
-.m.rep { background: var(--badbg); align-self: flex-end; }
+.m.rp { background: var(--badbg); align-self: flex-end; }
 .m small { display: block; font-size: 12px; color: var(--muted); }
-.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 20; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 60; }
+.skel { background: linear-gradient(90deg, var(--soft), #F3F7E6, var(--soft)); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: 12px; height: 64px; }
+@keyframes sk { to { background-position: -200% 0; } }
 
+@media (max-width: 900px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; padding: 10px 12px; gap: 8px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .logo { padding: 0 8px 0 0; } .logo small { display: none; }
+  .nav { flex-direction: row; overflow-x: auto; flex: 1 1 100%; order: 3; padding-bottom: 2px; }
+  .nav button { white-space: nowrap; padding: 8px 10px; }
+  .side .me { margin: 0 0 0 auto; flex-direction: row; align-items: center; padding: 0; } .side .me .em { display: none; }
+  .grid2 { grid-template-columns: 1fr; }
+  .tr { grid-template-columns: 1fr auto; } .tr.th, .tr .em, .tr .c3, .tr .c4 { display: none; }
+}
+@media (max-width: 520px) { .facts { grid-template-columns: repeat(2, 1fr); } .kpis { grid-template-columns: 1fr 1fr; } .kpi b { font-size: 26px; } }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header><div class="logo">Gusto<small>Amministrazione</small></div><div id="who"></div></header>
-  <main id="app"></main>
-</div>
+<div id="app"></div>
+<div id="drawer"></div>
 <div id="layer"></div>
 <div id="toast" class="toast" hidden></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -80,139 +173,300 @@ input[type=search] { font: inherit; background: var(--surface); border: 1px soli
   'use strict';
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
-  var S = { user: null, admin: null, tab: 'reports', rtab: 'open', stats: null, dash: null, pros: [], reports: [], users: [], uq: '', recipes: [], stories: [], comments: [], legacy: false, busy: false, msg: '' };
+  var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
+    ['recipes', 'Piatti', 'M4 13h16a8 8 0 01-16 0zM12 5v4M8 6v3M16 6v3'], ['stories', 'Storie', 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v8M8 12h8'], ['comments', 'Commenti', 'M4 5h16v11H9l-5 4z'],
+    ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
+  var FRESH = { user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
+    recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, busy: false, msg: '' };
+  var S = JSON.parse(JSON.stringify(FRESH));
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
 
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function fdate(iso) { return new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }); }
-  function fdt(iso) { return new Date(iso).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }); }
-  function toast(t) { var e = document.getElementById('toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { e.hidden = true; }, 2400); }
+  function n(v) { return Number(v || 0).toLocaleString('it-IT'); }
+  function fdate(iso) { return iso ? new Date(iso).toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'; }
+  function fdt(iso) { return iso ? new Date(iso).toLocaleString('it-IT', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'; }
+  function ago(iso) {
+    if (!iso) return '—'; var s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return 'ora'; if (s < 3600) return Math.floor(s / 60) + ' min fa'; if (s < 86400) return Math.floor(s / 3600) + ' h fa';
+    if (s < 86400 * 14) return Math.floor(s / 86400) + ' gg fa'; return fdate(iso);
+  }
+  function bytes(b) { b = Number(b || 0); if (b < 1048576) return Math.round(b / 1024) + ' KB'; if (b < 1073741824) return (b / 1048576).toFixed(1).replace('.', ',') + ' MB'; return (b / 1073741824).toFixed(2).replace('.', ',') + ' GB'; }
+  function ini(s) { return esc((String(s || '?').trim()[0] || '?').toUpperCase()); }
+  function toast(t) { var e = document.getElementById('toast'); e.textContent = t; e.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { e.hidden = true; }, 2600); }
   function dlg(inner) { document.getElementById('layer').innerHTML = '<div class="bg" data-act="close"><div class="dlg" role="dialog" aria-modal="true">' + inner + '</div></div>'; }
   function closeDlg() { document.getElementById('layer').innerHTML = ''; }
-
-  function viewLogin() {
-    return '<form class="login card" id="loginform" novalidate><h1 style="font-size:24px">Accedi</h1>' +
-      '<p class="msg">Area riservata agli amministratori di Gusto.</p>' +
-      '<label class="f" for="e">Email<input id="e" type="email" autocomplete="email" autocapitalize="none"></label>' +
-      '<label class="f" for="p">Password<input id="p" type="password" autocomplete="current-password"></label>' +
-      (S.msg ? '<p class="msg err" role="status">' + esc(S.msg) + '</p>' : '') +
-      '<button class="btn" type="submit"' + (S.busy ? ' disabled' : '') + '>Accedi</button></form>';
-  }
-  function viewDenied() {
-    return '<div class="card" style="max-width:460px;margin:40px auto 0"><h2>Accesso non consentito</h2><p class="msg" style="margin:10px 0 14px">L\'account ' + esc(S.user.email) + ' non è un amministratore.</p><button class="btn ghost" data-act="logout">Esci</button></div>';
-  }
   function pathOf(url) { var m = /\/object\/public\/media\/(.+)$/.exec(url || ''); return m ? decodeURIComponent(m[1]) : null; }
-  function dashHTML() {
-    var d = S.dash; if (!d) return '';
-    var c = function (n, l) { return '<div class="stat"><b>' + n + '</b><span>' + l + '</span></div>'; };
-    return '<div class="stats">' + c(d.users, 'utenti') + c(d.new_users_7d, 'nuovi in 7 giorni') + c(d.pros + ' / ' + d.pros_verified, 'nutrizionisti / verificati') + c(d.recipes, 'piatti') + c(d.stories_active, 'storie attive') + c(d.open_reports, 'segnalazioni aperte') + '</div>';
+  function ic(d) { return '<svg viewBox="0 0 24 24"><path d="' + d + '"/></svg>'; }
+  function av(name, url, big) { return url ? '<img class="av' + (big ? ' lg' : '') + '" src="' + esc(url) + '" alt="">' : '<span class="av' + (big ? ' lg' : '') + '">' + ini(name) + '</span>'; }
+  function nw(a, b) { var d = a - b; return '<i class="' + (d > 0 ? 'up' : d < 0 ? 'down' : 'flat') + '">' + (d > 0 ? '▲ ' : d < 0 ? '▼ ' : '') + '+' + n(a) + '</i>'; }
+  function trend(a, b) { var d = a - b; return '<i class="' + (d > 0 ? 'up' : d < 0 ? 'down' : 'flat') + '">' + (d > 0 ? '▲ +' : d < 0 ? '▼ ' : '= ') + n(d) + '</i>'; }
+  function logAct(a, t) { if (sb) sb.rpc('admin_log_add', { act: a, tgt: t }).then(function () {}, function () {}); }
+  function err(e) { toast(e && e.message && /non autorizzato/.test(e.message) ? 'Non sei autorizzato' : 'Operazione non riuscita'); }
+
+  /* ---------- Panoramica ---------- */
+  function kpi(k, label, big, small, alert) {
+    return '<button class="kpi' + (alert ? ' alert' : '') + '" data-act="kpi" data-k="' + k + '"><svg class="go" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg><span class="kl">' + label + '</span><b>' + big + '</b><small>' + small + '</small></button>';
+  }
+  function chartHTML() {
+    var o = S.ov, ser = (o && o.series) || [], key = S.chart, W = 640, H = 150, pad = 22;
+    var max = Math.max.apply(null, ser.map(function (x) { return x[key]; }).concat([1])), bw = (W - 10) / Math.max(ser.length, 1), tot = 0;
+    var bars = ser.map(function (x, i) { tot += x[key]; var h = Math.max(x[key] ? 3 : 0, (H - pad - 6) * x[key] / max); return '<rect x="' + (5 + i * bw + 1.5) + '" y="' + (H - pad - h) + '" width="' + Math.max(bw - 3, 2) + '" height="' + h + '" rx="2"><title>' + fdate(x.d) + ': ' + x[key] + '</title></rect>'; }).join('');
+    var lab = ser.length ? '<text x="5" y="' + (H - 6) + '">' + fdate(ser[0].d) + '</text><text x="' + (W - 5) + '" y="' + (H - 6) + '" text-anchor="end">' + fdate(ser[ser.length - 1].d) + '</text>' : '';
+    return '<div class="panel"><h3>Ultimi 30 giorni <span class="tabs">' + [['u', 'Iscrizioni'], ['r', 'Piatti'], ['c', 'Commenti']].map(function (t) { return '<button data-act="chart" data-v="' + t[0] + '" aria-pressed="' + (S.chart === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</span></h3>' +
+      '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Andamento"><line x1="5" x2="' + (W - 5) + '" y1="' + (H - pad) + '" y2="' + (H - pad) + '"/>' + bars + lab + '</svg><small class="muted">' + n(tot) + ' negli ultimi 30 giorni · massimo giornaliero ' + n(max) + '</small></div>';
+  }
+  function recentHTML() {
+    var r = (S.ov && S.ov.recent) || [];
+    if (!r.length) return '<p class="msg">Ancora nessuna attività.</p>';
+    return '<div class="lst">' + r.slice(0, 10).map(function (x) {
+      var txt = x.k === 'user' ? '<b>' + esc(x.who || 'Nuovo utente') + '</b><span>si è iscritto</span>' : x.k === 'recipe' ? '<b>' + esc(x.what) + '</b><span>piatto di ' + esc(x.who) + '</span>' : '<b>Segnalazione: ' + esc(REASON[x.what] || x.what) + '</b><span>contro ' + esc(x.who) + '</span>';
+      var act = x.k === 'user' ? 'user' : x.k === 'recipe' ? 'recipe' : 'goreports', dc = x.k === 'user' ? '' : x.k === 'recipe' ? ' b' : ' r';
+      return '<button class="li" data-act="' + act + '" data-id="' + esc(x.id) + '"><span class="dot' + dc + '"></span><span class="t">' + txt + '</span><span class="r">' + ago(x.at) + '</span></button>';
+    }).join('') + '</div>';
+  }
+  function overviewHTML() {
+    var o = S.ov;
+    if (S.ovErr) return '<div class="note">Le statistiche avanzate non sono disponibili: controlla che la migrazione 019 sia stata eseguita su Supabase.</div>';
+    if (!o) return '<div class="kpis"><div class="skel"></div><div class="skel"></div><div class="skel"></div><div class="skel"></div></div>';
+    var dbp = Math.min(100, o.db_bytes / 524288000 * 100), stp = Math.min(100, o.storage_bytes / 1073741824 * 100);
+    var pend = o.pros - o.pros_verified;
+    var pct = function (p) { return p > 85 ? ' hot' : p > 60 ? ' mid' : ''; };
+    return '<div class="kpis">' +
+      kpi('users', 'Utenti', n(o.users), nw(o.users_7d, o.users_prev_7d) + ' nuovi in 7 giorni') +
+      kpi('recipes', 'Piatti', n(o.recipes), nw(o.recipes_7d, o.recipes_prev_7d) + ' nuovi in 7 giorni') +
+      kpi('reports', 'Segnalazioni', n(o.reports_open), (o.reports_open ? 'da gestire' : 'tutto a posto') + ' · ' + n(o.reports_total) + ' totali', o.reports_open > 0) +
+      kpi('pros', 'Nutrizionisti', n(o.pros_verified) + ' <small class="muted">/ ' + n(o.pros) + '</small>', pend > 0 ? '<i class="down">' + pend + ' da verificare</i>' : 'tutti verificati') +
+      kpi('engage', 'Interazioni', n(o.likes + o.saves + o.comments), n(o.likes) + ' like · ' + n(o.saves) + ' salvati · ' + n(o.comments) + ' commenti') +
+      kpi('msgs', 'Messaggi', n(o.dms), n(o.dms_7d) + ' in 7 gg · ' + n(o.convs) + ' conversazioni') +
+      kpi('stories', 'Storie attive', n(o.stories_active), n(o.stories_total) + ' totali · ' + n(o.story_views) + ' visualizzazioni') +
+      kpi('storage', 'Spazio usato', bytes(o.storage_bytes + o.db_bytes), '<span class="bar' + pct(Math.max(dbp, stp)) + '" style="display:block"><i style="width:' + Math.max(dbp, stp).toFixed(0) + '%"></i></span>piano gratuito: ' + Math.max(dbp, stp).toFixed(0) + '% del limite più vicino') +
+      '</div><div class="grid2">' + chartHTML() + '<div class="panel"><h3>Ultime attività</h3>' + recentHTML() + '</div></div>' +
+      '<div class="grid2" style="grid-template-columns:1fr 1fr"><div class="panel"><h3>Piatti più apprezzati</h3>' + (o.top_recipes.length ? '<div class="lst">' + o.top_recipes.map(function (x) {
+        return '<button class="li" data-act="recipe" data-id="' + x.id + '">' + (x.media_url ? '<img class="thumb" src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '') + '<span class="t"><b>' + esc(x.title) + '</b><span>di ' + esc(x.author) + '</span></span><span class="r">' + n(x.likes) + ' like · ' + n(x.saves) + ' salv.</span></button>'; }).join('') + '</div>' : '<p class="msg">Nessun piatto.</p>') + '</div>' +
+      '<div class="panel"><h3>Profili più seguiti</h3>' + (o.top_users.length ? '<div class="lst">' + o.top_users.map(function (x) {
+        return '<button class="li" data-act="user" data-id="' + esc(x.id) + '">' + av(x.name) + '<span class="t"><b>' + esc(x.name || 'Senza nome') + '</b><span>' + (x.handle ? '@' + esc(x.handle) + ' · ' : '') + n(x.recipes) + ' piatti</span></span><span class="r">' + n(x.followers) + ' follower</span></button>'; }).join('') + '</div>' : '<p class="msg">Nessun profilo.</p>') + '</div></div>';
+  }
+
+  /* ---------- Utenti ---------- */
+  function filteredUsers() {
+    var f = S.uf, l = S.users.filter(function (u) { return f === 'all' || (f === 'pro' && u.account_type === 'pro') || (f === 'pend' && u.account_type === 'pro' && !u.pro_verified) || (f === 'susp' && u.suspended) || (f === 'admin' && u.is_admin) || (f === 'noterms' && !u.terms_version); });
+    var s = S.us; l = l.slice();
+    if (s === 'name') l.sort(function (a, b) { return String(a.name || '').localeCompare(String(b.name || ''), 'it'); });
+    else if (s === 'recipes') l.sort(function (a, b) { return b.recipes - a.recipes; });
+    else if (s === 'old') l.sort(function (a, b) { return new Date(a.created_at) - new Date(b.created_at); });
+    return l;
+  }
+  function usersListHTML() {
+    var l = filteredUsers();
+    if (!l.length) return '<div class="empty"><b>Nessun utente</b>Prova un altro filtro o un\'altra ricerca.</div>';
+    return '<div class="tbl"><div class="tr th"><span>Utente</span><span class="c2">Email</span><span class="c3">Tipo</span><span class="c4">Piatti</span><span>Iscritto</span></div>' + l.map(function (x) {
+      return '<button class="tr" data-act="user" data-id="' + esc(x.user_id) + '"><span class="who">' + av(x.name) + '<span><b>' + esc(x.name || 'Senza nome') + '</b><small class="muted">' + (x.handle ? '@' + esc(x.handle) : '') + '</small></span></span><span class="em c2">' + esc(x.email) + '</span>' +
+        '<span class="c3">' + (x.is_admin ? '<span class="chip ok">Admin</span> ' : '') + (x.account_type === 'pro' ? '<span class="chip ' + (x.pro_verified ? 'ok' : 'warn') + '">Nutrizionista' + (x.pro_verified ? '' : ' ?') + '</span> ' : '') + (x.suspended ? '<span class="chip bad">Sospeso</span>' : '') + '</span><span class="c4">' + n(x.recipes) + '</span><span class="muted">' + fdate(x.created_at) + '</span></button>';
+    }).join('') + '</div>' + (S.uend ? '' : '<button class="btn ghost more" data-act="moreusers">Carica altri</button>');
   }
   function usersHTML() {
-    var h = '<form id="uform" style="margin-bottom:12px"><input type="search" id="uq" placeholder="Cerca per nome, @handle o email" value="' + esc(S.uq) + '"></form>';
-    if (!S.users.length) return h + '<div class="empty"><b>Nessun utente</b>Prova un\'altra ricerca.</div>';
-    return h + '<div class="list">' + S.users.map(function (x) {
-      return '<div class="card"><div class="row"><div class="info"><b>' + esc(x.name || 'Senza nome') + (x.handle ? ' <small style="color:var(--muted);font-weight:500">@' + esc(x.handle) + '</small>' : '') + '</b><span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + ' · ' + x.recipes + ' piatti</span><span>' +
-        (x.account_type === 'pro' ? '<span class="chip ' + (x.pro_verified ? 'ok' : '') + '">Nutrizionista' + (x.pro_verified ? ' verificato' : ' da verificare') + '</span> ' : '') + (x.is_admin ? '<span class="chip ok">Admin</span> ' : '') + (x.suspended ? '<span class="chip bad">Sospeso</span> ' : '') + (x.terms_version ? '<span class="chip">Termini ' + esc(x.terms_version) + '</span>' : '<span class="chip">Termini non registrati</span>') + '</span></div>' +
-        (x.is_admin ? '' : '<div class="acts"><button class="btn sm ' + (x.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="' + (x.suspended ? '0' : '1') + '">' + (x.suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
-        '<button class="btn sm danger" data-act="deluser" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '">Elimina</button></div>') + '</div></div>';
-    }).join('') + '</div>';
+    var P = [['all', 'Tutti'], ['pro', 'Nutrizionisti'], ['pend', 'Da verificare'], ['susp', 'Sospesi'], ['admin', 'Admin'], ['noterms', 'Senza termini']];
+    return '<div class="toolbar"><input class="grow" type="search" id="uq" placeholder="Cerca per nome, @handle o email" value="' + esc(S.uq) + '" autocomplete="off"><select id="us" aria-label="Ordina"><option value="new"' + (S.us === 'new' ? ' selected' : '') + '>Più recenti</option><option value="old"' + (S.us === 'old' ? ' selected' : '') + '>Più vecchi</option><option value="name"' + (S.us === 'name' ? ' selected' : '') + '>Nome A–Z</option><option value="recipes"' + (S.us === 'recipes' ? ' selected' : '') + '>Più piatti</option></select><button class="btn ghost sm" data-act="csv">Esporta CSV</button></div>' +
+      '<div class="toolbar"><div class="pills">' + P.map(function (p) { return '<button class="pill" data-act="ufilter" data-v="' + p[0] + '" aria-pressed="' + (S.uf === p[0]) + '">' + p[1] + '</button>'; }).join('') + '</div></div><div id="ulist">' + usersListHTML() + '</div>';
+  }
+
+  /* ---------- Piatti, storie, commenti ---------- */
+  function recipesListHTML() {
+    var q = S.rq.toLowerCase(), l = S.recipes.filter(function (x) { return (S.rf === 'all' || x.open_reports > 0) && (!q || (x.title + ' ' + (x.author_name || '')).toLowerCase().indexOf(q) >= 0); });
+    if (!l.length) return '<div class="empty"><b>Nessun piatto</b>' + (S.recipes.length ? 'Nessun risultato per questo filtro.' : 'I piatti pubblicati compaiono qui.') + '</div>';
+    return '<div class="cards">' + l.map(function (x) {
+      return '<button class="tile" data-act="recipe" data-id="' + x.recipe_id + '">' + (x.media_url ? '<img src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '<div class="thumb" style="width:100%;height:auto;aspect-ratio:1;border-radius:0"></div>') + '<span class="tb"><b>' + esc(x.title) + '</b><span>' + esc(x.author_name || 'utente') + ' · ' + ago(x.created_at) + '</span>' + (x.open_reports > 0 ? '<span><span class="chip bad">' + x.open_reports + ' segnalaz.</span></span>' : '') + '</span></button>';
+    }).join('') + '</div>' + (S.rend ? '' : '<button class="btn ghost more" data-act="morerecipes">Carica altri</button>');
   }
   function recipesHTML() {
-    if (!S.recipes.length) return '<div class="empty"><b>Nessun piatto</b>I piatti pubblicati compaiono qui.</div>';
-    return '<div class="list">' + S.recipes.map(function (x) {
-      return '<div class="card"><div class="row"><div style="display:flex;gap:12px;align-items:center;min-width:0;flex:1 1 260px">' + (x.media_url ? '<img class="thumb" src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '') +
-        '<div class="info"><b>' + esc(x.title) + '</b><span>di ' + esc(x.author_name || 'utente') + ' · ' + fdt(x.created_at) + '</span>' + (x.open_reports > 0 ? '<span><span class="chip bad">' + x.open_reports + ' segnalazioni aperte</span></span>' : '') + '</div></div>' +
-        '<div class="acts"><button class="btn sm danger" data-act="delrec" data-id="' + x.recipe_id + '" data-n="' + esc(x.title) + '">Rimuovi</button></div></div></div>';
-    }).join('') + '</div>';
+    return '<div class="toolbar"><input class="grow" type="search" id="rq" placeholder="Cerca per titolo o autore (tra quelli caricati)" value="' + esc(S.rq) + '" autocomplete="off"><div class="pills"><button class="pill" data-act="rfilter" data-v="all" aria-pressed="' + (S.rf === 'all') + '">Tutti</button><button class="pill" data-act="rfilter" data-v="rep" aria-pressed="' + (S.rf === 'rep') + '">Solo segnalati</button></div></div><div id="rlist">' + recipesListHTML() + '</div>';
   }
   function storiesHTML() {
     if (!S.stories.length) return '<div class="empty"><b>Nessuna storia attiva</b>Le storie durano 24 ore.</div>';
-    return '<div class="list">' + S.stories.map(function (x) {
-      return '<div class="card"><div class="row"><div style="display:flex;gap:12px;align-items:center;min-width:0;flex:1 1 260px"><img class="thumb wide" src="' + esc(x.media_url) + '" alt="" loading="lazy">' +
-        '<div class="info"><b>' + esc(x.author_name || 'utente') + '</b><span>' + fdt(x.created_at) + '</span>' + (x.caption ? '<span style="color:var(--fg)">«' + esc(x.caption) + '»</span>' : '') + '</div></div>' +
-        '<div class="acts"><button class="btn sm danger" data-act="delstory" data-id="' + esc(x.story_id) + '">Rimuovi</button></div></div></div>';
+    return '<div class="cards">' + S.stories.map(function (x) {
+      return '<button class="tile story" data-act="story" data-id="' + esc(x.story_id) + '"><img src="' + esc(x.media_url) + '" alt="" loading="lazy"><span class="tb"><b>' + esc(x.author_name || 'utente') + '</b><span>' + ago(x.created_at) + (x.caption ? ' · «' + esc(x.caption) + '»' : '') + '</span></span></button>';
     }).join('') + '</div>';
   }
-  function commentsHTML() {
-    if (!S.comments.length) return '<div class="empty"><b>Nessun commento</b>Gli ultimi commenti compaiono qui.</div>';
-    return '<div class="list">' + S.comments.map(function (x) {
-      return '<div class="card"><div class="row"><div class="info"><b>' + esc(x.author_name || 'utente') + '</b><span>su «' + esc(x.recipe_title || 'piatto eliminato') + '» · ' + fdt(x.created_at) + '</span><span style="color:var(--fg)">' + esc(x.body) + '</span></div>' +
-        '<div class="acts"><button class="btn sm danger" data-act="delcom" data-id="' + x.comment_id + '">Elimina</button></div></div></div>';
+  function commentsListHTML() {
+    var q = S.cq.toLowerCase(), l = S.comments.filter(function (x) { return !q || (x.body + ' ' + (x.author_name || '')).toLowerCase().indexOf(q) >= 0; });
+    if (!l.length) return '<div class="empty"><b>Nessun commento</b>' + (S.comments.length ? 'Nessun risultato.' : 'Gli ultimi commenti compaiono qui.') + '</div>';
+    return '<div class="stack">' + l.map(function (x) {
+      return '<div class="rep"><div class="info"><b><button data-act="user" data-id="' + esc(x.author_id) + '" style="font-weight:700;text-decoration:underline">' + esc(x.author_name || 'utente') + '</button> <small class="muted">su «' + esc(x.recipe_title || 'piatto eliminato') + '» · ' + fdt(x.created_at) + '</small></b><span style="color:var(--fg)">' + esc(x.body) + '</span></div>' +
+        '<div class="acts"><button class="btn sm danger" data-act="del" data-k="delcom" data-id="' + x.comment_id + '">Elimina</button></div></div>';
     }).join('') + '</div>';
   }
-  function statsHTML() {
-    if (S.dash) return dashHTML();
-    var st = S.stats; if (!st) return '';
-    return '<div class="stats"><div class="stat"><b>' + st.users + '</b><span>utenti</span></div><div class="stat"><b>' + st.pros + '</b><span>nutrizionisti</span></div><div class="stat"><b>' + st.pros_verified + '</b><span>verificati</span></div><div class="stat"><b>' + st.open_reports + '</b><span>segnalazioni aperte</span></div></div>';
-  }
+  function commentsHTML() { return '<div class="toolbar"><input class="grow" type="search" id="cq" placeholder="Cerca nei commenti caricati" value="' + esc(S.cq) + '" autocomplete="off"></div><div id="clist">' + commentsListHTML() + '</div>'; }
+
+  /* ---------- Nutrizionisti, segnalazioni, registro ---------- */
   function prosHTML() {
     if (!S.pros.length) return '<div class="empty"><b>Nessun nutrizionista</b>Quando qualcuno si registra come nutrizionista compare qui, da verificare.</div>';
-    return '<p class="note">Controlla l\'iscrizione all\'albo prima di verificare. Solo i nutrizionisti verificati possono invitare clienti.</p><div class="list">' + S.pros.map(function (x) {
-      return '<div class="card"><div class="row"><div class="info"><b>' + esc(x.name || 'Senza nome') + '</b><span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + '</span><span>' +
-        (x.pro_verified ? '<span class="chip ok">Verificato</span>' : '<span class="chip">Da verificare</span>') + (x.suspended ? ' <span class="chip bad">Sospeso</span>' : '') + '</span></div>' +
-        '<div class="acts"><button class="btn sm' + (x.pro_verified ? ' ghost' : '') + '" data-act="ver" data-u="' + esc(x.user_id) + '" data-v="' + (x.pro_verified ? '0' : '1') + '">' + (x.pro_verified ? 'Revoca la verifica' : 'Verifica') + '</button>' +
-        '<button class="btn sm ' + (x.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="' + (x.suspended ? '0' : '1') + '">' + (x.suspended ? 'Riattiva' : 'Sospendi') + '</button></div></div></div>';
+    var l = S.pros.slice().sort(function (a, b) { return (a.pro_verified ? 1 : 0) - (b.pro_verified ? 1 : 0); });
+    return '<p class="note">Controlla l\'iscrizione all\'albo prima di verificare. Solo i nutrizionisti verificati possono invitare clienti.</p><div class="stack">' + l.map(function (x) {
+      return '<div class="rep"><div class="info"><b><button data-act="user" data-id="' + esc(x.user_id) + '" style="font-weight:700;text-decoration:underline">' + esc(x.name || 'Senza nome') + '</button></b><span>' + esc(x.email) + ' · registrato il ' + fdate(x.created_at) + '</span><span>' + (x.pro_verified ? '<span class="chip ok">Verificato</span>' : '<span class="chip warn">Da verificare</span>') + (x.suspended ? ' <span class="chip bad">Sospeso</span>' : '') + '</span></div>' +
+        '<div class="acts"><button class="btn sm' + (x.pro_verified ? ' ghost' : '') + '" data-act="ver" data-u="' + esc(x.user_id) + '" data-n="' + esc(x.name || x.email) + '" data-v="' + (x.pro_verified ? '0' : '1') + '">' + (x.pro_verified ? 'Revoca la verifica' : 'Verifica') + '</button></div></div>';
     }).join('') + '</div>';
   }
   function reportsHTML() {
-    var seg = '<div class="seg" role="group" aria-label="Stato"><button data-act="rtab" data-v="open" aria-pressed="' + (S.rtab === 'open') + '">Aperte</button><button data-act="rtab" data-v="closed" aria-pressed="' + (S.rtab === 'closed') + '">Chiuse</button></div>';
+    var seg = '<div class="toolbar"><div class="pills"><button class="pill" data-act="rtab" data-v="open" aria-pressed="' + (S.rtab === 'open') + '">Aperte</button><button class="pill" data-act="rtab" data-v="closed" aria-pressed="' + (S.rtab === 'closed') + '">Chiuse</button></div></div>';
     if (!S.reports.length) return seg + '<div class="empty"><b>' + (S.rtab === 'open' ? 'Nessuna segnalazione aperta' : 'Nessuna segnalazione chiusa') + '</b>Le segnalazioni degli utenti compaiono qui.</div>';
-    return seg + '<div class="list">' + S.reports.map(function (r) {
-      return '<div class="card"><div class="row"><div class="info"><b>' + esc(r.reported_name || 'Senza nome') + '</b><span>' + esc(r.reported_email) + (r.reported_suspended ? ' · <span class="chip bad">Sospeso</span>' : '') + '</span>' +
-        '<span><span class="chip">' + esc(REASON[r.reason] || r.reason) + '</span> · segnalato da ' + esc(r.reporter_name || 'utente') + ' il ' + fdt(r.created_at) + '</span>' +
-        (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') +
-        (r.content_type === 'recipe' ? '<span style="display:flex;gap:10px;align-items:center;margin-top:4px">' + (r.content_media ? '<img class="thumb" src="' + esc(r.content_media) + '" alt="">' : '') + '<span style="color:var(--fg)">Piatto segnalato: <b>' + esc(r.content_title || 'già rimosso') + '</b></span></span>' : '') + '</div>' +
-        '<div class="acts">' + (r.content_type === 'recipe' && r.content_title ? '<button class="btn sm danger" data-act="delrec" data-id="' + esc(r.content_id) + '" data-n="' + esc(r.content_title) + '">Rimuovi il piatto</button>' : '') + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">Vedi la conversazione</button>' : '') +
+    return seg + '<div class="stack">' + S.reports.map(function (r) {
+      return '<div class="rep"><div class="info"><b><button data-act="user" data-id="' + esc(r.reported_id) + '" style="font-weight:700;text-decoration:underline">' + esc(r.reported_name || 'Senza nome') + '</button> ' + (r.reported_suspended ? '<span class="chip bad">Sospeso</span>' : '') + '</b><span>' + esc(r.reported_email) + '</span>' +
+        '<span><span class="chip warn">' + esc(REASON[r.reason] || r.reason) + '</span> segnalato da ' + esc(r.reporter_name || 'utente') + ' · ' + fdt(r.created_at) + '</span>' + (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') +
+        (r.content_type === 'recipe' ? '<button class="li" data-act="recipe" data-id="' + esc(r.content_id) + '" style="border:1px solid var(--line);margin-top:4px;background:var(--bg)">' + (r.content_media ? '<img class="thumb" src="' + esc(r.content_media) + '" alt="">' : '') + '<span class="t"><b>' + esc(r.content_title || 'Piatto già rimosso') + '</b><span>Piatto segnalato · apri</span></span></button>' : '') + '</div>' +
+        '<div class="acts" style="align-content:flex-start">' + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">Conversazione</button>' : '') +
         '<button class="btn sm ' + (r.reported_suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-v="' + (r.reported_suspended ? '0' : '1') + '">' + (r.reported_suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
-        '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div></div>';
+        '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div>';
     }).join('') + '</div>';
   }
-  function viewDash() {
-    var T = S.legacy ? [['pros', 'Nutrizionisti'], ['reports', 'Segnalazioni']] : [['reports', 'Segnalazioni'], ['users', 'Utenti'], ['recipes', 'Piatti'], ['stories', 'Storie'], ['comments', 'Commenti'], ['pros', 'Nutrizionisti']];
-    var oc = (S.dash && S.dash.open_reports) || (S.stats && S.stats.open_reports) || 0;
-    var seg = '<div class="seg" role="group" aria-label="Sezione">' + T.map(function (t) { return '<button data-act="tab" data-v="' + t[0] + '" aria-pressed="' + (S.tab === t[0]) + '">' + t[1] + (t[0] === 'reports' && oc ? ' (' + oc + ')' : '') + '</button>'; }).join('') + '</div>';
-    return (S.legacy ? '<p class="note">Funzioni di moderazione avanzate non ancora attive: esegui la migrazione 018 su Supabase.</p>' : '') + statsHTML() + seg +
-      (S.tab === 'pros' ? prosHTML() : S.tab === 'users' ? usersHTML() : S.tab === 'recipes' ? recipesHTML() : S.tab === 'stories' ? storiesHTML() : S.tab === 'comments' ? commentsHTML() : reportsHTML());
-  }
-  function render() {
-    var app = document.getElementById('app'), who = document.getElementById('who');
-    who.innerHTML = S.user ? '<span class="msg" style="margin-right:10px">' + esc(S.user.email) + '</span><button class="btn ghost sm" data-act="logout">Esci</button>' : '';
-    app.innerHTML = !S.user ? viewLogin() : S.admin === null ? '<p class="msg" style="margin-top:30px">Un momento…</p>' : S.admin ? viewDash() : viewDenied();
+  var ACT = { suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
+  function logHTML() {
+    if (!S.log.length) return '<div class="empty"><b>Registro vuoto</b>Qui compaiono le azioni di moderazione fatte dagli amministratori.</div>';
+    return '<div class="panel"><div class="lst">' + S.log.map(function (x) { return '<div class="li"><span class="dot"></span><span class="t"><b>' + esc(ACT[x.action] || x.action) + '</b><span>' + esc(x.target || '') + '</span></span><span class="r">' + esc(x.admin_name || 'Admin') + ' · ' + fdt(x.created_at) + '</span></div>'; }).join('') + '</div></div>';
   }
 
-  function err(e) { toast(e && e.message && /non autorizzato/.test(e.message) ? 'Non sei autorizzato' : 'Operazione non riuscita'); }
-  function loadTab() {
+  /* ---------- Drawer ---------- */
+  function drawerHTML() {
+    var d = S.dr; if (!d) return '';
+    var close = '<button class="x" data-act="dclose" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+    var body;
+    if (d.loading) body = '<div class="dh"><div class="t"><h2>Caricamento…</h2></div>' + close + '</div><div class="skel"></div><div class="skel"></div>';
+    else if (d.kind === 'user') body = userDrawer(d.data, close);
+    else if (d.kind === 'recipe') body = recipeDrawer(d.data, close);
+    else body = kpiDrawer(d.k, close);
+    return '<div class="dov" data-act="dclose"><aside class="drawer" role="dialog" aria-modal="true">' + body + '</aside></div>';
+  }
+  function fact(v, l) { return '<div class="fact"><b>' + n(v) + '</b><span>' + l + '</span></div>'; }
+  function userDrawer(u, close) {
+    if (!u) return '<div class="dh"><div class="t"><h2>Utente non trovato</h2></div>' + close + '</div><p class="msg">Potrebbe essere stato eliminato.</p>';
+    var nm = u.name || u.email;
+    return '<div class="dh">' + av(u.name, u.avatar, true) + '<div class="t"><h2>' + esc(u.name || 'Senza nome') + '</h2><span class="muted">' + (u.handle ? '@' + esc(u.handle) : '') + '</span></div>' + close + '</div>' +
+      '<div class="acts">' + (u.admin ? '<span class="chip ok">Admin</span>' : '') + (u.type === 'pro' ? '<span class="chip ' + (u.verified ? 'ok' : 'warn') + '">Nutrizionista' + (u.verified ? ' verificato' : ' da verificare') + '</span>' : '') + (u.suspended ? '<span class="chip bad">Sospeso</span>' : '') + (u.private ? '<span class="chip">Profilo privato</span>' : '') + (u.confirmed ? '' : '<span class="chip warn">Email non confermata</span>') + '</div>' +
+      '<div class="facts">' + fact(u.recipes, 'piatti') + fact(u.followers, 'follower') + fact(u.following, 'seguiti') + fact(u.comments, 'commenti') + fact(u.likes_given, 'like dati') + fact(u.saves, 'salvati') + '</div>' +
+      '<div class="kv"><div><span>Email</span><span>' + esc(u.email) + '</span></div><div><span>Iscritto</span><span>' + fdt(u.created_at) + '</span></div><div><span>Ultimo accesso</span><span>' + (u.last_sign_in ? ago(u.last_sign_in) : 'mai') + '</span></div>' +
+      '<div><span>Termini accettati</span><span>' + (u.terms_version ? esc(u.terms_version) + (u.terms_at ? ' · ' + fdate(u.terms_at) : '') : 'non registrati') + '</span></div><div><span>Notifiche push</span><span>' + (u.push ? u.push + ' dispositivo/i' : 'nessuna') + '</span></div>' +
+      '<div><span>Storie / messaggi inviati</span><span>' + n(u.stories) + ' / ' + n(u.dms_sent) + '</span></div><div><span>Segnalazioni ricevute / fatte</span><span>' + n(u.reports_received) + ' / ' + n(u.reports_made) + '</span></div><div><span>Bloccato da</span><span>' + n(u.blocked_by) + ' utenti</span></div></div>' +
+      (u.last_recipes.length ? '<h3>Ultimi piatti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_recipes.map(function (x) { return '<button class="li" data-act="recipe" data-id="' + x.id + '">' + (x.media_url ? '<img class="thumb" src="' + esc(x.media_url) + '" alt="" loading="lazy">' : '') + '<span class="t"><b>' + esc(x.title) + '</b></span><span class="r">' + ago(x.created_at) + '</span></button>'; }).join('') + '</div>' : '') +
+      (u.last_comments.length ? '<h3>Ultimi commenti</h3><div class="lst panel" style="padding:6px 10px">' + u.last_comments.map(function (x) { return '<div class="li"><span class="t"><b style="white-space:normal">' + esc(x.body) + '</b><span>su «' + esc(x.title || 'piatto eliminato') + '» · ' + ago(x.created_at) + '</span></span><button class="btn sm danger" data-act="del" data-k="delcom" data-id="' + x.id + '">Elimina</button></div>'; }).join('') + '</div>' : '') +
+      (u.reports.length ? '<h3>Segnalazioni ricevute</h3><div class="lst panel" style="padding:6px 10px">' + u.reports.map(function (x) { return '<div class="li"><span class="t"><b>' + esc(REASON[x.reason] || x.reason) + (x.content_type ? ' · ' + (x.content_type === 'recipe' ? 'piatto' : x.content_type) : '') + '</b><span>' + (x.details ? '«' + esc(x.details) + '» · ' : '') + fdt(x.created_at) + '</span></span><span class="chip ' + (x.status === 'open' ? 'bad' : '') + '">' + (x.status === 'open' ? 'aperta' : 'chiusa') + '</span></div>'; }).join('') + '</div>' : '') +
+      (u.admin ? '' : '<div class="acts" style="margin-top:4px">' + (u.type === 'pro' ? '<button class="btn sm' + (u.verified ? ' ghost' : '') + '" data-act="ver" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.verified ? '0' : '1') + '">' + (u.verified ? 'Revoca la verifica' : 'Verifica nutrizionista') + '</button>' : '') +
+        '<button class="btn sm ' + (u.suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(u.id) + '" data-n="' + esc(nm) + '" data-v="' + (u.suspended ? '0' : '1') + '">' + (u.suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
+        '<a class="btn sm ghost" href="mailto:' + esc(u.email) + '" style="text-decoration:none">Scrivi email</a><button class="btn sm danger" data-act="del" data-k="deluser" data-id="' + esc(u.id) + '" data-n="' + esc(nm) + '">Elimina account</button></div>');
+  }
+  function recipeDrawer(r, close) {
+    if (!r) return '<div class="dh"><div class="t"><h2>Piatto non trovato</h2></div>' + close + '</div><p class="msg">Potrebbe essere stato rimosso.</p>';
+    var ing = (r.ingredients || []).map(function (i) { return typeof i === 'string' ? esc(i) : esc([i.q, i.u, i.n].filter(function (x) { return x !== undefined && x !== null && x !== ''; }).join(' ')); });
+    var st = (r.steps || []).map(function (s) { return esc(typeof s === 'string' ? s : (s.t || s.text || s.body || JSON.stringify(s))); });
+    return '<div class="dh"><div class="t"><h2>' + esc(r.title) + '</h2><button data-act="user" data-id="' + esc(r.author_id) + '" class="muted" style="text-decoration:underline">di ' + esc(r.author) + '</button></div>' + close + '</div>' +
+      (r.media_url ? '<img class="hero" src="' + esc(r.media_url) + '" alt="">' : '') +
+      '<div class="facts">' + fact(r.likes, 'like') + fact(r.saves, 'salvataggi') + fact(r.comments.length, 'commenti') + '</div>' +
+      '<div class="kv"><div><span>Categoria</span><span>' + esc(r.tag) + '</span></div><div><span>Tempo / porzioni</span><span>' + n(r.time_min) + ' min · ' + n(r.serv) + '</span></div><div><span>Pubblicato</span><span>' + fdt(r.created_at) + '</span></div></div>' +
+      (ing.length ? '<h3>Ingredienti</h3><ul class="ings">' + ing.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' : '') +
+      (st.length ? '<h3>Procedimento</h3><ol class="steps">' + st.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' : '') +
+      (r.reports.length ? '<h3>Segnalazioni</h3><div class="lst panel" style="padding:6px 10px">' + r.reports.map(function (x) { return '<div class="li"><span class="t"><b>' + esc(REASON[x.reason] || x.reason) + '</b><span>' + (x.details ? '«' + esc(x.details) + '» · ' : '') + fdt(x.created_at) + '</span></span><span class="chip ' + (x.status === 'open' ? 'bad' : '') + '">' + (x.status === 'open' ? 'aperta' : 'chiusa') + '</span></div>'; }).join('') + '</div>' : '') +
+      (r.comments.length ? '<h3>Commenti</h3><div class="lst panel" style="padding:6px 10px">' + r.comments.map(function (x) { return '<div class="li"><span class="t"><b style="white-space:normal">' + esc(x.body) + '</b><span>' + esc(x.who) + ' · ' + ago(x.created_at) + '</span></span><button class="btn sm danger" data-act="del" data-k="delcom" data-id="' + x.id + '">Elimina</button></div>'; }).join('') + '</div>' : '') +
+      '<div class="acts"><button class="btn sm danger" data-act="del" data-k="delrec" data-id="' + r.id + '" data-n="' + esc(r.title) + '">Rimuovi il piatto</button></div>';
+  }
+  function row(a, b) { return '<div><span>' + a + '</span><span>' + b + '</span></div>'; }
+  function kpiDrawer(k, close) {
+    var o = S.ov || {}, h = function (t, sub) { return '<div class="dh"><div class="t"><h2>' + t + '</h2><span class="muted">' + (sub || '') + '</span></div>' + close + '</div>'; };
+    var go = function (tab, label) { return '<div class="acts"><button class="btn" data-act="gotab" data-v="' + tab + '">' + label + '</button></div>'; };
+    if (k === 'users') return h('Utenti', 'Crescita e composizione') + '<div class="facts">' + fact(o.users, 'totali') + fact(o.users_today, 'oggi') + fact(o.active_7d, 'attivi 7 gg') + '</div>' +
+      '<div class="kv">' + row('Nuovi negli ultimi 7 giorni', n(o.users_7d)) + row('Nei 7 giorni precedenti', n(o.users_prev_7d)) + row('Variazione', trend(o.users_7d, o.users_prev_7d)) + row('Nutrizionisti', n(o.pros)) + row('Profili privati', n(o.private)) + row('Account sospesi', n(o.suspended)) + row('Con notifiche push', n(o.push) + ' dispositivi') + '</div>' +
+      '<p class="msg">«Attivi» = chi ha pubblicato, commentato o scritto un messaggio negli ultimi 7 giorni.</p><h3>Ultimi iscritti</h3><div class="lst panel" style="padding:6px 10px">' + ((o.recent || []).filter(function (x) { return x.k === 'user'; }).map(function (x) { return '<button class="li" data-act="user" data-id="' + esc(x.id) + '">' + av(x.who) + '<span class="t"><b>' + esc(x.who || 'Senza nome') + '</b></span><span class="r">' + ago(x.at) + '</span></button>'; }).join('') || '<p class="msg">Nessuno.</p>') + '</div>' + go('users', 'Apri l\'elenco utenti');
+    if (k === 'recipes') return h('Piatti', 'Contenuti pubblicati') + '<div class="facts">' + fact(o.recipes, 'totali') + fact(o.recipes_7d, 'in 7 gg') + fact(o.recipes_prev_7d, '7 gg prima') + '</div>' +
+      '<h3>Per categoria</h3><div class="panel">' + ((o.tags || []).map(function (t) { var p = o.recipes ? Math.round(t.n / o.recipes * 100) : 0; return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><span>' + esc(t.tag) + '</span><span class="muted">' + n(t.n) + ' · ' + p + '%</span></div><div class="bar"><i style="width:' + p + '%"></i></div></div>'; }).join('') || '<p class="msg">Nessun dato.</p>') + '</div>' + go('recipes', 'Apri l\'elenco piatti');
+    if (k === 'engage') return h('Interazioni', 'Come gli utenti usano i contenuti') + '<div class="facts">' + fact(o.likes, 'like') + fact(o.saves, 'salvataggi') + fact(o.comments, 'commenti') + '</div>' +
+      '<div class="kv">' + row('Commenti negli ultimi 7 giorni', n(o.comments_7d)) + row('Follow tra utenti', n(o.follows)) + row('Like per piatto (media)', o.recipes ? (o.likes / o.recipes).toFixed(1).replace('.', ',') : '—') + row('Commenti per piatto (media)', o.recipes ? (o.comments / o.recipes).toFixed(1).replace('.', ',') : '—') + row('Follow per utente (media)', o.users ? (o.follows / o.users).toFixed(1).replace('.', ',') : '—') + '</div>' + go('comments', 'Apri i commenti');
+    if (k === 'msgs') return h('Messaggi', 'Solo numeri: i testi privati non sono consultabili') + '<div class="facts">' + fact(o.dms, 'messaggi') + fact(o.dms_7d, 'in 7 gg') + fact(o.convs, 'conversazioni') + '</div><p class="msg">Per la privacy degli utenti, il contenuto delle conversazioni è visibile all\'amministratore solo quando una persona segnala quella conversazione.</p>' + go('reports', 'Vai alle segnalazioni');
+    if (k === 'stories') return h('Storie', 'Contenuti a 24 ore') + '<div class="facts">' + fact(o.stories_active, 'attive ora') + fact(o.stories_total, 'nello storico') + fact(o.story_views, 'visualizzazioni') + '</div>' + go('stories', 'Apri le storie attive');
+    if (k === 'pros') return h('Nutrizionisti', 'Verifica dell\'albo') + '<div class="facts">' + fact(o.pros, 'totali') + fact(o.pros_verified, 'verificati') + fact(o.pros - o.pros_verified, 'da verificare') + '</div>' + go('pros', 'Apri i nutrizionisti');
+    if (k === 'reports') return h('Segnalazioni', 'Moderazione') + '<div class="facts">' + fact(o.reports_open, 'aperte') + fact(o.reports_total - o.reports_open, 'chiuse') + fact(o.reports_total, 'totali') + '</div>' + go('reports', 'Apri le segnalazioni');
+    if (k === 'storage') {
+      var db = o.db_bytes / 524288000 * 100, stg = o.storage_bytes / 1073741824 * 100, cl = function (p) { return p > 85 ? ' hot' : p > 60 ? ' mid' : ''; };
+      return h('Spazio usato', 'Limiti del piano gratuito Supabase') + '<div class="panel"><div style="display:flex;justify-content:space-between"><b>Foto e file</b><span class="muted">' + bytes(o.storage_bytes) + ' / 1 GB</span></div><div class="bar' + cl(stg) + '"><i style="width:' + Math.min(100, stg).toFixed(1) + '%"></i></div><small class="muted">' + n(o.storage_files) + ' file</small></div>' +
+        '<div class="panel"><div style="display:flex;justify-content:space-between"><b>Database</b><span class="muted">' + bytes(o.db_bytes) + ' / 500 MB</span></div><div class="bar' + cl(db) + '"><i style="width:' + Math.min(100, db).toFixed(1) + '%"></i></div></div>' +
+        '<div class="kv">' + row('Peso medio per file', o.storage_files ? bytes(o.storage_bytes / o.storage_files) : '—') + row('Piatti + storie + profili', n(o.recipes) + ' + ' + n(o.stories_total) + ' + ' + n(o.users)) + '</div><p class="msg">Se ti avvicini al limite conviene passare al piano a pagamento o comprimere meglio le foto.</p>';
+    }
+    return '';
+  }
+  function openDrawer(kind, id, k) {
+    S.dr = { kind: kind, id: id, k: k, loading: kind !== 'kpi', data: null }; renderDrawer();
+    if (kind === 'kpi') return;
+    var rpc = kind === 'user' ? sb.rpc('admin_user_detail', { uid: id }) : sb.rpc('admin_recipe_detail', { rid: parseInt(id, 10) });
+    rpc.then(function (r) { if (!S.dr || S.dr.id !== id) return; if (r.error) { S.dr = null; renderDrawer(); err(r.error); return; } S.dr.loading = false; S.dr.data = r.data; renderDrawer(); });
+  }
+  function renderDrawer() { document.getElementById('drawer').innerHTML = drawerHTML(); document.body.style.overflow = S.dr ? 'hidden' : ''; }
+  function refreshDrawer() { var d = S.dr; if (d && d.kind !== 'kpi') { var id = d.id, kind = d.kind; (kind === 'user' ? sb.rpc('admin_user_detail', { uid: id }) : sb.rpc('admin_recipe_detail', { rid: parseInt(id, 10) })).then(function (r) { if (S.dr && S.dr.id === id) { S.dr.data = r.data; renderDrawer(); } }); } }
+
+  /* ---------- Shell ---------- */
+  function viewLogin() {
+    return '<form class="login card" id="loginform" novalidate><h1 style="font-size:24px">Accedi</h1><p class="msg">Area riservata agli amministratori di Gusto.</p>' +
+      '<label class="f" for="e">Email<input id="e" type="email" autocomplete="email" autocapitalize="none"></label><label class="f" for="p">Password<input id="p" type="password" autocomplete="current-password"></label>' +
+      (S.msg ? '<p class="msg err" role="status">' + esc(S.msg) + '</p>' : '') + '<button class="btn" type="submit"' + (S.busy ? ' disabled' : '') + '>Accedi</button></form>';
+  }
+  function viewDenied() { return '<div class="card" style="max-width:460px;margin:60px auto 0"><h2>Accesso non consentito</h2><p class="msg" style="margin:10px 0 14px">L\'account ' + esc(S.user.email) + ' non è un amministratore.</p><button class="btn ghost" data-act="logout">Esci</button></div>'; }
+  function viewShell() {
+    var oc = (S.ov && S.ov.reports_open) || 0, cur = S.tab, title = (TABS.filter(function (t) { return t[0] === cur; })[0] || TABS[0])[1];
+    var body = cur === 'overview' ? overviewHTML() : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : reportsHTML();
+    return '<div class="shell"><aside class="side"><div class="logo">Gusto<small>Amministrazione</small></div><nav class="nav" aria-label="Sezioni">' + TABS.map(function (t) {
+      return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + '</button>'; }).join('') +
+      '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span><button class="btn ghost sm" data-act="logout">Esci</button></div></aside>' +
+      '<main class="main"><div class="top"><div><h2>' + title + '</h2><div class="sub">' + (S.updated ? 'Aggiornato alle ' + S.updated.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '') + '</div></div><button class="btn ghost sm" data-act="refresh"' + (S.loading ? ' disabled' : '') + '>' + (S.loading ? 'Aggiorno…' : 'Aggiorna') + '</button></div>' + body + '</main></div>';
+  }
+  function render() {
+    var app = document.getElementById('app'), y = window.scrollY;
+    var a = document.activeElement, fid = a && a.id && /^(uq|rq|cq)$/.test(a.id) ? a.id : null, pos = fid ? a.selectionStart : 0;
+    app.innerHTML = !S.user ? viewLogin() : S.admin === null ? '<p class="msg" style="margin:40px 20px">Un momento…</p>' : S.admin ? viewShell() : viewDenied();
+    if (fid) { var el = document.getElementById(fid); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
+    window.scrollTo(0, y);
+  }
+
+  /* ---------- Dati ---------- */
+  function setTab(t) { S.tab = t; try { history.replaceState(null, '', '#' + t); } catch (e) {} render(); loadTab(); }
+  function loadTab(more) {
     var t = S.tab, p;
-    if (S.legacy) return Promise.resolve();
-    if (t === 'users') p = sb.rpc('admin_users', { q: S.uq, lim: 60, off: 0 }).then(function (r) { S.users = r.data || []; });
-    else if (t === 'recipes') p = sb.rpc('admin_recipes', { lim: 60, off: 0 }).then(function (r) { S.recipes = r.data || []; });
+    if (t === 'users') { var off = more ? S.users.length : 0; p = sb.rpc('admin_users', { q: S.uq, lim: 50, off: off }).then(function (r) { var d = r.data || []; S.users = more ? S.users.concat(d) : d; S.uend = d.length < 50; }); }
+    else if (t === 'recipes') { var ro = more ? S.recipes.length : 0; p = sb.rpc('admin_recipes', { lim: 48, off: ro }).then(function (r) { var d = r.data || []; S.recipes = more ? S.recipes.concat(d) : d; S.rend = d.length < 48; }); }
     else if (t === 'stories') p = sb.rpc('admin_stories').then(function (r) { S.stories = r.data || []; });
-    else if (t === 'comments') p = sb.rpc('admin_comments', { lim: 60 }).then(function (r) { S.comments = r.data || []; });
+    else if (t === 'comments') p = sb.rpc('admin_comments', { lim: 100 }).then(function (r) { S.comments = r.data || []; });
+    else if (t === 'log') p = sb.rpc('admin_log_list', { lim: 100 }).then(function (r) { S.log = r.data || []; });
+    else if (t === 'reports') p = sb.rpc('admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; });
     else return Promise.resolve();
-    return p.then(function () { render(); });
+    return p.then(function () { S.updated = new Date(); render(); }, function () { toast('Connessione non riuscita'); });
   }
   function loadAll() {
-    return Promise.all([sb.rpc('admin_dashboard'), sb.rpc('admin_pros'), sb.rpc('admin_reports2', { st: S.rtab })]).then(function (a) {
-      if (a[0].error || a[2].error) {
-        if (a[0].error && /non autorizzato/.test(a[0].error.message || '')) { err(a[0].error); return; }
-        S.legacy = true; if (['pros', 'reports'].indexOf(S.tab) < 0) S.tab = 'reports';
-        return Promise.all([sb.rpc('admin_stats'), sb.rpc('admin_reports', { st: S.rtab })]).then(function (b) {
-          if (b[0].error) { err(b[0].error); return; }
-          S.stats = (b[0].data && b[0].data[0]) || b[0].data; S.pros = a[1].data || []; S.reports = b[1].data || []; S.dash = null; render();
-        });
-      }
-      S.legacy = false; S.dash = (a[0].data && a[0].data[0]) || a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; render(); return loadTab();
-    });
+    S.loading = true; render();
+    return Promise.all([sb.rpc('admin_overview'), sb.rpc('admin_pros'), sb.rpc('admin_reports2', { st: S.rtab })]).then(function (a) {
+      S.loading = false;
+      if (a[0].error && /non autorizzato/.test(a[0].error.message || '')) { err(a[0].error); render(); return; }
+      S.ovErr = !!a[0].error; S.ov = a[0].error ? null : a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; S.updated = new Date(); render();
+      return loadTab();
+    }, function () { S.loading = false; render(); toast('Connessione non riuscita'); });
   }
   function start(user) {
     S.user = user; S.admin = null; render();
     sb.from('profiles').select('is_admin').eq('id', user.id).maybeSingle().then(function (r) {
-      S.admin = !!(r.data && r.data.is_admin); render(); if (S.admin) loadAll();
+      S.admin = !!(r.data && r.data.is_admin);
+      var h = (location.hash || '').slice(1); if (TABS.some(function (t) { return t[0] === h; })) S.tab = h;
+      render(); if (S.admin) loadAll();
     });
   }
+  function csv() {
+    var q = function (v) { return '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"'; };
+    var rows = [['Nome', 'Handle', 'Email', 'Tipo', 'Verificato', 'Sospeso', 'Piatti', 'Iscritto', 'Termini']].concat(filteredUsers().map(function (u) { return [u.name, u.handle, u.email, u.account_type, u.pro_verified ? 'sì' : 'no', u.suspended ? 'sì' : 'no', u.recipes, u.created_at, u.terms_version]; }));
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + rows.map(function (r) { return r.map(q).join(';'); }).join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'utenti-gusto.csv'; document.body.appendChild(a); a.click(); a.remove(); toast('File scaricato');
+  }
 
+  /* ---------- Eventi ---------- */
+  var uTimer = null;
+  document.addEventListener('input', function (e) {
+    var id = e.target.id;
+    if (id === 'uq') { clearTimeout(uTimer); uTimer = setTimeout(function () { S.uq = e.target.value.trim(); loadTab(); }, 350); }
+    else if (id === 'rq') { S.rq = e.target.value.trim(); document.getElementById('rlist').innerHTML = recipesListHTML(); }
+    else if (id === 'cq') { S.cq = e.target.value.trim(); document.getElementById('clist').innerHTML = commentsListHTML(); }
+  });
+  document.addEventListener('change', function (e) { if (e.target.id === 'us') { S.us = e.target.value; document.getElementById('ulist').innerHTML = usersListHTML(); } });
   document.addEventListener('submit', function (e) {
-    if (e.target.id === 'uform') { e.preventDefault(); S.uq = document.getElementById('uq').value.trim(); loadTab(); return; }
     if (e.target.id !== 'loginform') return;
     e.preventDefault(); if (S.busy || !sb) return;
     var em = document.getElementById('e').value.trim(), pw = document.getElementById('p').value;
@@ -224,72 +478,85 @@ input[type=search] { font: inherit; background: var(--surface); border: 1px soli
       start({ id: r.data.session.user.id, email: r.data.session.user.email });
     }, function () { S.busy = false; S.msg = 'Connessione non riuscita.'; render(); });
   });
-
   document.addEventListener('click', function (e) {
     var el = e.target.closest('[data-act]'); if (!el) return;
-    var act = el.getAttribute('data-act');
+    var act = el.getAttribute('data-act'), id = el.getAttribute('data-id'), v = el.getAttribute('data-v');
     if (act === 'close') { if (el.classList.contains('bg') && e.target !== el) return; closeDlg(); return; }
-    if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = { user: null, admin: null, tab: 'reports', rtab: 'open', stats: null, dash: null, pros: [], reports: [], users: [], uq: '', recipes: [], stories: [], comments: [], legacy: false, busy: false, msg: '' }; closeDlg(); render(); }); return; }
-    if (act === 'tab') { S.tab = el.getAttribute('data-v'); render(); loadTab(); return; }
-    if (act === 'rtab') { S.rtab = el.getAttribute('data-v'); sb.rpc(S.legacy ? 'admin_reports' : 'admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; render(); }); return; }
-    if (act === 'delrec' || act === 'delstory' || act === 'delcom' || act === 'deluser') {
-      var what = { delrec: ['il piatto', 'Il piatto e la sua foto vengono cancellati.'], delstory: ['la storia', 'La storia e la sua foto vengono cancellate.'], delcom: ['il commento', 'Il commento viene cancellato.'], deluser: ['l\'account', 'Profilo, piatti, commenti, storie e messaggi vengono cancellati per sempre.'] }[act];
-      var nm = el.getAttribute('data-n') || '';
-      dlg('<h2>Eliminare ' + what[0] + (nm ? ' «' + esc(nm) + '»' : '') + '?</h2><p class="msg">' + what[1] + ' Non si può annullare.</p>' +
-        '<div class="acts"><button class="btn danger" data-act="delyes" data-k="' + act + '" data-id="' + esc(el.getAttribute('data-id') || el.getAttribute('data-u')) + '">Sì, elimina</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+    if (act === 'dclose') { if (el.classList.contains('dov') && e.target !== el) return; S.dr = null; renderDrawer(); return; }
+    if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = JSON.parse(JSON.stringify(FRESH)); closeDlg(); renderDrawer(); render(); }); return; }
+    if (act === 'tab') { S.dr = null; renderDrawer(); setTab(v); window.scrollTo(0, 0); return; }
+    if (act === 'gotab') { S.dr = null; renderDrawer(); setTab(v); window.scrollTo(0, 0); return; }
+    if (act === 'goreports') { setTab('reports'); return; }
+    if (act === 'refresh') { loadAll(); return; }
+    if (act === 'kpi') { openDrawer('kpi', null, el.getAttribute('data-k')); return; }
+    if (act === 'user' || act === 'recipe') { closeDlg(); openDrawer(act, id); return; }
+    if (act === 'chart') { S.chart = v; render(); return; }
+    if (act === 'ufilter') { S.uf = v; render(); return; }
+    if (act === 'rfilter') { S.rf = v; render(); return; }
+    if (act === 'moreusers') { loadTab(true); return; }
+    if (act === 'morerecipes') { loadTab(true); return; }
+    if (act === 'csv') { csv(); return; }
+    if (act === 'rtab') { S.rtab = v; loadTab(); return; }
+    if (act === 'story') {
+      var s = S.stories.filter(function (x) { return x.story_id === id; })[0]; if (!s) return;
+      dlg('<h2>Storia di ' + esc(s.author_name || 'utente') + '</h2><img class="big" src="' + esc(s.media_url) + '" alt="">' + (s.caption ? '<p style="margin:0">«' + esc(s.caption) + '»</p>' : '') + '<p class="msg">Pubblicata ' + fdt(s.created_at) + '</p>' +
+        '<div class="acts"><button class="btn danger" data-act="del" data-k="delstory" data-id="' + esc(s.story_id) + '" data-n="' + esc(s.author_name || '') + '">Rimuovi la storia</button><button class="btn ghost" data-act="user" data-id="' + esc(s.author_id) + '">Apri il profilo</button><button class="btn ghost" data-act="close">Chiudi</button></div>');
+      return;
+    }
+    if (act === 'del') {
+      var k = el.getAttribute('data-k'), nm = el.getAttribute('data-n') || '';
+      var what = { delrec: ['il piatto', 'Il piatto e la sua foto vengono cancellati.'], delstory: ['la storia', 'La storia e la sua foto vengono cancellate.'], delcom: ['il commento', 'Il commento viene cancellato.'], deluser: ['l\'account', 'Profilo, piatti, commenti, storie e messaggi vengono cancellati per sempre.'] }[k];
+      dlg('<h2>Eliminare ' + what[0] + (nm ? ' «' + esc(nm) + '»' : '') + '?</h2><p class="msg">' + what[1] + ' Non si può annullare.</p><div class="acts"><button class="btn danger" data-act="delyes" data-k="' + k + '" data-id="' + esc(id) + '" data-n="' + esc(nm) + '">Sì, elimina</button><button class="btn ghost" data-act="close">Annulla</button></div>');
       return;
     }
     if (act === 'delyes') {
-      var k = el.getAttribute('data-k'), id = el.getAttribute('data-id');
-      var rm = function (url) { var p = pathOf(url) || url; if (p && p.indexOf('http') !== 0) return sb.storage.from('media').remove([p]).then(function () {}, function () {}); return Promise.resolve(); };
-      var call = k === 'delrec' ? sb.rpc('admin_delete_recipe', { rid: parseInt(id, 10) }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
-        : k === 'delstory' ? sb.rpc('admin_delete_story', { sid: id }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
-        : k === 'delcom' ? sb.rpc('admin_delete_comment', { cid: parseInt(id, 10) })
-        : sb.rpc('admin_delete_user', { target: id });
-      call.then(function (r) { closeDlg(); if (r && r.error) { err(r.error); return; } toast('Eliminato'); loadAll(); });
+      var dk = el.getAttribute('data-k'), dn = el.getAttribute('data-n') || '';
+      var rm = function (url) { var p = pathOf(url) || url; if (p && String(p).indexOf('http') !== 0) return sb.storage.from('media').remove([p]).then(function () {}, function () {}); return Promise.resolve(); };
+      var call = dk === 'delrec' ? sb.rpc('admin_delete_recipe', { rid: parseInt(id, 10) }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
+        : dk === 'delstory' ? sb.rpc('admin_delete_story', { sid: id }).then(function (r) { return r.error ? r : rm(r.data).then(function () { return r; }); })
+        : dk === 'delcom' ? sb.rpc('admin_delete_comment', { cid: parseInt(id, 10) }) : sb.rpc('admin_delete_user', { target: id });
+      call.then(function (r) {
+        closeDlg(); if (r && r.error) { err(r.error); return; }
+        var key = { delrec: 'delete_recipe', delstory: 'delete_story', delcom: 'delete_comment', deluser: 'delete_user' }[dk]; logAct(key, dn || id);
+        if (dk === 'deluser' || (dk === 'delrec' && S.dr && S.dr.kind === 'recipe' && String(S.dr.id) === String(id))) { S.dr = null; renderDrawer(); }
+        toast('Eliminato'); loadAll().then(refreshDrawer);
+      });
       return;
     }
     if (act === 'ver') {
-      var u = el.getAttribute('data-u'), v = el.getAttribute('data-v') === '1';
-      sb.rpc('admin_set_pro_verified', { target: u, ok: v }).then(function (r) { if (r.error) { err(r.error); return; } toast(v ? 'Nutrizionista verificato' : 'Verifica revocata'); loadAll(); });
+      var u = el.getAttribute('data-u'), ok = v === '1', vn = el.getAttribute('data-n') || u;
+      sb.rpc('admin_set_pro_verified', { target: u, ok: ok }).then(function (r) { if (r.error) { err(r.error); return; } logAct(ok ? 'verify' : 'unverify', vn); toast(ok ? 'Nutrizionista verificato' : 'Verifica revocata'); loadAll().then(refreshDrawer); });
       return;
     }
     if (act === 'susp') {
-      var su = el.getAttribute('data-u'), sn = el.getAttribute('data-n'), sv = el.getAttribute('data-v') === '1';
-      dlg('<h2>' + (sv ? 'Sospendere ' : 'Riattivare ') + esc(sn) + '?</h2><p class="msg">' + (sv ? 'L\'account non potrà più accedere e non sarà più visibile agli altri. Puoi riattivarlo quando vuoi.' : 'L\'account potrà accedere di nuovo e tornerà visibile.') + '</p>' +
-        '<div class="acts"><button class="btn' + (sv ? ' danger' : '') + '" data-act="suspyes" data-u="' + esc(su) + '" data-v="' + (sv ? '1' : '0') + '">' + (sv ? 'Sì, sospendi' : 'Sì, riattiva') + '</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      var su = el.getAttribute('data-u'), sn = el.getAttribute('data-n'), sv = v === '1';
+      dlg('<h2>' + (sv ? 'Sospendere ' : 'Riattivare ') + esc(sn) + '?</h2><p class="msg">' + (sv ? 'L\'account non potrà più accedere e non sarà più visibile agli altri. Puoi riattivarlo quando vuoi.' : 'L\'account potrà accedere di nuovo e tornerà visibile.') + '</p><div class="acts"><button class="btn' + (sv ? ' danger' : '') + '" data-act="suspyes" data-u="' + esc(su) + '" data-n="' + esc(sn) + '" data-v="' + (sv ? '1' : '0') + '">' + (sv ? 'Sì, sospendi' : 'Sì, riattiva') + '</button><button class="btn ghost" data-act="close">Annulla</button></div>');
       return;
     }
     if (act === 'suspyes') {
-      var yu = el.getAttribute('data-u'), yv = el.getAttribute('data-v') === '1';
-      sb.rpc('admin_set_suspended', { target: yu, flag: yv }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } toast(yv ? 'Account sospeso' : 'Account riattivato'); loadAll(); });
+      var yu = el.getAttribute('data-u'), yv = v === '1', yn = el.getAttribute('data-n') || yu;
+      sb.rpc('admin_set_suspended', { target: yu, flag: yv }).then(function (r) { closeDlg(); if (r.error) { err(r.error); return; } logAct(yv ? 'suspend' : 'unsuspend', yn); toast(yv ? 'Account sospeso' : 'Account riattivato'); loadAll().then(refreshDrawer); });
       return;
     }
     if (act === 'rset') {
-      var rid = parseInt(el.getAttribute('data-id'), 10), rv = el.getAttribute('data-v');
-      sb.rpc('admin_report_set', { rid: rid, new_status: rv }).then(function (r) { if (r.error) { err(r.error); return; } toast(rv === 'closed' ? 'Segnalazione chiusa' : 'Segnalazione riaperta'); loadAll(); });
+      var rid = parseInt(id, 10);
+      sb.rpc('admin_report_set', { rid: rid, new_status: v }).then(function (r) { if (r.error) { err(r.error); return; } logAct(v === 'closed' ? 'report_close' : 'report_reopen', 'segnalazione #' + rid); toast(v === 'closed' ? 'Segnalazione chiusa' : 'Segnalazione riaperta'); loadAll(); });
       return;
     }
     if (act === 'conv') {
-      var cid = parseInt(el.getAttribute('data-id'), 10);
-      sb.rpc('admin_report_messages', { rid: cid }).then(function (r) {
+      sb.rpc('admin_report_messages', { rid: parseInt(id, 10) }).then(function (r) {
         if (r.error) { err(r.error); return; }
         var m = r.data || [];
-        dlg('<h2>Conversazione segnalata</h2><p class="msg">Solo questa conversazione, indicata da chi ha segnalato. In rosso i messaggi della persona segnalata.</p>' +
-          '<div class="chat">' + (m.length ? m.map(function (x) { return '<div class="m' + (x.from_reported ? ' rep' : '') + '"><small>' + esc(x.sender_name || 'Utente') + ' · ' + fdt(x.created_at) + '</small>' + esc(x.body) + '</div>'; }).join('') : '<p class="msg">Nessun messaggio disponibile.</p>') + '</div>' +
-          '<button class="btn ghost" data-act="close">Chiudi</button>');
+        dlg('<h2>Conversazione segnalata</h2><p class="msg">Solo questa conversazione, indicata da chi ha segnalato. In rosso i messaggi della persona segnalata.</p><div class="chat">' + (m.length ? m.map(function (x) { return '<div class="m' + (x.from_reported ? ' rp' : '') + '"><small>' + esc(x.sender_name || 'Utente') + ' · ' + fdt(x.created_at) + '</small>' + esc(x.body) + '</div>'; }).join('') : '<p class="msg">Nessun messaggio disponibile.</p>') + '</div><button class="btn ghost" data-act="close">Chiudi</button>');
       });
       return;
     }
   });
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDlg(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (document.getElementById('layer').firstChild) closeDlg(); else if (S.dr) { S.dr = null; renderDrawer(); } } });
 
   render();
-  if (!sb) { document.getElementById('app').innerHTML = '<p class="msg err" style="margin-top:30px">Impossibile caricare il servizio. Controlla la connessione.</p>'; return; }
-  sb.auth.getSession().then(function (r) {
-    var u = r.data && r.data.session && r.data.session.user;
-    if (u) start({ id: u.id, email: u.email });
-  });
+  if (!sb) { document.getElementById('app').innerHTML = '<p class="msg err" style="margin:40px 20px">Impossibile caricare il servizio. Controlla la connessione.</p>'; return; }
+  sb.auth.getSession().then(function (r) { var u = r.data && r.data.session && r.data.session.user; if (u) start({ id: u.id, email: u.email }); });
 })();
 </script>
 </body>
