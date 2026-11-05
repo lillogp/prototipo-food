@@ -1,7 +1,7 @@
 -- Solo il proprietario puo' nominare o togliere gli amministratori.
 alter table public.profiles add column is_owner boolean not null default false;
 -- (nessun permesso di UPDATE per gli utenti su questa colonna: resta modificabile solo da migrazione)
-update public.profiles set is_owner = true, is_admin = true where id = (select id from auth.users where email = 'teo91bongi@gmail.com');
+update public.profiles set is_owner = true, is_admin = true where id = (select id from auth.users where email = 'bongiorno.matteo1@gmail.com');
 
 create function private.is_owner() returns boolean language sql stable security definer set search_path = '' as $$
   select coalesce((select p.is_owner and p.is_admin from public.profiles p where p.id = (select auth.uid())), false);
