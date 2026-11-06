@@ -643,11 +643,9 @@ body.inchat nav.tabs { display: none !important; }
     var seg = '<div class="seg" role="group" aria-label="Sezione"><button data-act="htab" data-v="dishes" aria-pressed="' + (state.homeTab !== 'rest') + '">Piatti</button><button data-act="htab" data-v="rest" aria-pressed="' + (state.homeTab === 'rest') + '">Ristoranti</button></div>';
     var note = state.note ? '<div class="note"><span>I piatti di questo prototipo sono esempi. Pubblica il tuo con il tasto +.</span><button data-act="hidenote">Ok</button></div>' : '';
     if (state.homeTab === 'rest') return note + seg + viewRest();
-    var tags = ['Tutti', 'Seguiti'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
+    var tags = ['Tutti', 'Seguiti', 'Dalla dispensa'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
     var times = [[0, 'Tutti i tempi'], [20, 'Fino a 20 min'], [45, 'Fino a 45 min'], [60, 'Fino a 1 ora']];
-    var pOn = state.filter === 'Dalla dispensa';
-    var pbtn = '<button class="btn pantrytop' + (pOn ? '' : ' ghost') + '" data-act="filter" data-v="' + (pOn ? 'Tutti' : 'Dalla dispensa') + '" aria-pressed="' + pOn + '" style="width:100%;margin:0 0 12px">' + (pOn ? 'Mostra tutti i piatti' : 'Cosa posso cucinare con la dispensa?') + '</button>';
-    return note + seg + pbtn + '<div id="stwrap">' + storiesHTML() + '</div>' +
+    return note + seg + '<div id="stwrap">' + storiesHTML() + '</div>' +
       '<div class="filters" role="group" aria-label="Categorie">' + tags.map(function (t) { return '<button data-act="filter" data-v="' + esc(t) + '" aria-pressed="' + (state.filter === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
       '<div class="filters sub" role="group" aria-label="Tempo">' + times.map(function (t) { return '<button data-act="maxt" data-v="' + t[0] + '" aria-pressed="' + (state.maxT === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       '<div id="feedwrap">' + feedHTML() + '</div>';
@@ -1094,10 +1092,10 @@ body.inchat nav.tabs { display: none !important; }
     var rows = state.pantry.map(function (x, i) {
       return '<li class="pitem"><span class="pn1">' + esc(x.n) + '</span><span class="pq">' + esc(pQty(x)) + '</span><button class="rm" data-act="pdel" data-i="' + i + '" aria-label="Rimuovi ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>';
     }).join('');
-    return '<p class="hint" style="margin:0 0 10px">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
+    return '<button class="btn" data-act="pcook" style="width:100%;margin:0 0 12px">Cosa posso cucinare con la dispensa?</button>' + '<p class="hint" style="margin:0 0 10px">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
       '<form class="pform" id="pantryform"><input type="text" id="pnn" list="ingl" maxlength="40" placeholder="Ingrediente" aria-label="Ingrediente"><input type="number" id="pqq" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità">' +
       '<select id="puu" aria-label="Unità"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="pezzi">pezzi</option></select><button class="btn" type="submit">Aggiungi</button></form>' +
-      (rows ? '<ul class="ing plist" style="margin-top:12px">' + rows + '</ul><button class="btn ghost" data-act="pcook" style="margin-top:12px">Cosa posso cucinare?</button>' : '<div class="empty" style="padding:18px;margin-top:12px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
+      (rows ? '<ul class="ing plist" style="margin-top:12px">' + rows + '</ul>' : '<div class="empty" style="padding:18px;margin-top:12px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
       '<datalist id="ingl">' + COMMON.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist>';
   }
   function viewShopTab() {
@@ -1612,10 +1610,10 @@ body.inchat nav.tabs { display: none !important; }
       return '<li class="pitem"><span class="pn1">' + esc(x.n) + '</span><span class="pq">' + esc(pQty(x)) + '</span><button class="rm" data-act="pdel" data-i="' + i + '" aria-label="Rimuovi ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>';
     }).join('');
     sheetOpen('Dispensa', 'Dispensa',
-      '<p class="hint" style="margin:0">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
+      '<button class="btn" data-act="pcook" style="width:100%;margin:0">Cosa posso cucinare con la dispensa?</button>' + '<p class="hint" style="margin:0">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
       '<form class="pform" id="pantryform"><input type="text" id="pnn" list="ingl" maxlength="40" placeholder="Ingrediente" aria-label="Ingrediente"><input type="number" id="pqq" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità">' +
       '<select id="puu" aria-label="Unità"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="pezzi">pezzi</option></select><button class="btn" type="submit">Aggiungi</button></form>' +
-      (rows ? '<ul class="ing plist">' + rows + '</ul><button class="btn ghost" data-act="pcook">Cosa posso cucinare?</button>' : '<div class="empty" style="padding:18px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
+      (rows ? '<ul class="ing plist">' + rows + '</ul>' : '<div class="empty" style="padding:18px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
       '<datalist id="ingl">' + COMMON.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist>');
   }
 
@@ -4092,8 +4090,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 51; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061150';
+  var VERSION = 52; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061210';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
