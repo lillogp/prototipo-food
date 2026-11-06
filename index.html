@@ -2136,8 +2136,8 @@ body.inchat nav.tabs { display: none !important; }
   var sb = null; try { if (window.supabase) sb = window.supabase.createClient(SB_URL, SB_KEY); } catch (e) { sb = null; }
   var authChecked = !sb, cloudReady = false, syncT = null, authMsg = '', authBusy = false;
   state.user = null; state.authMode = 'in';
-  try { state.guest = localStorage.getItem('gusto-guest') === '1'; } catch (e) { state.guest = false; }
-  function needAuth() { return !!sb && authChecked && !state.user && !state.guest; }
+  state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {}
+  function needAuth() { return authChecked && !state.user; }
   function cloudPack() {
     var o = {}; KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs' && k !== 'pro' && k !== 'chat') o[k] = state[k]; });
     return { planner: o, pantry: state.pantry, prefs: state.prefs };
@@ -2195,7 +2195,7 @@ body.inchat nav.tabs { display: none !important; }
       (authMsg ? '<p class="hint" role="status" style="margin:0">' + esc(authMsg) + '</p>' : '') +
       '<button class="btn" type="submit" style="padding:14px 16px"' + (authBusy ? ' disabled' : '') + '>' + (up ? 'Registrati' : 'Accedi') + '</button></form>' +
       '<p style="text-align:center;margin:14px 0 4px"><button class="reset" data-act="authmode">' + (up ? 'Ho già un account' : 'Non ho un account: registrati') + '</button></p>' +
-      '<p style="text-align:center;margin:0"><button class="reset" data-act="authguest" style="color:var(--muted)">Continua senza account</button></p>';
+      '';
   }
   function openAccount() {
     sheetOpen('Account', 'Account',
@@ -3337,7 +3337,7 @@ body.inchat nav.tabs { display: none !important; }
     }
 
     if (id === 'authform') {
-      e.preventDefault(); if (!sb || authBusy) return true;
+      e.preventDefault(); if (authBusy) return true; if (!sb) { authMsg = 'Servizio non raggiungibile. Controlla la connessione e riprova.'; render(); return true; }
       var em = document.getElementById('au-e').value.trim(), pw = document.getElementById('au-p').value, up = state.authMode === 'up';
       if (!/^\S+@\S+\.\S+$/.test(em)) { authMsg = 'Scrivi un\'email valida.'; render(); return true; }
       if (pw.length < 8) { authMsg = 'La password deve avere almeno 8 caratteri.'; render(); return true; }
@@ -3548,7 +3548,6 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'authmode') { state.authMode = state.authMode === 'up' ? 'in' : 'up'; authMsg = ''; render(); return true; }
     if (act === 'authterms') { var e2 = document.getElementById('au-e'), p2 = document.getElementById('au-n'), q2 = document.getElementById('au-p'); var ev2 = e2 ? e2.value : '', nv2 = p2 ? p2.value : '', pv2 = q2 ? q2.value : ''; state.authTerms = !state.authTerms; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev2; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv2; if (document.getElementById('au-p')) document.getElementById('au-p').value = pv2; return true; }
     if (act === 'authpro') { var e1 = document.getElementById('au-e'), p1 = document.getElementById('au-n'); var ev1 = e1 ? e1.value : '', nv1 = p1 ? p1.value : ''; state.authPro = !state.authPro; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev1; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv1; return true; }
-    if (act === 'authguest') { state.guest = true; try { localStorage.setItem('gusto-guest', '1'); } catch (e) {} render(); return true; }
     if (act === 'authopen') { state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {} closeSheet(); render(); return true; }
     if (act === 'account') { state.tab = 'account'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
     if (act === 'shoptab') { state.shopTab = el.getAttribute('data-v'); render(); return true; }
@@ -4034,8 +4033,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 45; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611051930';
+  var VERSION = 46; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061040';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
