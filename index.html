@@ -3759,7 +3759,19 @@ body.inchat nav.tabs { display: none !important; }
   function voiceParse(txt) {
     var parts = String(txt || '').toLowerCase().replace(/^\s*(aggiungi|aggiungere|metti|segna|compra|comprare|devo comprare|ho comprato|ho)\s+/, '').split(/[,;\n.]+|\s+e\s+|\s+più\s+/);
     var out = [];
+    var chunks = [];
     parts.forEach(function (raw) {
+      var cur = [], hasName = false;
+      raw.trim().split(/\s+/).forEach(function (tok) {
+        if (!tok) return;
+        var isNum = /^\d+(?:[.,]\d+)?(kg|g|gr|ml|l|lt)?$/.test(tok) || (VNUM[tok] != null && tok !== 'un' && tok !== 'uno' && tok !== 'una') || ((tok === 'un' || tok === 'uno' || tok === 'una') && hasName);
+        if (isNum && hasName) { chunks.push(cur.join(' ')); cur = []; hasName = false; }
+        cur.push(tok);
+        if (!isNum && !VUNIT[tok] && !VPACK.test(tok) && tok !== 'di' && tok !== 'd\'' && tok !== 'e') hasName = true;
+      });
+      if (cur.length) chunks.push(cur.join(' '));
+    });
+    chunks.forEach(function (raw) {
       var t = raw.trim().replace(/\s+/g, ' '); if (!t) return;
       var w = t.split(' '), q = null, u = 'pz', i = 0, m;
       if ((m = /^(\d+(?:[.,]\d+)?)(kg|g|gr|ml|l|lt)?$/.exec(w[0]))) { q = parseFloat(m[1].replace(',', '.')); if (m[2]) u = VUNIT[m[2]]; i = 1; }
@@ -4160,8 +4172,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 54; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061700';
+  var VERSION = 55; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061715';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
