@@ -643,9 +643,11 @@ body.inchat nav.tabs { display: none !important; }
     var seg = '<div class="seg" role="group" aria-label="Sezione"><button data-act="htab" data-v="dishes" aria-pressed="' + (state.homeTab !== 'rest') + '">Piatti</button><button data-act="htab" data-v="rest" aria-pressed="' + (state.homeTab === 'rest') + '">Ristoranti</button></div>';
     var note = state.note ? '<div class="note"><span>I piatti di questo prototipo sono esempi. Pubblica il tuo con il tasto +.</span><button data-act="hidenote">Ok</button></div>' : '';
     if (state.homeTab === 'rest') return note + seg + viewRest();
-    var tags = ['Tutti', 'Seguiti', 'Dalla dispensa'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
+    var tags = ['Tutti', 'Seguiti'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
     var times = [[0, 'Tutti i tempi'], [20, 'Fino a 20 min'], [45, 'Fino a 45 min'], [60, 'Fino a 1 ora']];
-    return note + seg + '<div id="stwrap">' + storiesHTML() + '</div>' +
+    var pOn = state.filter === 'Dalla dispensa';
+    var pbtn = '<button class="btn pantrytop' + (pOn ? '' : ' ghost') + '" data-act="filter" data-v="' + (pOn ? 'Tutti' : 'Dalla dispensa') + '" aria-pressed="' + pOn + '" style="width:100%;margin:0 0 12px">' + (pOn ? 'Mostra tutti i piatti' : 'Cosa posso cucinare con la dispensa?') + '</button>';
+    return note + seg + pbtn + '<div id="stwrap">' + storiesHTML() + '</div>' +
       '<div class="filters" role="group" aria-label="Categorie">' + tags.map(function (t) { return '<button data-act="filter" data-v="' + esc(t) + '" aria-pressed="' + (state.filter === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
       '<div class="filters sub" role="group" aria-label="Tempo">' + times.map(function (t) { return '<button data-act="maxt" data-v="' + t[0] + '" aria-pressed="' + (state.maxT === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
       '<div id="feedwrap">' + feedHTML() + '</div>';
@@ -4090,8 +4092,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 50; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061135';
+  var VERSION = 51; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061150';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
