@@ -207,7 +207,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 14;
+  var ADMIN_VERSION = 15;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
@@ -486,9 +486,11 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 
   /* ---------- Shell ---------- */
   function viewLogin() {
+    if (S.recovery) return '<form class="login card" id="newpwform" novalidate><h1 style="font-size:24px">Nuova password</h1><p class="msg">Scegli la nuova password (almeno 8 caratteri).</p><label class="f" for="np">Nuova password<input id="np" type="password" autocomplete="new-password"></label>' + (S.msg ? '<p class="msg err" role="status">' + esc(S.msg) + '</p>' : '') + '<button class="btn" type="submit"' + (S.busy ? ' disabled' : '') + '>Salva e accedi</button></form>';
+    if (S.forgot) return '<form class="login card" id="forgotform" novalidate><h1 style="font-size:24px">Password dimenticata</h1><p class="msg">Scrivi la tua email: ti mandiamo un link per sceglierne una nuova.</p><label class="f" for="e">Email<input id="e" type="email" autocomplete="email" autocapitalize="none"></label>' + (S.msg ? '<p class="msg" role="status">' + esc(S.msg) + '</p>' : '') + '<button class="btn" type="submit"' + (S.busy ? ' disabled' : '') + '>Invia link</button><button class="btn ghost" type="button" data-act="backlogin">Torna ad accedere</button></form>';
     return '<form class="login card" id="loginform" novalidate><h1 style="font-size:24px">Accedi</h1><p class="msg">Area riservata agli amministratori di Frog’s.</p>' +
       '<label class="f" for="e">Email<input id="e" type="email" autocomplete="email" autocapitalize="none"></label><label class="f" for="p">Password<input id="p" type="password" autocomplete="current-password"></label>' +
-      (S.msg ? '<p class="msg err" role="status">' + esc(S.msg) + '</p>' : '') + '<button class="btn" type="submit"' + (S.busy ? ' disabled' : '') + '>Accedi</button></form>';
+      (S.msg ? '<p class="msg err" role="status">' + esc(S.msg) + '</p>' : '') + '<button class="btn" type="submit"' + (S.busy ? ' disabled' : '') + '>Accedi</button><button class="btn ghost" type="button" data-act="forgot" style="margin-top:8px">Password dimenticata?</button></form>';
   }
   function viewDenied() { return '<div class="card" style="max-width:460px;margin:60px auto 0"><h2>Accesso non consentito</h2><p class="msg" style="margin:10px 0 14px">L\'account ' + esc(S.user.email) + ' non è un amministratore.</p><button class="btn ghost" data-act="logout">Esci</button></div>'; }
   var MAIN = ['overview', 'reports', 'users', 'recipes'];
@@ -513,7 +515,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   function render() {
     var app = document.getElementById('app'), y = window.scrollY;
     var a = document.activeElement, fid = a && a.id && /^(uq|rq|cq)$/.test(a.id) ? a.id : null, pos = fid ? a.selectionStart : 0;
-    app.innerHTML = !S.user ? viewLogin() : S.admin === null ? '<p class="msg" style="margin:40px 20px">Un momento…</p>' : S.admin ? viewShell() : viewDenied();
+    app.innerHTML = (!S.user || S.recovery) ? viewLogin() : S.admin === null ? '<p class="msg" style="margin:40px 20px">Un momento…</p>' : S.admin ? viewShell() : viewDenied();
     if (fid) { var el = document.getElementById(fid); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (e) {} } }
     window.scrollTo(0, y);
   }
@@ -565,6 +567,24 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   document.addEventListener('input', function (e) { if (e.target.id === 'sdn') suspPrev(); });
   document.addEventListener('change', function (e) { if (e.target.id === 'sdu') { suspPrev(); return; } if (e.target.id === 'wreason') { var wm = document.getElementById('wmsg'); if (wm && WARNTXT[e.target.value]) wm.value = WARNTXT[e.target.value][1]; return; } if (e.target.id === 'us') { S.us = e.target.value; document.getElementById('ulist').innerHTML = usersListHTML(); } });
   document.addEventListener('submit', function (e) {
+    if (e.target.id === 'forgotform') {
+      e.preventDefault(); if (S.busy || !sb) return;
+      var fe = document.getElementById('e').value.trim(); if (!fe) { S.msg = 'Scrivi la tua email.'; render(); return; }
+      S.busy = true; S.msg = ''; render();
+      sb.auth.resetPasswordForEmail(fe, { redirectTo: location.origin + '/admin' }).then(function (r) { S.busy = false; S.msg = r.error ? 'Invio non riuscito. Riprova tra qualche minuto.' : 'Se l\'email è registrata, riceverai un link. Controlla anche lo spam.'; render(); }, function () { S.busy = false; S.msg = 'Connessione non riuscita.'; render(); });
+      return;
+    }
+    if (e.target.id === 'newpwform') {
+      e.preventDefault(); if (S.busy || !sb) return;
+      var np = document.getElementById('np').value; if (np.length < 8) { S.msg = 'Almeno 8 caratteri.'; render(); return; }
+      S.busy = true; S.msg = ''; render();
+      sb.auth.updateUser({ password: np }).then(function (r) {
+        S.busy = false; if (r.error) { S.msg = 'Non riuscito: ' + r.error.message; render(); return; }
+        S.recovery = false; try { history.replaceState(null, '', location.pathname); } catch (x) {}
+        sb.auth.getSession().then(function (g) { var u = g.data && g.data.session && g.data.session.user; if (u) start({ id: u.id, email: u.email }); else render(); });
+      }, function () { S.busy = false; S.msg = 'Connessione non riuscita.'; render(); });
+      return;
+    }
     if (e.target.id !== 'loginform') return;
     e.preventDefault(); if (S.busy || !sb) return;
     var em = document.getElementById('e').value.trim(), pw = document.getElementById('p').value;
@@ -581,6 +601,8 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     var act = el.getAttribute('data-act'), id = el.getAttribute('data-id'), v = el.getAttribute('data-v');
     if (act === 'close') { if (el.classList.contains('bg') && e.target !== el) return; closeDlg(); return; }
     if (act === 'dclose') { if (el.classList.contains('dov') && e.target !== el) return; S.dr = null; renderDrawer(); return; }
+    if (act === 'forgot') { S.forgot = true; S.msg = ''; render(); return; }
+    if (act === 'backlogin') { S.forgot = false; S.msg = ''; render(); return; }
     if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = JSON.parse(JSON.stringify(FRESH)); closeDlg(); renderDrawer(); render(); }); return; }
     if (act === 'tab') { S.dr = null; renderDrawer(); setTab(v); window.scrollTo(0, 0); return; }
     if (act === 'gotab') { S.dr = null; renderDrawer(); setTab(v); window.scrollTo(0, 0); return; }
@@ -754,7 +776,9 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('admin-sw.js').catch(function () {}); } catch (e) {}
   render();
   if (!sb) { document.getElementById('app').innerHTML = '<p class="msg err" style="margin:40px 20px">Impossibile caricare il servizio. Controlla la connessione.</p>'; return; }
-  sb.auth.getSession().then(function (r) { var u = r.data && r.data.session && r.data.session.user; if (u) start({ id: u.id, email: u.email }); });
+  if (/type=recovery/.test(location.hash + location.search)) { S.recovery = true; render(); }
+  sb.auth.onAuthStateChange(function (ev) { if (ev === 'PASSWORD_RECOVERY') { S.recovery = true; setTimeout(render, 0); } });
+  sb.auth.getSession().then(function (r) { var u = r.data && r.data.session && r.data.session.user; if (u && !S.recovery) start({ id: u.id, email: u.email }); });
 })();
 </script>
 </body>

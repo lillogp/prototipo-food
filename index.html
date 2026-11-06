@@ -2137,7 +2137,7 @@ body.inchat nav.tabs { display: none !important; }
   var authChecked = !sb, cloudReady = false, syncT = null, authMsg = '', authBusy = false;
   state.user = null; state.authMode = 'in';
   state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {}
-  function needAuth() { return authChecked && !state.user; }
+  function needAuth() { return (authChecked && !state.user) || !!state.recovery; }
   function cloudPack() {
     var o = {}; KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs' && k !== 'pro' && k !== 'chat') o[k] = state[k]; });
     return { planner: o, pantry: state.pantry, prefs: state.prefs };
@@ -2172,6 +2172,7 @@ body.inchat nav.tabs { display: none !important; }
       proLoad();
     });
   }
+  try { if (/type=recovery/.test(location.hash + location.search)) state.recovery = true; } catch (e) {}
   function authErr(m) {
     m = String(m || '');
     if (/invalid login/i.test(m)) return 'Email o password non corretti.';
@@ -2184,6 +2185,19 @@ body.inchat nav.tabs { display: none !important; }
   }
   var LEGAL_VER = '2026-11-05', AUD = {};
   function viewAuth() {
+    if (state.recovery) {
+      return '<div class="view-h" style="margin-top:18px"><h1>Nuova password</h1><p>Scegli la nuova password per il tuo account.</p></div><form class="new" id="newpwform" novalidate>' +
+        '<label class="f" for="np-p">Nuova password <small>almeno 8 caratteri</small><input id="np-p" type="password" autocomplete="new-password" maxlength="72"></label>' +
+        (authMsg ? '<p class="hint" role="status" style="margin:0">' + esc(authMsg) + '</p>' : '') +
+        '<button class="btn" type="submit" style="padding:14px 16px"' + (authBusy ? ' disabled' : '') + '>Salva e accedi</button></form>';
+    }
+    if (state.authMode === 'forgot') {
+      return '<div class="view-h" style="margin-top:18px"><h1>Password dimenticata</h1><p>Scrivi la tua email: ti mandiamo un link per sceglierne una nuova.</p></div><form class="new" id="forgotform" novalidate>' +
+        '<label class="f" for="au-e">Email<input id="au-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" maxlength="120" value="' + esc(AUD['au-e'] || '') + '"></label>' +
+        (authMsg ? '<p class="hint" role="status" style="margin:0">' + esc(authMsg) + '</p>' : '') +
+        '<button class="btn" type="submit" style="padding:14px 16px"' + (authBusy ? ' disabled' : '') + '>Invia link</button></form>' +
+        '<p style="text-align:center;margin:14px 0 4px"><button class="reset" data-act="authmode">Torna ad accedere</button></p>';
+    }
     var up = state.authMode === 'up';
     return (hasInvite() ? '<div class="note" style="margin-top:14px"><span>Hai ricevuto un invito da un nutrizionista. Accedi o registrati per collegarti.</span></div>' : '') + '<div class="view-h" style="margin-top:18px"><h1>' + (up ? 'Crea il tuo account' : 'Accedi') + '</h1><p>' + (up ? 'Così planner, spesa e dispensa restano con te su ogni dispositivo.' : 'Bentornato su Frog’s.') + '</p></div>' +
       '<form class="new" id="authform" novalidate>' +
@@ -2194,6 +2208,7 @@ body.inchat nav.tabs { display: none !important; }
       (up ? '<div style="display:flex;gap:10px;align-items:flex-start"><button type="button" class="mchk" style="border:0;width:auto;flex:none;padding:2px" role="checkbox" aria-checked="' + !!state.authTerms + '" aria-label="Accetto Termini e Informativa privacy" data-act="authterms"><span class="box">' + (state.authTerms ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span></button><span style="font-size:14px">Ho almeno 16 anni e accetto i <a href="termini.html" target="_blank" rel="noopener">Termini d\'uso</a> e l\'<a href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a>.</span></div>' : '') +
       (authMsg ? '<p class="hint" role="status" style="margin:0">' + esc(authMsg) + '</p>' : '') +
       '<button class="btn" type="submit" style="padding:14px 16px"' + (authBusy ? ' disabled' : '') + '>' + (up ? 'Registrati' : 'Accedi') + '</button></form>' +
+      (up ? '' : '<p style="text-align:center;margin:12px 0 0"><button class="reset" data-act="authforgot">Password dimenticata?</button></p>') +
       '<p style="text-align:center;margin:14px 0 4px"><button class="reset" data-act="authmode">' + (up ? 'Ho già un account' : 'Non ho un account: registrati') + '</button></p>' +
       '';
   }
@@ -2209,6 +2224,7 @@ body.inchat nav.tabs { display: none !important; }
       authChecked = true; render();
     }, function () { authChecked = true; render(); });
     sb.auth.onAuthStateChange(function (ev, session) {
+      if (ev === 'PASSWORD_RECOVERY') { state.recovery = true; setTimeout(render, 0); }
       setTimeout(function () {
         var u = session && session.user;
         if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email }; authBusy = false; authMsg = ''; AUD = {}; cloudReady = false; cloudLoad(); }
@@ -3336,6 +3352,30 @@ body.inchat nav.tabs { display: none !important; }
       return true;
     }
 
+    if (id === 'forgotform') {
+      e.preventDefault(); if (authBusy || !sb) return true;
+      var fe = document.getElementById('au-e').value.trim();
+      if (!/^\S+@\S+\.\S+$/.test(fe)) { authMsg = 'Scrivi un\'email valida.'; render(); return true; }
+      authBusy = true; authMsg = 'Un momento…'; render();
+      sb.auth.resetPasswordForEmail(fe, { redirectTo: location.origin + '/' }).then(function (r) {
+        authBusy = false;
+        authMsg = r.error ? (/rate limit|too many|seconds/i.test(r.error.message) ? 'Troppi tentativi: riprova tra qualche minuto.' : 'Invio non riuscito. Riprova.') : 'Se l\'email è registrata, riceverai a breve un link. Controlla anche lo spam.';
+        render();
+      }, function () { authBusy = false; authMsg = 'Connessione non riuscita. Riprova.'; render(); });
+      return true;
+    }
+    if (id === 'newpwform') {
+      e.preventDefault(); if (authBusy || !sb) return true;
+      var np = document.getElementById('np-p').value;
+      if (np.length < 8) { authMsg = 'La password deve avere almeno 8 caratteri.'; render(); return true; }
+      authBusy = true; authMsg = 'Un momento…'; render();
+      sb.auth.updateUser({ password: np }).then(function (r) {
+        authBusy = false;
+        if (r.error) { authMsg = authErr(r.error.message); render(); return; }
+        authMsg = ''; state.recovery = false; state.authMode = 'in'; try { history.replaceState(null, '', location.pathname); } catch (x) {} toast('Password aggiornata'); render();
+      }, function () { authBusy = false; authMsg = 'Connessione non riuscita. Riprova.'; render(); });
+      return true;
+    }
     if (id === 'authform') {
       e.preventDefault(); if (authBusy) return true; if (!sb) { authMsg = 'Servizio non raggiungibile. Controlla la connessione e riprova.'; render(); return true; }
       var em = document.getElementById('au-e').value.trim(), pw = document.getElementById('au-p').value, up = state.authMode === 'up';
@@ -3545,7 +3585,8 @@ body.inchat nav.tabs { display: none !important; }
       return true;
     }
     if (act === 'notiftap') { var nn = state.notifs[parseInt(el.getAttribute('data-i'), 10)]; if (nn) notifOpen(nn); return true; }
-    if (act === 'authmode') { state.authMode = state.authMode === 'up' ? 'in' : 'up'; authMsg = ''; render(); return true; }
+    if (act === 'authmode') { state.authMode = state.authMode === 'in' || state.authMode === 'forgot' ? (state.authMode === 'forgot' ? 'in' : 'up') : 'in'; authMsg = ''; render(); return true; }
+    if (act === 'authforgot') { state.authMode = 'forgot'; authMsg = ''; render(); return true; }
     if (act === 'authterms') { var e2 = document.getElementById('au-e'), p2 = document.getElementById('au-n'), q2 = document.getElementById('au-p'); var ev2 = e2 ? e2.value : '', nv2 = p2 ? p2.value : '', pv2 = q2 ? q2.value : ''; state.authTerms = !state.authTerms; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev2; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv2; if (document.getElementById('au-p')) document.getElementById('au-p').value = pv2; return true; }
     if (act === 'authpro') { var e1 = document.getElementById('au-e'), p1 = document.getElementById('au-n'); var ev1 = e1 ? e1.value : '', nv1 = p1 ? p1.value : ''; state.authPro = !state.authPro; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev1; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv1; return true; }
     if (act === 'authopen') { state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {} closeSheet(); render(); return true; }
@@ -4033,8 +4074,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 46; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061040';
+  var VERSION = 47; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061115';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
