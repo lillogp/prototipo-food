@@ -4119,7 +4119,8 @@ body.inchat nav.tabs { display: none !important; }
   (function () {
     var tabHist = [], lastKey = null, cur = 0, ignore = 0, popping = false;
     function key() { return state.tab + (state.tab === 'user' ? ':' + state.viewing : '') + (state.tab === 'dm' ? ':' + state.curDm : ''); }
-    function depth() { return tabHist.length + (document.getElementById('layer').firstChild ? 1 : 0) + (state.cook ? 1 : 0); }
+    function depth() { return 1 + tabHist.length + (document.getElementById('layer').firstChild ? 1 : 0) + (state.cook ? 1 : 0); }
+    var exitArmed = false, exitT = null;
     function sync() {
       var k = key();
       if (lastKey !== null && k !== lastKey && !popping) {
@@ -4147,6 +4148,11 @@ body.inchat nav.tabs { display: none !important; }
     window.addEventListener('popstate', function (e) {
       if (ignore) { ignore = 0; return; }
       var d = (e.state && e.state.d) || 0;
+      if (d === 0) {
+        if (exitArmed) { clearTimeout(exitT); exitArmed = false; cur = 0; try { history.back(); } catch (x) {} return; }
+        exitArmed = true; clearTimeout(exitT); exitT = setTimeout(function () { exitArmed = false; }, 2200);
+        toast('Premi ancora indietro per uscire'); cur = 0; lastKey = key(); sync(); return;
+      }
       popping = true; cur = d;
       var guard = 0; while (depth() > d && guard++ < 10) back();
       popping = false; lastKey = key();
@@ -4172,8 +4178,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 55; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061715';
+  var VERSION = 56; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061730';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
