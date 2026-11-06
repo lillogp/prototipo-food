@@ -2203,7 +2203,7 @@ body.inchat nav.tabs { display: none !important; }
     if (/rate limit|too many/i.test(m)) return 'Troppi tentativi: riprova tra qualche minuto.';
     return 'Operazione non riuscita. Riprova.';
   }
-  var LEGAL_VER = '2026-11-05', AUD = {};
+  var LEGAL_VER = '2026-11-06', AUD = {};
   function viewAuth() {
     if (state.recovery) {
       return '<div class="view-h" style="margin-top:18px"><h1>Nuova password</h1><p>Scegli la nuova password per il tuo account.</p></div><form class="new" id="newpwform" novalidate>' +
@@ -4160,8 +4160,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 53; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061645';
+  var VERSION = 54; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061700';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
