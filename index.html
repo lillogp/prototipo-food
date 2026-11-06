@@ -289,6 +289,9 @@ textarea { min-height: 112px; resize: vertical; }
 input:disabled { opacity: .45; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 14px; }
 .grid3 button { padding: 0; border-radius: 8px; overflow: hidden; aspect-ratio: 1; }
+.grid3 .ph { aspect-ratio: 1; border-radius: 8px; background: var(--soft); border: 1.5px dashed var(--line, rgba(0,0,0,.15)); display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.grid3 .ph svg { width: 26px; height: 26px; opacity: .55; }
+.grid3 button.ph:first-child { color: var(--fg); }
 .grid3 img, .grid3 video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .prof { display: flex; gap: 14px; align-items: center; }
 .prof .av { width: 64px; height: 64px; font-size: 26px; }
@@ -786,18 +789,29 @@ body.inchat nav.tabs { display: none !important; }
     return b ? '<p class="bio">' + esc(b) + ' <button class="reset" data-act="tab" data-v="account" style="padding:2px 6px">Modifica</button></p>'
       : '<p class="bio"><button class="reset" data-act="tab" data-v="account" style="padding:2px 0">Aggiungi una breve descrizione</button></p>';
   }
+  function profSeg() {
+    if (!isPro()) return '';
+    var c = state.profTab === 'clients';
+    return '<div class="seg" role="group" aria-label="Sezione profilo" style="margin-top:14px"><button data-act="ptab" data-v="dishes" aria-pressed="' + !c + '">I miei piatti</button><button data-act="ptab" data-v="clients" aria-pressed="' + c + '">Clienti</button></div>';
+  }
+  function phGrid(addFirst) {
+    var plus = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>', pic = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="5"/><path d="M8 7l1.5-2h5L16 7"/></svg>', o = '';
+    for (var i = 0; i < 6; i++) o += (i === 0 && addFirst) ? '<button class="ph" data-act="tab" data-v="new" aria-label="Pubblica un piatto">' + plus + '</button>' : '<div class="ph" aria-hidden="true">' + pic + '</div>';
+    return '<div class="grid3">' + o + '</div>';
+  }
   function viewProfile() {
     var mine = posts.filter(function (p) { return p.mine; });
     var saved = Object.keys(state.saved).filter(function (k) { return state.saved[k]; }).length;
     var nf = Object.keys(state.following).filter(function (k) { return state.following[k]; }).length;
+    var showClients = isPro() && state.profTab === 'clients';
     var pn = liveMode() && state.profile ? (state.profile.display_name || 'Il tuo nome') : ME.name;
     var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : 'Su Frog’s')) : '@' + ME.handle;
     return '<div class="prof">' + avHTML(liveMode() && state.profile ? state.profile.avatar_url : null, pn) + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><div><b>0</b>seguaci</div><div><b>' + nf + '</b>seguiti</div><button class="statbtn" data-act="tab" data-v="saved" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
-      bioOwnHTML() + profMenu() +
-      (mine.length ? '<div class="grid3">' + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
-        '<div class="empty" style="margin-top:18px"><b>Il tuo profilo è vuoto</b>Pubblica il primo piatto e comparirà qui.</div>');
+      bioOwnHTML() + profSeg() +
+      (showClients ? viewProDash() : (mine.length ? '<div class="grid3">' + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
+        phGrid(true) + '<p class="hint" style="text-align:center;margin:14px 0 0">Pubblica il primo piatto: comparirà qui.</p>'));
   }
 
   /* ---------- Planner e lista della spesa ---------- */
@@ -1094,8 +1108,9 @@ body.inchat nav.tabs { display: none !important; }
   function viewSettings() {
     var pr = state.prefs, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
     if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
+    if (liveMode() && state.profile && !isPro()) rows.push(['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno']);
     if (liveMode() && state.profile) rows.push(['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']);
-    rows.push(['install', 'Installa l\'app', window.__canInstall && window.__canInstall() ? 'Aggiungila alla schermata Home' : 'Già installata su questo telefono']);
+    if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
     rows.push(['legalterms', 'Termini d\'uso', 'Le regole di Frog’s'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
@@ -1656,7 +1671,7 @@ body.inchat nav.tabs { display: none !important; }
         : (function () {
           var ps = posts.filter(function (q) { return q.authorId === id; });
           return ps.length ? '<div class="stats"><div><b>' + ps.length + '</b>' + (ps.length === 1 ? 'piatto' : 'piatti') + '</div></div><div class="grid3">' + ps.map(function (q) { return '<button data-act="open" data-id="' + q.id + '" aria-label="' + esc(q.title) + '">' + mediaTag(q.media, '') + '</button>'; }).join('') + '</div>'
-            : '<div class="empty" style="margin-top:18px"><b>Ancora nessun piatto</b>Quando pubblicherà delle ricette le troverai qui.</div>';
+            : '<div class="stats"><div><b>0</b>piatti</div></div>' + phGrid(false) + '<p class="hint" style="text-align:center;margin:14px 0 0">Ancora nessun piatto: quando pubblicherà delle ricette le troverai qui.</p>';
         })());
   }
   function peopleHTML() {
@@ -3747,6 +3762,7 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'close') { if (el.classList.contains('sheet-bg') && e.target !== el) return; closeSheet(); if (state.tab !== 'new') render(); return; }
     if (act === 'sqtag') { state.q = el.getAttribute('data-v'); render(); realSearch(); return true; }
     if (act === 'tab') { if (state.tab === 'new') keepFields(); var tv = el.getAttribute('data-v'); state.tab = tv; if (tv === 'shop') state.shopTab = 'list'; closeSheet(); render(); window.scrollTo(0, 0); if (tv === 'home' && liveMode()) loadFeed(); }
+    else if (act === 'ptab') { state.profTab = el.getAttribute('data-v'); if (state.profTab === 'dishes') state.curClient = null; else if (liveMode()) proLoad(); render(); }
     else if (act === 'filter') { state.filter = el.getAttribute('data-v'); render(); }
     else if (act === 'hidenote') { state.note = false; render(); }
     else if (act === 'like') {
@@ -4074,8 +4090,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 47; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061115';
+  var VERSION = 48; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061140';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
