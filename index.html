@@ -629,7 +629,7 @@ body.inchat nav.tabs { display: none !important; }
 
   function card(p) {
     var liked = !!state.liked[p.id], saved = !!state.saved[p.id];
-    return '<article class="post"><div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '">' + avHTML(p.avatar, p.user) + '<div class="who"><b>' + esc(p.user) + '</b><span>' + esc(hnd(p)) + ' · ' + esc(p.t) + '</span></div></button>' +
+    return '<article class="post"><div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '">' + avHTML(p.avatar, p.user) + '<div class="who"><b>' + esc(p.user) + '</b><span>' + esc((p.real ? (p.hd || '') : '@' + p.handle) ? (p.real ? (p.hd || '') : '@' + p.handle) + ' · ' + p.t : p.t) + '</span></div></button>' +
       (p.role ? '<span class="role">' + esc(p.role) + '</span>' : '') + (p.mine ? '' : followBtn(p.handle)) + '</div>' +
       (p.media.type === 'video' ? mediaTag(p.media, 'media') : '<div class="tap" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ricetta ' + esc(p.title) + '">' + mediaTag(p.media, 'media') + '</div>') +
       '<div class="post-b"><div class="tap tapb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '"><h2>' + esc(p.title) + '</h2><div class="meta"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + esc(p.tag) + '</span>' + (p.sample ? '<span class="role">Esempio</span>' : '') + (nutriKcal(p) && !(p.hideN && !p.mine) ? '<span>≈ ' + nutriKcal(p) + ' kcal a porzione</span>' : '') + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + (state.filter === 'Dalla dispensa' ? covBadge(p) : '') + '</div>' + warnHTML(p) + '</div>' +
@@ -3177,7 +3177,7 @@ body.inchat nav.tabs { display: none !important; }
     var me = liveMode() && r.author_id === state.user.id;
     var nl = r.likes && r.likes[0] ? r.likes[0].count : 0, nc = r.comments && r.comments[0] ? r.comments[0].count : 0;
     return { id: RB + r.id, dbId: r.id, real: true, authorId: r.author_id, user: a.display_name || (a.handle ? '@' + a.handle : 'Utente'), handle: 'u:' + r.author_id,
-      avatar: a.avatar_url || null, menuId: r.menu_id || null, menuName: r.menu_name || '', menuPos: r.menu_pos || 0, hd: a.handle ? '@' + a.handle : 'Su Frog’s', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
+      avatar: a.avatar_url || null, menuId: r.menu_id || null, menuName: r.menu_name || '', menuPos: r.menu_pos || 0, hd: a.handle ? '@' + a.handle : '', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
       title: r.title, tag: r.tag, time: r.time_min, serv: r.serv, media: { type: r.media_type === 'video' ? 'video' : 'image', src: r.media_url || plate(['#A9B8B2', '#8FB86B', '#F4E7C5', '#C8472B'], r.id % 97) }, mediaPath: pathOf(r.media_url), priv: !!r.for_link_id, linkId: r.for_link_id || null,
       ing: Array.isArray(r.ingredients) ? r.ingredients : [], steps: Array.isArray(r.steps) ? r.steps : [], hideN: !!r.hide_nutrition,
       from: r.from_info || null, likes: nl, ccount: nc, comments: [], mine: me };
@@ -4090,8 +4090,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 48; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061140';
+  var VERSION = 49; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061200';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
