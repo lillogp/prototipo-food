@@ -330,6 +330,11 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .clike[aria-pressed="true"] { color: var(--amber); }
 .clike[aria-pressed="true"] svg { fill: currentColor; }
 .cm b { font-weight: 600; }
+.micic { display: inline-block; width: 18px; height: 18px; margin-right: 8px; vertical-align: -3px; background: currentColor; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='3' width='6' height='11' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v3'/%3E%3C/svg%3E") center/contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round'%3E%3Crect x='9' y='3' width='6' height='11' rx='3'/%3E%3Cpath d='M5 11a7 7 0 0 0 14 0M12 18v3'/%3E%3C/svg%3E") center/contain no-repeat; }
+.micbtn.rec { background: var(--accent, #3B8A4A); color: #fff; }
+.vtxt { width: 100%; min-height: 76px; border-radius: 12px; padding: 10px 12px; font: inherit; resize: vertical; }
+.vrow { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,.08); }
+.vrow b { flex: 1; font-weight: 600; } .vrow span { color: var(--muted); }
 .cmf { display: flex; gap: 8px; }
 .cmf input { flex: 1; min-width: 0; }
 
@@ -1005,7 +1010,7 @@ body.inchat nav.tabs { display: none !important; }
   function viewShop() {
     var days = weekDays(state.weekOff), n = plannedCount(days), all = shopList().concat(shopExtraItems());
     var buy = all.filter(function (i) { return i.fam === 'nq' || i.need > 0; }), home = all.filter(function (i) { return i.fam !== 'nq' && !(i.need > 0); });
-    var form = '<form class="cmf" id="shopform" style="margin-bottom:12px"><input type="text" id="shopin" maxlength="40" placeholder="Aggiungi alla lista (es. detersivo)" aria-label="Aggiungi alla lista"><button class="btn" type="submit">Aggiungi</button></form>';
+    var form = '<button type="button" class="btn ghost micbtn" data-act="voice" data-v="shop" style="width:100%;margin:0 0 10px"><i class="micic" aria-hidden="true"></i>Aggiungi con la voce</button>' + '<form class="cmf" id="shopform" style="margin-bottom:12px"><input type="text" id="shopin" maxlength="40" placeholder="Aggiungi alla lista (es. detersivo)" aria-label="Aggiungi alla lista"><button class="btn" type="submit">Aggiungi</button></form>';
     var sp = state.people.length > 1 ? '<div class="mwho" style="padding:0 0 10px"><span>Spesa fatta da:</span>' + state.people.map(function (q) { return '<button class="pc" data-act="shopper" data-pid="' + q.id + '" aria-pressed="' + (q.id === shopperId()) + '">' + esc(q.name) + '</button>'; }).join('') + '</div>' : '';
     if (!all.length) return form + '<div class="empty"><b>La lista è vuota</b>Aggiungi dei piatti al planner della settimana e qui compaiono gli ingredienti da comprare, già sommati.<br><button class="btn ghost" data-act="pantry" style="margin-top:12px">Apri la dispensa</button></div>';
     var got = buy.filter(function (i) { return state.checked[i.key]; }).length;
@@ -1092,7 +1097,7 @@ body.inchat nav.tabs { display: none !important; }
     var rows = state.pantry.map(function (x, i) {
       return '<li class="pitem"><span class="pn1">' + esc(x.n) + '</span><span class="pq">' + esc(pQty(x)) + '</span><button class="rm" data-act="pdel" data-i="' + i + '" aria-label="Rimuovi ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>';
     }).join('');
-    return '<button class="btn" data-act="pcook" style="width:100%;margin:0 0 12px">Cosa posso cucinare con la dispensa?</button>' + '<p class="hint" style="margin:0 0 10px">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
+    return '<button class="btn" data-act="pcook" style="width:100%;margin:0 0 12px">Cosa posso cucinare con la dispensa?</button>' + '<button type="button" class="btn ghost micbtn" data-act="voice" data-v="pantry" style="width:100%;margin:0 0 10px"><i class="micic" aria-hidden="true"></i>Aggiungi con la voce</button>' + '<p class="hint" style="margin:0 0 10px">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
       '<form class="pform" id="pantryform"><input type="text" id="pnn" list="ingl" maxlength="40" placeholder="Ingrediente" aria-label="Ingrediente"><input type="number" id="pqq" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità">' +
       '<select id="puu" aria-label="Unità"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="pezzi">pezzi</option></select><button class="btn" type="submit">Aggiungi</button></form>' +
       (rows ? '<ul class="ing plist" style="margin-top:12px">' + rows + '</ul>' : '<div class="empty" style="padding:18px;margin-top:12px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
@@ -1610,7 +1615,7 @@ body.inchat nav.tabs { display: none !important; }
       return '<li class="pitem"><span class="pn1">' + esc(x.n) + '</span><span class="pq">' + esc(pQty(x)) + '</span><button class="rm" data-act="pdel" data-i="' + i + '" aria-label="Rimuovi ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>';
     }).join('');
     sheetOpen('Dispensa', 'Dispensa',
-      '<button class="btn" data-act="pcook" style="width:100%;margin:0">Cosa posso cucinare con la dispensa?</button>' + '<p class="hint" style="margin:0">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
+      '<button class="btn" data-act="pcook" style="width:100%;margin:0">Cosa posso cucinare con la dispensa?</button>' + '<button type="button" class="btn ghost micbtn" data-act="voice" data-v="pantry" style="width:100%;margin:0 0 10px"><i class="micic" aria-hidden="true"></i>Aggiungi con la voce</button>' + '<p class="hint" style="margin:0">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
       '<form class="pform" id="pantryform"><input type="text" id="pnn" list="ingl" maxlength="40" placeholder="Ingrediente" aria-label="Ingrediente"><input type="number" id="pqq" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità">' +
       '<select id="puu" aria-label="Unità"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="pezzi">pezzi</option></select><button class="btn" type="submit">Aggiungi</button></form>' +
       (rows ? '<ul class="ing plist">' + rows + '</ul>' : '<div class="empty" style="padding:18px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
@@ -3746,6 +3751,71 @@ body.inchat nav.tabs { display: none !important; }
       (state.goalBy ? 'Obiettivo di ' + state.goalBy + '. ' : '') + (left >= 0 ? 'Mancano ' + left + ' kcal all\'obiettivo di ' + g : 'Oltre l\'obiettivo di ' + (-left) + ' kcal (' + g + ')') + '</small></div>';
   }
   function shopperId() { return state.people.some(function (q) { return q.id === state.shopper; }) ? state.shopper : curPerson(); }
+
+  /* ---------- Dettatura: dispensa e spesa ---------- */
+  var VNUM = { un: 1, uno: 1, una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6, sette: 7, otto: 8, nove: 9, dieci: 10, undici: 11, dodici: 12, mezzo: 0.5, mezza: 0.5 };
+  var VUNIT = { kg: 'kg', chilo: 'kg', chili: 'kg', chilogrammo: 'kg', chilogrammi: 'kg', g: 'g', gr: 'g', grammo: 'g', grammi: 'g', etto: 'etto', etti: 'etto', l: 'l', lt: 'l', litro: 'l', litri: 'l', ml: 'ml', millilitro: 'ml', millilitri: 'ml', pezzo: 'pz', pezzi: 'pz' };
+  var VPACK = /^(bottiglia|bottiglie|pacco|pacchi|confezione|confezioni|scatola|scatole|barattolo|barattoli|vasetto|vasetti|bustina|bustine|mazzo|mazzi|spicchio|spicchi|fetta|fette|lattina|lattine)$/;
+  function voiceParse(txt) {
+    var parts = String(txt || '').toLowerCase().replace(/^\s*(aggiungi|aggiungere|metti|segna|compra|comprare|devo comprare|ho comprato|ho)\s+/, '').split(/[,;\n.]+|\s+e\s+|\s+più\s+/);
+    var out = [];
+    parts.forEach(function (raw) {
+      var t = raw.trim().replace(/\s+/g, ' '); if (!t) return;
+      var w = t.split(' '), q = null, u = 'pz', i = 0, m;
+      if ((m = /^(\d+(?:[.,]\d+)?)(kg|g|gr|ml|l|lt)?$/.exec(w[0]))) { q = parseFloat(m[1].replace(',', '.')); if (m[2]) u = VUNIT[m[2]]; i = 1; }
+      else if (VNUM[w[0]] != null) { q = VNUM[w[0]]; i = 1; }
+      if (q != null && w[i] && VUNIT[w[i]] && u === 'pz') { u = VUNIT[w[i]]; i++; }
+      else if (q != null && w[i] && VPACK.test(w[i])) { i++; }
+      if (q != null && (w[i] === 'di' || w[i] === 'd\'')) i++;
+      var nm = w.slice(i).join(' ').replace(/^(di|d')\s*/, '').trim(); if (!nm) return;
+      if (u === 'etto') { q = q * 100; u = 'g'; }
+      if (q == null) q = 0;
+      out.push({ n: nm.charAt(0).toUpperCase() + nm.slice(1), q: q, u: u });
+    });
+    return out;
+  }
+  function voiceQty(x) { return x.q ? (x.u === 'pz' ? fmtNum(x.q) + (x.q === 1 ? ' pezzo' : ' pezzi') : fmtNum(x.q) + ' ' + x.u) : ''; }
+  var VS = { dest: 'pantry', rec: null, on: false };
+  function voicePreview() {
+    var el = document.getElementById('vprev'), ta = document.getElementById('vtxt'); if (!el || !ta) return;
+    var items = voiceParse(ta.value); VS.items = items;
+    el.innerHTML = items.length ? items.map(function (x, i) { return '<div class="vrow"><b>' + esc(x.n) + '</b><span>' + esc(voiceQty(x) || (VS.dest === 'pantry' ? '1 pezzo' : '')) + '</span><button class="rm" data-act="voicedel" data-i="' + i + '" aria-label="Togli ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'; }).join('') : '<p class="hint" style="margin:0">Qui compare la lista che ho capito.</p>';
+    var b = document.getElementById('vgo'); if (b) b.textContent = items.length ? (VS.dest === 'pantry' ? 'Aggiungi alla dispensa' : 'Aggiungi alla spesa') + ' (' + items.length + ')' : 'Aggiungi';
+  }
+  function voiceStop() { try { if (VS.rec) VS.rec.stop(); } catch (e) {} VS.on = false; var b = document.getElementById('vmic'); if (b) { b.classList.remove('rec'); b.lastChild.textContent = 'Parla'; } }
+  function voiceOpen(dest) {
+    VS.dest = dest; VS.items = [];
+    sheetOpen('Aggiungi con la voce', dest === 'pantry' ? 'Aggiungi alla dispensa' : 'Aggiungi alla spesa',
+      '<p class="hint" style="margin:0">Tocca Parla e di\' ad esempio «due uova, trecento grammi di farina, un litro di latte». Puoi correggere il testo prima di salvare.</p>' +
+      '<button type="button" class="btn ghost micbtn" id="vmic" data-act="voicemic" style="width:100%"><i class="micic" aria-hidden="true"></i><span>Parla</span></button>' +
+      '<textarea class="vtxt" id="vtxt" placeholder="Il testo detto compare qui" aria-label="Testo detto"></textarea>' +
+      '<p class="hint" id="vmsg" style="margin:0" role="status"></p><div id="vprev"></div>' +
+      '<button class="btn" id="vgo" data-act="voicego" style="width:100%">Aggiungi</button>');
+    voicePreview();
+  }
+  document.addEventListener('input', function (e) { if (e.target && e.target.id === 'vtxt') voicePreview(); });
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-act]'); if (!el) return; var act = el.getAttribute('data-act');
+    if (act === 'voice') { voiceOpen(el.getAttribute('data-v')); return; }
+    if (act === 'voicedel') { var ta = document.getElementById('vtxt'); var list = voiceParse(ta.value); var i = parseInt(el.getAttribute('data-i'), 10); list.splice(i, 1); ta.value = list.map(function (x) { return (x.q ? voiceQty(x) + ' di ' : '') + x.n.toLowerCase(); }).join(', '); voicePreview(); return; }
+    if (act === 'voicemic') {
+      var msg = document.getElementById('vmsg'), SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (VS.on) { voiceStop(); return; }
+      if (!SR) { msg.textContent = 'Su questo dispositivo il microfono dell\'app non è disponibile: scrivi qui sopra, oppure usa il microfono della tastiera.'; document.getElementById('vtxt').focus(); return; }
+      var r = new SR(); r.lang = 'it-IT'; r.interimResults = true; r.continuous = false; VS.rec = r; var base = document.getElementById('vtxt').value;
+      r.onresult = function (ev) { var t = ''; for (var k = 0; k < ev.results.length; k++) t += ev.results[k][0].transcript; var ta2 = document.getElementById('vtxt'); if (ta2) { ta2.value = (base ? base + ', ' : '') + t; voicePreview(); } };
+      r.onerror = function (ev) { var m2 = document.getElementById('vmsg'); if (m2) m2.textContent = /not-allowed|service-not-allowed/.test(ev.error) ? 'Il microfono è bloccato: consenti l\'accesso nelle impostazioni del browser, oppure scrivi qui sopra.' : (ev.error === 'no-speech' ? 'Non ho sentito nulla: riprova.' : 'Riconoscimento vocale non riuscito: scrivi qui sopra.'); voiceStop(); };
+      r.onend = function () { voiceStop(); };
+      try { r.start(); VS.on = true; msg.textContent = 'Ti ascolto…'; el.classList.add('rec'); el.lastChild.textContent = 'Stop'; } catch (x) { msg.textContent = 'Microfono non avviabile: scrivi qui sopra.'; }
+      return;
+    }
+    if (act === 'voicego') {
+      voiceStop(); var items = voiceParse((document.getElementById('vtxt') || {}).value); if (!items.length) { toast('Di\' o scrivi cosa aggiungere'); return; }
+      if (VS.dest === 'pantry') { items.forEach(function (x) { var b = toBase(x.q || 1, x.u); pantryAdd(x.n, b.q, b.fam); }); }
+      else { items.forEach(function (x, k) { state.shopx.push({ id: Date.now() + k, n: x.n + (x.q ? ' · ' + voiceQty(x) : '') }); }); }
+      persist(); closeSheet(); render(); toast(items.length === 1 ? 'Aggiunto: ' + items[0].n : 'Aggiunti ' + items.length + ' articoli'); return;
+    }
+  });
   function profMenu() {
     var rows = [
       ['mypro', isPro() ? 'I miei clienti' : 'Il mio nutrizionista', isPro() ? (state.profile.pro_verified ? (state.clients.filter(function (c) { return c.status === 'active'; }).length + ' attivi') : 'In verifica') : (state.pro ? state.pro.name + ' · collegato' : 'Nessuno')],
@@ -4090,8 +4160,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 52; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061210';
+  var VERSION = 53; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611061645';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
