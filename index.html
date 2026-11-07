@@ -317,7 +317,13 @@ ol.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column;
 .cm { display: flex; flex-direction: column; gap: 10px; }
 .cm p { margin: 0; flex: 1; min-width: 0; }
 .avedit { display: flex; gap: 14px; align-items: center; margin: 4px 0 18px; }
-.avedit .av { width: 72px; height: 72px; font-size: 28px; flex: none; }
+.avedit .av { width: 84px; height: 84px; font-size: 32px; flex: none; }
+.avpick { position: relative; display: block; cursor: pointer; flex: none; border-radius: 50%; }
+.avcam { position: absolute; right: -2px; bottom: -2px; width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--accent-fg); display: grid; place-items: center; border: 2px solid var(--bg); }
+.avcam svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.crwrap { position: relative; margin: 10px auto; overflow: hidden; touch-action: none; background: #111; border-radius: 12px; cursor: grab; }
+.crwrap img { position: absolute; max-width: none; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+.crmask { position: absolute; border-radius: 50%; box-shadow: 0 0 0 999px rgba(0,0,0,.58); border: 2px solid rgba(255,255,255,.85); pointer-events: none; }
 .avedit small { display: block; color: var(--muted); font-size: 12px; margin: 2px 0 8px; }
 .avbtns { display: flex; gap: 14px; align-items: center; }
 .avlab { cursor: pointer; }
@@ -815,7 +821,9 @@ body.inchat nav.tabs { display: none !important; }
     var showClients = isPro() && state.profTab === 'clients';
     var pn = liveMode() && state.profile ? (state.profile.display_name || 'Il tuo nome') : ME.name;
     var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : 'Su Frog’s')) : '@' + ME.handle;
-    return '<div class="prof">' + avHTML(liveMode() && state.profile ? state.profile.avatar_url : null, pn) + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
+    var avh = avHTML(liveMode() && state.profile ? state.profile.avatar_url : null, pn);
+    if (liveMode() && state.profile) avh = '<label class="avpick" for="avfile" aria-label="Cambia la foto profilo">' + avh + '<span class="avcam" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></label><input type="file" id="avfile" accept="image/*" hidden>';
+    return '<div class="prof">' + avh + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><div><b>0</b>seguaci</div><div><b>' + nf + '</b>seguiti</div><button class="statbtn" data-act="tab" data-v="saved" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
       bioOwnHTML() + profSeg() +
@@ -1132,8 +1140,8 @@ body.inchat nav.tabs { display: none !important; }
     if (!liveMode()) return back + '<div class="view-h"><h1>Account</h1></div><div class="empty"><b>Non hai effettuato l\'accesso</b>Con un account ritrovi planner, dispensa e preferenze su ogni dispositivo.<br><button class="btn" data-act="authopen" style="margin-top:12px">Accedi o registrati</button></div>';
     var nm = (state.profile && state.profile.display_name) || '';
     return back + '<div class="view-h"><h1>Account</h1></div>' +
-      '<div class="avedit">' + avHTML(state.profile && state.profile.avatar_url, nm || state.user.email) + '<div><b>Foto profilo</b><small>Si vede su piatti, profilo e chat.</small>' +
-      '<div class="avbtns"><label class="reset avlab" for="avfile">' + (state.profile && state.profile.avatar_url ? 'Cambia foto' : 'Scegli foto') + '</label>' + (state.profile && state.profile.avatar_url ? '<button class="reset" data-act="avdel" style="color:var(--muted)">Rimuovi</button>' : '') + '</div>' +
+      '<div class="avedit"><label class="avpick" for="avfile" aria-label="Cambia la foto profilo">' + avHTML(state.profile && state.profile.avatar_url, nm || state.user.email) + '<span class="avcam" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></label><div><b>Foto profilo</b><small>Tocca la foto per cambiarla. Si vede su piatti, profilo e chat.</small>' +
+      (state.profile && state.profile.avatar_url ? '<div class="avbtns"><button class="reset" data-act="avdel" style="color:var(--muted)">Rimuovi foto</button></div>' : '') +
       '<input type="file" id="avfile" accept="image/*" hidden></div></div>' +
       '<form class="new accf" id="nameform" novalidate><label class="f" for="acc-n">Nome<small>È il nome con cui gli altri ti cercano.</small><input id="acc-n" type="text" maxlength="40" autocomplete="name" value="' + esc(nm) + '"></label><button class="btn ghost" type="submit">Salva il nome</button></form>' +
       '<form class="new accf" id="bioform" novalidate><label class="f" for="acc-b">Descrizione<small>Poche righe su di te: la vedono le persone che aprono il tuo profilo. Con il profilo privato la vedono solo i tuoi follower.</small><textarea id="acc-b" rows="3" maxlength="200" placeholder="Es. Cucina semplice e di stagione. Nutrizionista a Forlì.">' + esc((state.profile && state.profile.bio) || '') + '</textarea></label><button class="btn ghost" type="submit">Salva la descrizione</button></form>' +
@@ -3272,23 +3280,52 @@ body.inchat nav.tabs { display: none !important; }
       });
     });
   }
-  function avatarSquare(file) {
+  function avatarCrop(file) {
     return new Promise(function (res, rej) {
-      var u = URL.createObjectURL(file), im = new Image();
+      var url = URL.createObjectURL(file), im = new Image();
+      im.onerror = function () { URL.revokeObjectURL(url); rej(new Error('img')); };
       im.onload = function () {
-        var S = 256, c = document.createElement('canvas'); c.width = c.height = S;
-        var m = Math.min(im.width, im.height), sx = (im.width - m) / 2, sy = (im.height - m) / 2;
-        c.getContext('2d').drawImage(im, sx, sy, m, m, 0, 0, S, S); URL.revokeObjectURL(u);
-        c.toBlob(function (b) { b ? res(b) : rej(new Error('blob')); }, 'image/jpeg', 0.86);
+        var V = Math.min(320, window.innerWidth - 56), D = V - 28, base = Math.max(D / im.width, D / im.height), sc = 1, tx = 0, ty = 0, ptrs = {}, d0 = 0, sc0 = 1;
+        sheetOpen('Ritaglia foto', 'Foto profilo',
+          '<p class="hint" style="margin:0">Trascina per spostare, pizzica o usa il cursore per ingrandire.</p>' +
+          '<div class="crwrap" id="crw" style="width:' + V + 'px;height:' + V + 'px"><img id="cri" alt="" src="' + url + '" draggable="false"><div class="crmask" style="left:14px;top:14px;width:' + D + 'px;height:' + D + 'px"></div></div>' +
+          '<input type="range" id="crz" min="1" max="4" step="0.01" value="1" aria-label="Zoom" style="width:100%">' +
+          '<div style="display:flex;gap:10px"><button class="btn ghost" data-act="close" style="flex:1">Annulla</button><button class="btn" id="crok" style="flex:1">Usa foto</button></div>');
+        var w = document.getElementById('crw'), img = document.getElementById('cri'), z = document.getElementById('crz');
+        function paint() {
+          var k = base * sc, hw = im.width * k / 2, hh = im.height * k / 2;
+          tx = Math.max(-(hw - D / 2), Math.min(hw - D / 2, tx)); ty = Math.max(-(hh - D / 2), Math.min(hh - D / 2, ty));
+          img.style.width = im.width * k + 'px'; img.style.height = im.height * k + 'px';
+          img.style.left = (V / 2 + tx - hw) + 'px'; img.style.top = (V / 2 + ty - hh) + 'px'; z.value = sc;
+        }
+        function dist() { var p = Object.keys(ptrs).map(function (k) { return ptrs[k]; }); return Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); }
+        w.addEventListener('pointerdown', function (e) { try { w.setPointerCapture(e.pointerId); } catch (x) {} ptrs[e.pointerId] = { x: e.clientX, y: e.clientY }; if (Object.keys(ptrs).length === 2) { d0 = dist(); sc0 = sc; } });
+        w.addEventListener('pointermove', function (e) {
+          var p = ptrs[e.pointerId]; if (!p) return; var n = Object.keys(ptrs).length;
+          if (n === 1) { tx += e.clientX - p.x; ty += e.clientY - p.y; }
+          ptrs[e.pointerId] = { x: e.clientX, y: e.clientY };
+          if (n === 2 && d0) sc = Math.max(1, Math.min(4, sc0 * dist() / d0));
+          paint();
+        });
+        function up(e) { delete ptrs[e.pointerId]; d0 = 0; window.__noClose = Date.now(); }
+        w.addEventListener('pointerup', up); w.addEventListener('pointercancel', up);
+        w.addEventListener('wheel', function (e) { e.preventDefault(); sc = Math.max(1, Math.min(4, sc * (e.deltaY < 0 ? 1.08 : 0.93))); paint(); }, { passive: false });
+        z.addEventListener('input', function () { sc = parseFloat(z.value) || 1; paint(); });
+        document.getElementById('crok').addEventListener('click', function () {
+          var k = base * sc, S = 360, c = document.createElement('canvas'); c.width = c.height = S;
+          c.getContext('2d').drawImage(im, im.width / 2 + (-D / 2 - tx) / k, im.height / 2 + (-D / 2 - ty) / k, D / k, D / k, 0, 0, S, S);
+          c.toBlob(function (b) { URL.revokeObjectURL(url); closeSheet(); b ? res(b) : rej(new Error('blob')); }, 'image/jpeg', 0.88);
+        });
+        paint();
       };
-      im.onerror = function () { URL.revokeObjectURL(u); rej(new Error('img')); };
-      im.src = u;
+      im.src = url;
     });
   }
+  document.addEventListener('click', function (e) { if (window.__noClose && Date.now() - window.__noClose < 120 && e.target.classList && e.target.classList.contains('sheet-bg')) e.stopPropagation(); }, true);
   function setAvatar(file) {
     if (!liveMode() || !file) return;
-    toast('Carico la foto…');
-    avatarSquare(file).then(function (blob) {
+    avatarCrop(file).then(function (blob) {
+      toast('Carico la foto…');
       var path = state.user.id + '/avatar-' + uuid4() + '.jpg', old = pathOf(state.profile && state.profile.avatar_url);
       return sb.storage.from('media').upload(path, blob, { contentType: 'image/jpeg', upsert: false }).then(function (r) {
         if (r.error) throw r.error;
@@ -3297,7 +3334,7 @@ body.inchat nav.tabs { display: none !important; }
           if (q.error) throw q.error;
           if (state.profile) state.profile.avatar_url = url; state.realP[state.user.id] = Object.assign({}, state.realP[state.user.id] || {}, { avatar_url: url });
           if (old) sb.storage.from('media').remove([old]);
-          toast('Foto aggiornata'); if (state.tab === 'account') render();
+          toast('Foto aggiornata'); if (state.tab === 'account' || state.tab === 'me') render();
         });
       });
     }).catch(function () { toast('Foto non caricata'); });
@@ -4245,7 +4282,7 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 57; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 58; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611071930';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
