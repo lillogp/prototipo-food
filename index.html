@@ -284,7 +284,10 @@ textarea { min-height: 112px; resize: vertical; }
 .prodcard .hint { margin: 0; }
 .rm { width: 40px; height: 40px; border-radius: 10px; background: var(--soft); display: grid; place-items: center; color: var(--muted); }
 .rm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.steprow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 40px; gap: 8px; align-items: center; }
+.steprow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 40px 40px; gap: 8px; align-items: center; }
+.rm.mic.rec { background: var(--accent); color: #fff; }
+.dragging { position: relative; z-index: 20; box-shadow: 0 10px 28px rgba(0,0,0,.22); transition: none !important; opacity: .97; }
+.dragsib { transition: transform .15s ease; }
 .steprow .n { width: 28px; height: 28px; border-radius: 50%; background: var(--soft); color: var(--accent); display: grid; place-items: center; font-family: var(--f-display); font-weight: 700; font-size: 14px; }
 input:disabled { opacity: .45; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 14px; }
@@ -579,7 +582,7 @@ body.inchat nav.tabs { display: none !important; }
     if (!Array.isArray(r)) return r;
     var m = /^(\d+(?:[.,]\d+)?)\s*(.*?)(?:\s*\(≈.*\))?$/.exec((r[1] || '').trim());
     if (!m) return { n: r[0], q: null, u: '' };
-    var map = { cucchiai: 'cucchiaio', cucchiaio: 'cucchiaio', cucchiaini: 'cucchiaino', cucchiaino: 'cucchiaino', pizzichi: 'pizzico', pizzico: 'pizzico', pezzo: 'pezzi', pezzi: 'pezzi' };
+    var map = { cucchiai: 'cucchiaio', cucchiaio: 'cucchiaio', cucchiaini: 'cucchiaino', cucchiaino: 'cucchiaino', pizzichi: 'pizzico', pizzico: 'pizzico', pezzo: 'pezzi', pezzi: 'pezzi', spicchio: 'spicchio', spicchi: 'spicchio' };
     var u = m[2].trim();
     return { n: r[0], q: parseFloat(m[1].replace(',', '.')), u: map[u] || u };
   }
@@ -718,9 +721,9 @@ body.inchat nav.tabs { display: none !important; }
         (state.folderSel && state.folderSel !== 'none' ? '<div class="empty"><b>Cartella vuota</b>Aggiungi ricette salvate o altri piatti.<br><button class="btn" data-act="fadds" style="margin-top:12px">Aggiungi ricette</button></div>' : '<div class="empty"><b>Ancora niente qui</b>Tocca il segnalibro su una ricetta del feed per ritrovarla in questa pagina.</div>'));
   }
 
-  var UNITS = [['g', 'g (grammi)'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'l (litri)'], ['cucchiaio', 'cucchiai (≈ 15 g)'], ['cucchiaino', 'cucchiaini (≈ 5 g)'], ['pizzico', 'pizzico (≈ 0,5 g)'], ['pezzi', 'pezzi'], ['mazzetto', 'mazzetti'], ['rametto', 'rametti'], ['foglie', 'foglie'], ['fogli', 'fogli']];
+  var UNITS = [['g', 'g (grammi)'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'l (litri)'], ['cucchiaio', 'cucchiai (≈ 15 g)'], ['cucchiaino', 'cucchiaini (≈ 5 g)'], ['pizzico', 'pizzico (≈ 0,5 g)'], ['pezzi', 'pezzi'], ['spicchio', 'spicchi'], ['mazzetto', 'mazzetti'], ['rametto', 'rametti'], ['foglie', 'foglie'], ['fogli', 'fogli']];
   var REF = { cucchiaio: 15, cucchiaino: 5, pizzico: 0.5 };
-  var UNIT_TXT = { cucchiaio: ['cucchiaio', 'cucchiai'], cucchiaino: ['cucchiaino', 'cucchiaini'], pizzico: ['pizzico', 'pizzichi'], pezzi: ['pezzo', 'pezzi'], mazzetto: ['mazzetto', 'mazzetti'], rametto: ['rametto', 'rametti'] };
+  var UNIT_TXT = { cucchiaio: ['cucchiaio', 'cucchiai'], cucchiaino: ['cucchiaino', 'cucchiaini'], pizzico: ['pizzico', 'pizzichi'], pezzi: ['pezzo', 'pezzi'], spicchio: ['spicchio', 'spicchi'], mazzetto: ['mazzetto', 'mazzetti'], rametto: ['rametto', 'rametti'] };
   function fmtIng(q, u) {
     if (!q) return '';
     var n = parseFloat(q.replace(',', '.')), t = UNIT_TXT[u], txt = q + ' ' + (t ? t[n === 1 ? 0 : 1] : u);
@@ -736,22 +739,23 @@ body.inchat nav.tabs { display: none !important; }
   }
   function ingBox(d) {
     var rows = d.ings.map(function (r, i) {
-      return '<div class="ingrow"><div class="namewrap"><input type="text" class="in-n" list="ingl" placeholder="Ingrediente (es. Farina 00)" maxlength="40" aria-label="Ingrediente ' + (i + 1) + '" value="' + esc(r.n) + '">' +
+      return '<div class="ingrow" data-oi="' + i + '"><div class="namewrap"><input type="text" class="in-n" list="ingl" placeholder="Ingrediente (es. Farina 00)" maxlength="40" aria-label="Ingrediente ' + (i + 1) + '" value="' + esc(r.n) + '">' +
         '<button type="button" class="rm scan" data-act="scan" data-i="' + i + '" aria-label="Scansiona codice a barre">' + ICONS.barcode + '</button></div>' +
         (r.prod ? '<div class="prodline">' + esc(r.prod.brand) + ' · ' + r.prod.kc + ' kcal per 100 g (dati di esempio)</div>' : '') +
         '<input type="number" class="in-q" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità" value="' + esc(r.q) + '">' +
         '<select class="in-u" aria-label="Unità">' + UNITS.map(function (u) { return '<option value="' + u[0] + '"' + (r.u === u[0] ? ' selected' : '') + '>' + u[1] + '</option>'; }).join('') + '</select>' +
         '<button type="button" class="rm" data-act="rming" data-i="' + i + '" aria-label="Rimuovi ingrediente"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
     }).join('');
-    return '<span>Ingredienti</span><small>Scrivi il nome (o scegli dai suggerimenti), poi quantità e unità.</small>' + rows +
+    return '<span>Ingredienti</span><small>Scrivi il nome (o scegli dai suggerimenti), poi quantità e unità. Tieni premuta una riga per spostarla.</small>' + rows +
       '<button type="button" class="btn ghost" data-act="adding">Aggiungi ingrediente</button><datalist id="ingl">' + COMMON.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist>';
   }
   function stepBox(d) {
     var rows = d.stps.map(function (s, i) {
-      return '<div class="steprow"><span class="n">' + (i + 1) + '</span><input type="text" class="in-s" maxlength="160" placeholder="Una frase breve, es. Cuoci per 20 minuti" aria-label="Passaggio ' + (i + 1) + '" value="' + esc(s) + '">' +
+      return '<div class="steprow" data-oi="' + i + '"><span class="n">' + (i + 1) + '</span><input type="text" class="in-s" maxlength="160" placeholder="Una frase breve, es. Cuoci per 20 minuti" aria-label="Passaggio ' + (i + 1) + '" value="' + esc(s) + '">' +
+        '<button type="button" class="rm mic" data-act="stepmic" data-i="' + i + '" aria-label="Detta il passaggio ' + (i + 1) + '"><i class="micic" style="margin:0" aria-hidden="true"></i></button>' +
         '<button type="button" class="rm" data-act="rmstep" data-i="' + i + '" aria-label="Rimuovi passaggio"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
     }).join('');
-    return '<span>Procedimento</span><small>Un passaggio alla volta, in frasi brevi.</small>' + rows + '<button type="button" class="btn ghost" data-act="addstep">Aggiungi passaggio</button>';
+    return '<span>Procedimento</span><small>Un passaggio alla volta, in frasi brevi. Tocca il microfono per dettarlo, tieni premuto per spostarlo.</small>' + rows + '<button type="button" class="btn ghost" data-act="addstep">Aggiungi passaggio</button>';
   }
   function viewNew() {
     var d = ensureDraft();
@@ -3828,6 +3832,69 @@ body.inchat nav.tabs { display: none !important; }
       persist(); closeSheet(); render(); toast(items.length === 1 ? 'Aggiunto: ' + items[0].n : 'Aggiunti ' + items.length + ' articoli'); return;
     }
   });
+
+  /* ---------- Bozza ricetta: riordino a pressione lunga e dettatura dei passaggi ---------- */
+  (function () {
+    var D = null, timer = null, p0 = null, SRNOW = null;
+    function rowSel(r) { return r.classList.contains('ingrow') ? '#ingbox .ingrow' : '#stepbox .steprow'; }
+    function begin(row, y) {
+      try { document.activeElement && document.activeElement.blur(); } catch (e) {}
+      keepFields();
+      var rows = Array.prototype.slice.call(document.querySelectorAll(rowSel(row)));
+      var rects = rows.map(function (r) { return r.getBoundingClientRect(); });
+      var from = rows.indexOf(row); if (from < 0) return;
+      D = { kind: row.classList.contains('ingrow') ? 'ings' : 'stps', rows: rows, rects: rects, from: from, to: from, y0: y, sy0: window.scrollY, h: rects[from].height + 8 };
+      rows.forEach(function (r) { r.classList.add('dragsib'); }); row.classList.add('dragging');
+      try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
+    }
+    function move(y) {
+      if (!D) return;
+      var dy = y - D.y0 + (window.scrollY - D.sy0), c = D.rects[D.from], mid = c.top + D.sy0 + c.height / 2 + dy, to = D.from;
+      for (var i = 0; i < D.rects.length; i++) { var m = D.rects[i].top + D.sy0 + D.rects[i].height / 2; if (i < D.from && mid < m) to = Math.min(to, i); if (i > D.from && mid > m) to = Math.max(to, i); }
+      D.to = to;
+      D.rows.forEach(function (r, i) {
+        if (i === D.from) { r.style.transform = 'translateY(' + dy + 'px)'; return; }
+        var sh = 0; if (D.from < D.to && i > D.from && i <= D.to) sh = -D.h; if (D.from > D.to && i < D.from && i >= D.to) sh = D.h;
+        r.style.transform = sh ? 'translateY(' + sh + 'px)' : '';
+      });
+      var vh = window.innerHeight; if (y < 80) window.scrollBy(0, -10); else if (y > vh - 80) window.scrollBy(0, 10);
+    }
+    function end() {
+      clearTimeout(timer); timer = null; p0 = null;
+      if (!D) return; var d = D; D = null;
+      d.rows.forEach(function (r) { r.style.transform = ''; r.classList.remove('dragging', 'dragsib'); });
+      if (d.to !== d.from) { var dd = state.draft, arr = dd[d.kind], it = arr.splice(d.from, 1)[0]; arr.splice(d.to, 0, it); render(); }
+    }
+    function down(e, x, y) {
+      var t = e.target; if (!t.closest) return; var row = t.closest('#ingbox .ingrow, #stepbox .steprow'); if (!row) return;
+      if (t.closest('button') || t === document.activeElement) return;
+      p0 = { x: x, y: y, row: row };
+      clearTimeout(timer); timer = setTimeout(function () { if (p0) begin(p0.row, p0.y); }, 450);
+    }
+    document.addEventListener('touchstart', function (e) { var t = e.touches[0]; down(e, t.clientX, t.clientY); }, { passive: true });
+    document.addEventListener('touchmove', function (e) {
+      var t = e.touches[0];
+      if (D) { e.preventDefault(); move(t.clientY); return; }
+      if (p0 && (Math.abs(t.clientX - p0.x) > 8 || Math.abs(t.clientY - p0.y) > 8)) { clearTimeout(timer); p0 = null; }
+    }, { passive: false });
+    document.addEventListener('touchend', end); document.addEventListener('touchcancel', end);
+    document.addEventListener('mousedown', function (e) { if (e.button === 0) down(e, e.clientX, e.clientY); });
+    document.addEventListener('mousemove', function (e) { if (D) { move(e.clientY); return; } if (p0 && (Math.abs(e.clientX - p0.x) > 8 || Math.abs(e.clientY - p0.y) > 8)) { clearTimeout(timer); p0 = null; } });
+    document.addEventListener('mouseup', end);
+    document.addEventListener('contextmenu', function (e) { if (D || p0) e.preventDefault(); });
+    document.addEventListener('click', function (e) {
+      var el = e.target.closest && e.target.closest('[data-act="stepmic"]'); if (!el) return;
+      var SR = window.SpeechRecognition || window.webkitSpeechRecognition, inp = document.querySelectorAll('.in-s')[parseInt(el.getAttribute('data-i'), 10)];
+      if (SRNOW) { try { SRNOW.stop(); } catch (x) {} return; }
+      if (!SR) { toast('Il microfono non è disponibile qui: usa quello della tastiera'); if (inp) inp.focus(); return; }
+      var r = new SR(); r.lang = 'it-IT'; r.interimResults = true; r.continuous = false; SRNOW = r; var base = inp.value.trim();
+      el.classList.add('rec');
+      r.onresult = function (ev) { var t = ''; for (var k = 0; k < ev.results.length; k++) t += ev.results[k][0].transcript; t = t.trim(); if (t) t = t.charAt(0).toUpperCase() + t.slice(1); inp.value = ((base ? base + ' ' : '') + t).slice(0, 160); };
+      r.onerror = function (ev) { toast(/not-allowed|service-not-allowed/.test(ev.error) ? 'Microfono bloccato: consenti l\'accesso nelle impostazioni' : ev.error === 'no-speech' ? 'Non ho sentito nulla: riprova' : 'Riconoscimento non riuscito'); };
+      r.onend = function () { SRNOW = null; el.classList.remove('rec'); };
+      try { r.start(); toast('Ti ascolto…'); } catch (x) { SRNOW = null; el.classList.remove('rec'); }
+    });
+  })();
   function profMenu() {
     var rows = [
       ['mypro', isPro() ? 'I miei clienti' : 'Il mio nutrizionista', isPro() ? (state.profile.pro_verified ? (state.clients.filter(function (c) { return c.status === 'active'; }).length + ' attivi') : 'In verifica') : (state.pro ? state.pro.name + ' · collegato' : 'Nessuno')],
@@ -4178,8 +4245,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 56; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611061730';
+  var VERSION = 57; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611071930';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
