@@ -284,7 +284,15 @@ textarea { min-height: 112px; resize: vertical; }
 .prodcard .hint { margin: 0; }
 .rm { width: 40px; height: 40px; border-radius: 10px; background: var(--soft); display: grid; place-items: center; color: var(--muted); }
 .rm svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
-.steprow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 40px 40px; gap: 8px; align-items: center; }
+.steprow { display: grid; grid-template-columns: 28px minmax(0, 1fr) 40px 40px auto; gap: 8px; align-items: center; }
+.steprow:not(:has(.sec)) { grid-template-columns: 28px minmax(0, 1fr) 40px 40px; }
+.rm.sec { flex: none; }
+.rm.sec svg { fill: none; stroke: currentColor; stroke-width: 1.8; }
+.rm.sec[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+.seclocked { color: var(--muted); font-style: italic; }
+.seclocked svg, .seclab svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; vertical-align: -2px; margin-right: 4px; }
+.secbox { border: 1.5px dashed var(--accent); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.secbox b { display: block; }
 .rm.mic.rec { background: var(--accent); color: #fff; }
 .dragging { position: relative; z-index: 20; box-shadow: 0 10px 28px rgba(0,0,0,.22); transition: none !important; opacity: .97; }
 .dragsib { transition: transform .15s ease; }
@@ -541,6 +549,7 @@ body.inchat nav.tabs { display: none !important; }
 <script>
 (function () {
   var ICONS = {
+    lock: '<svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
     search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
     home: '<svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>',
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -754,27 +763,30 @@ body.inchat nav.tabs { display: none !important; }
     var d = state.draft = state.draft || {};
     if (!d.ings) d.ings = [{ n: '', q: '', u: 'g' }, { n: '', q: '', u: 'g' }];
     if (!d.stps) d.stps = ['', ''];
+    if (!d.ssec || d.ssec.length !== d.stps.length) d.ssec = d.stps.map(function (_, i) { return !!(d.ssec && d.ssec[i]); });
     return d;
   }
   function ingBox(d) {
     var rows = d.ings.map(function (r, i) {
       return '<div class="ingrow" data-oi="' + i + '"><div class="namewrap"><input type="text" class="in-n" list="ingl" placeholder="Ingrediente (es. Farina 00)" maxlength="40" aria-label="Ingrediente ' + (i + 1) + '" value="' + esc(r.n) + '">' +
-        '<button type="button" class="rm scan" data-act="scan" data-i="' + i + '" aria-label="Scansiona codice a barre">' + ICONS.barcode + '</button></div>' +
+        '<button type="button" class="rm scan" data-act="scan" data-i="' + i + '" aria-label="Scansiona codice a barre">' + ICONS.barcode + '</button>' +
+        (liveMode() ? '<button type="button" class="rm sec" data-act="togsec" data-k="ings" data-i="' + i + '" aria-pressed="' + !!r.sec + '" aria-label="' + (r.sec ? 'Ingrediente segreto: tocca per renderlo pubblico' : 'Rendi segreto questo ingrediente') + '">' + ICONS.lock + '</button>' : '') + '</div>' +
         (r.prod ? '<div class="prodline">' + esc(r.prod.brand) + ' · ' + r.prod.kc + ' kcal per 100 g (dati di esempio)</div>' : '') +
         '<input type="number" class="in-q" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità" value="' + esc(r.q) + '">' +
         '<select class="in-u" aria-label="Unità">' + UNITS.map(function (u) { return '<option value="' + u[0] + '"' + (r.u === u[0] ? ' selected' : '') + '>' + u[1] + '</option>'; }).join('') + '</select>' +
         '<button type="button" class="rm" data-act="rming" data-i="' + i + '" aria-label="Rimuovi ingrediente"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
     }).join('');
-    return '<span>Ingredienti</span><small>Scrivi il nome (o scegli dai suggerimenti), poi quantità e unità. Tieni premuta una riga per spostarla.</small>' + rows +
+    return '<span>Ingredienti</span><small>Scrivi il nome (o scegli dai suggerimenti), poi quantità e unità. Tieni premuta una riga per spostarla.' + (liveMode() ? ' Il lucchetto nasconde fino a 2 ingredienti: li vede solo chi ti chiede il permesso e tu accetti.' : '') + '</small>' + rows +
       '<button type="button" class="btn ghost" data-act="adding">Aggiungi ingrediente</button><datalist id="ingl">' + COMMON.map(function (c) { return '<option value="' + c + '">'; }).join('') + '</datalist>';
   }
   function stepBox(d) {
     var rows = d.stps.map(function (s, i) {
       return '<div class="steprow" data-oi="' + i + '"><span class="n">' + (i + 1) + '</span><input type="text" class="in-s" maxlength="160" placeholder="Una frase breve, es. Cuoci per 20 minuti" aria-label="Passaggio ' + (i + 1) + '" value="' + esc(s) + '">' +
         '<button type="button" class="rm mic" data-act="stepmic" data-i="' + i + '" aria-label="Detta il passaggio ' + (i + 1) + '"><i class="micic" style="margin:0" aria-hidden="true"></i></button>' +
+        (liveMode() ? '<button type="button" class="rm sec" data-act="togsec" data-k="stps" data-i="' + i + '" aria-pressed="' + !!d.ssec[i] + '" aria-label="' + (d.ssec[i] ? 'Passaggio segreto: tocca per renderlo pubblico' : 'Rendi segreto questo passaggio') + '">' + ICONS.lock + '</button>' : '') +
         '<button type="button" class="rm" data-act="rmstep" data-i="' + i + '" aria-label="Rimuovi passaggio"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
     }).join('');
-    return '<span>Procedimento</span><small>Un passaggio alla volta, in frasi brevi. Tocca il microfono per dettarlo, tieni premuto per spostarlo.</small>' + rows + '<button type="button" class="btn ghost" data-act="addstep">Aggiungi passaggio</button>';
+    return '<span>Procedimento</span><small>Un passaggio alla volta, in frasi brevi. Tocca il microfono per dettarlo, tieni premuto per spostarlo.' + (liveMode() ? ' Il lucchetto nasconde fino a 2 passaggi, sbloccabili solo da te.' : '') + '</small>' + rows + '<button type="button" class="btn ghost" data-act="addstep">Aggiungi passaggio</button>';
   }
   function viewNew() {
     var d = ensureDraft();
@@ -1356,10 +1368,10 @@ body.inchat nav.tabs { display: none !important; }
   }
   function nutriKcal(p) {
     var n = nutri(p);
-    return n.any && !n.miss.length ? Math.round(n.t.kcal / p.serv / 5) * 5 : 0;
+    return n.any && !n.miss.length && !p.lockI ? Math.round(n.t.kcal / p.serv / 5) * 5 : 0;
   }
   function nutriHTML(p) {
-    var n = nutri(p); if (!n.any || (p.hideN && !p.mine)) return '';
+    var n = nutri(p); if (!n.any || (p.hideN && !p.mine) || p.lockI) return '';
     var s = p.serv, t = n.t;
     return '<section><h3>Valori nutrizionali <small style="font-family:var(--f-body);font-weight:400;color:var(--muted);font-size:13px">stima per porzione</small></h3>' +
       '<div class="nutri"><div class="kc"><b>' + Math.round(t.kcal / s / 5) * 5 + '</b><span>kcal</span></div>' +
@@ -1427,7 +1439,15 @@ body.inchat nav.tabs { display: none !important; }
   }
   function ingItems(p, serv) {
     var f = serv / p.serv;
-    return p.ing.map(function (i) { return '<li><span>' + esc(i.n) + (i.prod ? '<small class="brand">' + esc(i.prod.brand) + '</small>' : '') + '</span><span>' + esc(ingText(i, f)) + '</span></li>'; }).join('');
+    return p.ing.map(function (i) { return '<li><span>' + (i.sec ? '<span class="seclab">' + ICONS.lock + '</span>' : '') + esc(i.n) + (i.prod ? '<small class="brand">' + esc(i.prod.brand) + '</small>' : '') + '</span><span>' + esc(ingText(i, f)) + '</span></li>'; }).join('') + (p.lockI ? '<li class="seclocked"><span><span class="seclab">' + ICONS.lock + '</span>' + p.lockI + (p.lockI === 1 ? ' ingrediente segreto' : ' ingredienti segreti') + '</span></li>' : '');
+  }
+  function secBoxHTML(p) {
+    if (!p.hasSec) return '';
+    if (p.mine) return '<p class="hint" style="margin:0"><span class="seclab">' + ICONS.lock + '</span>Hai nascosto dei segreti: li vedi solo tu e chi accetti dalle notifiche.</p>';
+    var n = p.lockI + p.lockS; if (!n) return '<p class="hint" style="margin:0"><span class="seclab">' + ICONS.lock + '</span>L\'autore ti ha sbloccato i segreti di questa ricetta.</p>';
+    var st = p.secReq;
+    return '<div class="secbox"><div><b>Questa ricetta ha dei segreti</b><span class="hint">' + (p.lockI ? p.lockI + (p.lockI === 1 ? ' ingrediente' : ' ingredienti') : '') + (p.lockI && p.lockS ? ' e ' : '') + (p.lockS ? p.lockS + (p.lockS === 1 ? ' passaggio' : ' passaggi') : '') + ' che l\'autore mostra solo a chi lo chiede e viene accettato.</span></div>' +
+      (st ? '<button class="btn ghost" data-act="secreq" data-id="' + p.id + '"' + (st === 'pending' ? '' : ' disabled') + '>Richiesto</button>' : '<button class="btn" data-act="secreq" data-id="' + p.id + '">Chiedi di vederli</button>') + '</div>';
   }
   function servBox(p) {
     return '<div class="servbox"><span class="sl">Porzioni</span><div class="stepper">' +
@@ -1453,8 +1473,9 @@ body.inchat nav.tabs { display: none !important; }
       '<button class="ic save" data-act="save" data-id="' + p.id + '" aria-pressed="' + saved + '" aria-label="Salva ricetta">' + ICONS.save + '</button><span class="sp"></span>';
   }
   function refreshSheetActs() { var p = byId(state.sheetId), el = document.getElementById('sheetacts'); if (p && el) el.innerHTML = sheetActsHTML(p); }
-  function openSheet(id) {
+  function openSheet(id, keep) {
     var p = byId(id); if (!p) return;
+    var oldTop = keep ? (document.querySelector('#layer .sheet') || {}).scrollTop : 0;
     if (state.sheetId !== p.id) { state.sheetId = p.id; state.sheetServ = p.serv; }
     var layer = document.getElementById('layer');
     layer.innerHTML = '<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(p.title) + '" data-stop="1">' +
@@ -1465,9 +1486,10 @@ body.inchat nav.tabs { display: none !important; }
       (p.priv ? (p.from && p.from.note ? '<div class="note" style="margin:0"><b>Nota del nutrizionista</b><br>' + esc(p.from.note) + '</div>' : '') : '') +
       warnHTML(p) +
       '<button class="btn" data-act="cook" data-id="' + p.id + '">Modalità cucina</button>' +
+      (p.priv ? '' : secBoxHTML(p)) +
       '<section><h3>Ingredienti</h3>' + servBox(p) + '<ul class="ing" id="inglist">' + ingItems(p, state.sheetServ) + '</ul><p class="hint" id="scalehint"></p></section>' +
       nutriHTML(p) + allergenHTML(p) +
-      '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></section>' +
+      '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s, i) { var k = p.stSec && p.stSec[i]; return '<li' + (k === 2 ? ' class="seclocked"' : '') + '>' + (k ? '<span class="seclab">' + ICONS.lock + '</span>' : '') + esc(s) + '</li>'; }).join('') + '</ol></section>' +
       (p.priv ? '' : '<section class="cmsec" id="cmsec"><h3 id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</h3><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
       '<form class="cmf2" id="cmf" data-id="' + p.id + '">' + avHTML(state.profile && state.profile.avatar_url, (state.profile && state.profile.display_name) || 'Tu') + '<input type="text" id="cmi" placeholder="Aggiungi un commento…" aria-label="Commento" maxlength="200" autocomplete="off"><button class="cpost" type="submit">Pubblica</button></form></section>') +
       (p.priv ? '' : '<button class="btn ghost" data-act="share" data-id="' + p.id + '">Invia in chat</button>') +
@@ -1477,7 +1499,16 @@ body.inchat nav.tabs { display: none !important; }
       (p.mine ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
       (p.mine && p.real && !p.priv ? '<button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina il piatto</button>' : '') +
       (!p.mine && p.real && !p.priv && liveMode() ? '<button class="reset" data-act="reportrec" data-id="' + p.id + '" style="color:var(--muted);align-self:center;padding:8px">Segnala questo piatto</button>' : '') + '</div></div>';
-    if (p.real && !p.priv && liveMode()) loadComments(p);
+    if (oldTop) { var shn = document.querySelector('#layer .sheet'); if (shn) shn.scrollTop = oldTop; }
+    if (p.real && !p.priv && liveMode() && !keep) { loadComments(p); if (p.hasSec) loadSecrets(p); }
+  }
+  function loadSecrets(p) {
+    var q1 = sb.from('recipe_secrets').select('kind,idx,content').eq('recipe_id', p.dbId), q2 = p.mine ? Promise.resolve({ data: null }) : sb.from('secret_requests').select('id,status').eq('recipe_id', p.dbId).eq('requester_id', state.user.id).maybeSingle();
+    Promise.all([q1, q2]).then(function (a) {
+      var sd = {}; ((a[0] && a[0].data) || []).forEach(function (x) { sd[x.kind + x.idx] = x.content; });
+      p.secData = sd; var rq = a[1] && a[1].data; p.secReq = rq ? rq.status : null; p.secReqId = rq ? rq.id : null; secApply(p);
+      if (state.sheetId === p.id) openSheet(p.id, true);
+    });
   }
   function closeSheet() { document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
 
@@ -1522,21 +1553,29 @@ body.inchat nav.tabs { display: none !important; }
       if (!d.media) { toast('Aggiungi una foto o un video'); return; }
       var ing = d.ings.filter(function (r) { return r.n.trim(); }).map(function (r) {
         var q = parseFloat(String(r.q).replace(',', '.'));
-        return { n: r.n.trim(), q: q > 0 ? q : null, u: r.u, prod: r.prod || null };
+        return { n: r.n.trim(), q: q > 0 ? q : null, u: r.u, prod: r.prod || null, sec: !!r.sec && liveMode() };
       });
-      var steps = d.stps.map(function (s) { return s.trim(); }).filter(Boolean);
+      var stRows = d.stps.map(function (s, i) { return { t: s.trim(), sec: !!d.ssec[i] && liveMode() }; }).filter(function (x) { return x.t; });
+      var steps = stRows.map(function (x) { return x.t; });
+      var secRows = [];
+      var ingPub = ing.map(function (r, i) { if (!r.sec) return { n: r.n, q: r.q, u: r.u, prod: r.prod }; secRows.push({ kind: 'ing', idx: i, content: { n: r.n, q: r.q, u: r.u } }); return { secret: 1 }; });
+      var stepPub = stRows.map(function (x, i) { if (!x.sec) return x.t; secRows.push({ kind: 'step', idx: i, content: x.t }); return STEP_SECRET; });
       if (!ing.length) { toast('Aggiungi almeno un ingrediente'); return; }
       if (!steps.length) { toast('Aggiungi almeno un passaggio'); return; }
       if (sb && !liveMode()) { toast('Accedi o registrati per pubblicare: così gli altri vedono il tuo piatto'); return; }
       if (liveMode()) {
         var pb = document.querySelector('#newform button[type=submit]'); if (pb) { pb.disabled = true; pb.textContent = 'Pubblico…'; }
         var rowBase = { author_id: state.user.id, title: d.title.trim(), tag: d.tag || 'Altro', time_min: Math.max(1, parseInt(d.time, 10) || 30), serv: Math.min(50, Math.max(1, parseInt(d.serv, 10) || 2)),
-          media_type: d.media.type, ingredients: ing, steps: steps, hide_nutrition: d.showN === false,
+          media_type: d.media.type, ingredients: ingPub, steps: stepPub, hide_nutrition: d.showN === false,
           from_recipe_id: d.from && d.from.id >= RB ? d.from.id - RB : null, from_info: d.from ? { name: d.from.name, title: d.from.title } : null };
         if (d.menuId) { rowBase.menu_id = d.menuId; rowBase.menu_name = (d.menuName || '').trim() || null; rowBase.menu_pos = d.menuPos || 0; }
         uploadMedia(d).then(function (up) {
           rowBase.media_url = up.url;
-          return sb.from('recipes').insert(rowBase).select('id').single().then(function (r) { if (r.error) { sb.storage.from('media').remove([up.path]); throw r.error; } });
+          return sb.from('recipes').insert(rowBase).select('id').single().then(function (r) {
+            if (r.error) { sb.storage.from('media').remove([up.path]); throw r.error; }
+            if (!secRows.length) return;
+            return sb.from('recipe_secrets').insert(secRows.map(function (x) { return { recipe_id: r.data.id, kind: x.kind, idx: x.idx, content: x.content }; })).then(function (q) { if (q.error) toast('Piatto pubblicato, ma i segreti non sono stati salvati'); });
+          });
         }).then(function () {
           if (more) { state.draft = { menuId: d.menuId, menuName: d.menuName, menuPos: (d.menuPos || 0) + 1 }; state.filter = 'Tutti'; state.q = ''; loadFeed(); return 'more'; }
           state.draft = null; state.tab = 'home'; state.filter = 'Tutti'; state.q = ''; return loadFeed();
@@ -1563,11 +1602,11 @@ body.inchat nav.tabs { display: none !important; }
       var old = d.ings;
       d.ings = Array.prototype.map.call(rows, function (r, k) {
         var n = r.querySelector('.in-n').value, pr = old[k] && old[k].prod;
-        return { n: n, q: r.querySelector('.in-q').value, u: r.querySelector('.in-u').value, prod: pr && pr.label === n ? pr : null };
+        return { n: n, q: r.querySelector('.in-q').value, u: r.querySelector('.in-u').value, prod: pr && pr.label === n ? pr : null, sec: !!(old[k] && old[k].sec) };
       });
     }
     var st = document.querySelectorAll('.in-s');
-    if (st.length) d.stps = Array.prototype.map.call(st, function (e) { return e.value; });
+    if (st.length) { d.stps = Array.prototype.map.call(st, function (e) { return e.value; }); ensureDraft(); }
   }
 
   /* ---------- Estensioni: preferenze, dispensa, ricerca, cucina, cartelle, obiettivi, ristoranti ---------- */
@@ -1615,7 +1654,7 @@ body.inchat nav.tabs { display: none !important; }
     var f = flagsOf(p), mine = ctxAllergens(), keys = FLAGS.map(function (x) { return x[0]; }).filter(function (k) { return f[k]; });
     var veg = !f.carne && !f.pesce && !f['crostacei e molluschi'], vegan = veg && !f.latticini && !f.uova && !f.miele;
     return '<section><h3>Allergeni e dieta</h3><p style="margin:0 0 6px">' + (keys.length ? 'Contiene: ' + keys.map(function (k) { return mine.indexOf(k) > -1 ? '<b class="warnt">' + k + '</b>' : k; }).join(', ') + '.' : 'Nessun allergene comune tra gli ingredienti.') + '</p>' +
-      '<p class="hint" style="margin:0">' + (vegan ? 'Adatta a vegani. ' : veg ? 'Adatta a vegetariani. ' : '') + 'Stima dagli ingredienti: controlla sempre le etichette dei prodotti.</p></section>';
+      '<p class="hint" style="margin:0">' + (vegan ? 'Adatta a vegani. ' : veg ? 'Adatta a vegetariani. ' : '') + 'Stima dagli ingredienti: controlla sempre le etichette dei prodotti.' + (p.lockI ? ' <b>Ci sono ingredienti segreti che non posso considerare: allergeni e valori potrebbero essere incompleti.</b>' : '') + '</p></section>';
   }
 
   /* Dispensa */
@@ -2237,7 +2276,7 @@ body.inchat nav.tabs { display: none !important; }
     if (/rate limit|too many/i.test(m)) return 'Troppi tentativi: riprova tra qualche minuto.';
     return 'Operazione non riuscita. Riprova.';
   }
-  var LEGAL_VER = '2026-11-06', AUD = {};
+  var LEGAL_VER = '2026-11-07', AUD = {};
   function viewAuth() {
     if (state.recovery) {
       return '<div class="view-h" style="margin-top:18px"><h1>Nuova password</h1><p>Scegli la nuova password per il tuo account.</p></div><form class="new" id="newpwform" novalidate>' +
@@ -2516,8 +2555,8 @@ body.inchat nav.tabs { display: none !important; }
   function adaptStart(src, mode) {
     var known = UNITS.map(function (u) { return u[0]; });
     state.pad = { src: src, mode: mode || 'plan', slot: state.pcmp && state.pcmp.slot, edit: src.priv ? src : null,
-      title: src.priv ? src.title : (src.title + ' (adattato)').slice(0, 80), serv: String(src.serv), note: src.priv && src.from && src.from.note ? src.from.note : '', stps: src.steps.join('\n'),
-      ings: src.ing.map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null }; }) };
+      title: src.priv ? src.title : (src.title + ' (adattato)').slice(0, 80), serv: String(src.serv), note: src.priv && src.from && src.from.note ? src.from.note : '', stps: pubSteps(src).join('\n'),
+      ings: pubIng(src).map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null }; }) };
     openAdapt();
   }
   function padKeep() {
@@ -2784,7 +2823,7 @@ body.inchat nav.tabs { display: none !important; }
   var NTXT = {
     follow: 'ha iniziato a seguirti', follow_request: 'ha chiesto di seguirti', follow_accepted: 'ha accettato la tua richiesta',
     like: 'ha messo mi piace a un tuo piatto', story_like: 'ha messo mi piace alla tua storia', comment_like: 'ha messo mi piace al tuo commento', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
-    plan: 'ti ha inviato un nuovo piano', admin_warning: 'ti ha inviato un avviso'
+    plan: 'ti ha inviato un nuovo piano', admin_warning: 'ti ha inviato un avviso', secret_request: 'vuole vedere i segreti di', secret_accepted: 'ti ha sbloccato i segreti di'
   };
   function avHTML(url, nm) { return '<div class="av">' + (url ? '<img src="' + esc(url) + '" alt="" loading="lazy">' : esc(((nm || '?')[0] || '?').toUpperCase())) + '</div>'; }
   function ago(iso) {
@@ -2825,10 +2864,12 @@ body.inchat nav.tabs { display: none !important; }
       var nm = nActor(n), isNew = !!state.notifNew[n.id], h = 'u:' + n.actor_id, acts = '';
       if (n.type === 'follow_request') {
         acts = state.reqs.indexOf(n.actor_id) > -1 ? '<div class="nact"><button class="follow" data-act="reqok" data-u="' + esc(n.actor_id) + '">Accetta</button><button class="reset" data-act="reqno" data-u="' + esc(n.actor_id) + '" style="color:var(--muted)">Rifiuta</button></div>' : '';
+      } else if (n.type === 'secret_request' && n.ref && n.ref.request_id) {
+        acts = '<div class="nact"><button class="follow" data-act="sreqok" data-rid="' + n.ref.request_id + '">Accetta</button><button class="reset" data-act="sreqno" data-rid="' + n.ref.request_id + '" style="color:var(--muted)">Rifiuta</button></div>';
       } else if (n.type === 'follow' && state.realP[n.actor_id]) {
         acts = '<div class="nact">' + followBtn(h) + '</div>';
       }
-      var text = '<b>' + esc(nm) + '</b> ' + (NTXT[n.type] || '');
+      var text = '<b>' + esc(nm) + '</b> ' + (NTXT[n.type] || '') + (n.type.indexOf('secret_') === 0 && n.ref && n.ref.title ? ' «' + esc(n.ref.title) + '»' : '');
       return '<div class="nrow' + (isNew ? ' new' : '') + '"><button class="ntap" data-act="notiftap" data-i="' + i + '">' + avHTML((state.realP[n.actor_id] || {}).avatar_url, nm) + '<span style="display:flex;flex-direction:column;gap:2px;color:var(--fg);font-size:14px;min-width:0">' + text + '<span style="font-size:12px;color:var(--muted)">' + ago(n.created_at) + '</span></span></button>' + acts + '</div>';
     }).join('') + '</div>';
   }
@@ -2839,7 +2880,7 @@ body.inchat nav.tabs { display: none !important; }
       sheetOpen('Avviso da Frog’s', 'Avviso da Frog’s', (rf.reason ? '<div class="meta"><span>' + esc(rf.reason) + '</span></div>' : '') + '<p style="margin:0;white-space:pre-wrap">' + esc(rf.body || '') + '</p><p class="hint" style="margin:0">È un messaggio dell\'amministrazione di Frog’s, a senso unico. Per i dettagli leggi i <a href="termini.html" target="_blank" rel="noopener">Termini</a>.</p><button class="btn" data-act="close">Ho capito</button>');
       return;
     }
-    if ((t === 'like' || t === 'comment' || t === 'comment_like') && n.ref && n.ref.recipe_id) {
+    if ((t === 'like' || t === 'comment' || t === 'comment_like' || t === 'secret_request' || t === 'secret_accepted') && n.ref && n.ref.recipe_id) {
       var rpid = RB + n.ref.recipe_id;
       if (byId(rpid)) { openSheet(rpid); return; }
       loadFeed().then(function () { if (byId(rpid)) openSheet(rpid); else toast('Il piatto non è più disponibile'); });
@@ -3211,15 +3252,25 @@ body.inchat nav.tabs { display: none !important; }
   function fromTxt(f) { return f ? (f.name || ('@' + f.handle)) : ''; }
   function pathOf(url) { var m = /\/object\/public\/media\/(.+)$/.exec(url || ''); return m ? decodeURIComponent(m[1]) : null; }
   function uuid4() { return window.crypto && crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(16).slice(2); }
+  var STEP_SECRET = '[[segreto]]';
+  function pubIng(p) { return p.ing.filter(function (i) { return !i.sec; }); }
+  function pubSteps(p) { return p.steps.filter(function (t, i) { return !(p.stSec && p.stSec[i]); }); }
+  function secApply(p) {
+    var sd = p.secData || {}, li = 0, ls = 0;
+    p.ing = []; p.rawIng.forEach(function (x, i) { if (x && x.secret) { var c = sd['ing' + i]; if (c) { var o = Object.assign({}, c); o.sec = 1; p.ing.push(o); } else li++; } else p.ing.push(x); });
+    p.stSec = []; p.steps = p.rawStp.map(function (t, i) { if (t === STEP_SECRET) { var c = sd['step' + i]; if (c != null) { p.stSec[i] = 1; return String(c); } ls++; p.stSec[i] = 2; return 'Passaggio segreto: l\'autore lo condivide su richiesta'; } return t; });
+    p.lockI = li; p.lockS = ls; delete p._n;
+  }
   function mapRecipe(r) {
     var a = r.author || {}; if (a.id) state.realP[a.id] = a;
     var me = liveMode() && r.author_id === state.user.id;
     var nl = r.likes && r.likes[0] ? r.likes[0].count : 0, nc = r.comments && r.comments[0] ? r.comments[0].count : 0;
-    return { id: RB + r.id, dbId: r.id, real: true, authorId: r.author_id, user: a.display_name || (a.handle ? '@' + a.handle : 'Utente'), handle: 'u:' + r.author_id,
+    var o = { id: RB + r.id, dbId: r.id, real: true, authorId: r.author_id, user: a.display_name || (a.handle ? '@' + a.handle : 'Utente'), handle: 'u:' + r.author_id,
       avatar: a.avatar_url || null, menuId: r.menu_id || null, menuName: r.menu_name || '', menuPos: r.menu_pos || 0, hd: a.handle ? '@' + a.handle : '', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
       title: r.title, tag: r.tag, time: r.time_min, serv: r.serv, media: { type: r.media_type === 'video' ? 'video' : 'image', src: r.media_url || plate(['#A9B8B2', '#8FB86B', '#F4E7C5', '#C8472B'], r.id % 97) }, mediaPath: pathOf(r.media_url), priv: !!r.for_link_id, linkId: r.for_link_id || null,
-      ing: Array.isArray(r.ingredients) ? r.ingredients : [], steps: Array.isArray(r.steps) ? r.steps : [], hideN: !!r.hide_nutrition,
+      rawIng: Array.isArray(r.ingredients) ? r.ingredients : [], rawStp: Array.isArray(r.steps) ? r.steps : [], hideN: !!r.hide_nutrition,
       from: r.from_info || null, likes: nl, ccount: nc, comments: [], mine: me };
+    o.hasSec = o.rawIng.some(function (x) { return x && x.secret; }) || o.rawStp.indexOf(STEP_SECRET) > -1; secApply(o); return o;
   }
   function rebuildPosts(real) {
     var keep = posts.filter(function (p) { return !p.real && !p.sample; });
@@ -3530,6 +3581,18 @@ body.inchat nav.tabs { display: none !important; }
   }
 
   function extraClick(act, el, id) {
+    if (act === 'secreq') {
+      var sp = byId(id); if (!sp) return true; if (!liveMode()) { toast('Accedi per chiedere i segreti'); return true; }
+      if (sp.secReq === 'pending') { sb.from('secret_requests').delete().eq('id', sp.secReqId).then(function (r) { if (r.error) { toast('Non riuscito'); return; } sp.secReq = null; sp.secReqId = null; openSheet(sp.id, true); toast('Richiesta annullata'); }); return true; }
+      if (sp.secReq) return true;
+      sb.from('secret_requests').insert({ recipe_id: sp.dbId, requester_id: state.user.id }).select('id,status').single().then(function (r) { if (r.error) { toast('Richiesta non inviata'); return; } sp.secReq = 'pending'; sp.secReqId = r.data.id; openSheet(sp.id, true); toast('Richiesta inviata'); });
+      return true;
+    }
+    if (act === 'sreqok' || act === 'sreqno') {
+      var srid = parseInt(el.getAttribute('data-rid'), 10);
+      sb.from('secret_requests').update({ status: act === 'sreqok' ? 'accepted' : 'declined' }).eq('id', srid).then(function (r) { if (r.error) { toast('Operazione non riuscita'); return; } toast(act === 'sreqok' ? 'Segreti sbloccati' : 'Richiesta rifiutata'); loadNotifs(); });
+      return true;
+    }
     if (act === 'cfocus') { var ci = document.getElementById('cmi'); if (ci) { var sec = document.getElementById('cmsec'); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'center' }); setTimeout(function () { ci.focus({ preventScroll: true }); }, 350); } return true; }
     if (act === 'creply') { var ci2 = document.getElementById('cmi'); if (ci2) { ci2.value = '@' + el.getAttribute('data-name') + ' '; ci2.focus(); } return true; }
     if (act === 'cdel') {
@@ -3763,7 +3826,7 @@ body.inchat nav.tabs { display: none !important; }
       var p = byId(id); if (!p) return true;
       var known = UNITS.map(function (u) { return u[0]; });
       state.draft = { title: p.title + ' (la mia versione)', time: String(p.time), serv: String(p.serv), tag: p.tag, media: p.real ? null : p.media, from: { id: p.id, name: hnd(p), title: p.title },
-        ings: p.ing.map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null }; }), stps: p.steps.slice() };
+        ings: pubIng(p).map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null }; }), stps: pubSteps(p) };
       closeSheet(); state.tab = 'new'; render(); window.scrollTo(0, 0); toast('Modifica ingredienti e passaggi, poi pubblica'); return true;
     }
     if (act === 'cook') { openCook(id); return true; }
@@ -3936,7 +3999,7 @@ body.inchat nav.tabs { display: none !important; }
       clearTimeout(timer); timer = null; p0 = null;
       if (!D) return; var d = D; D = null;
       d.rows.forEach(function (r) { r.style.transform = ''; r.classList.remove('dragging', 'dragsib'); });
-      if (d.to !== d.from) { var dd = state.draft, arr = dd[d.kind], it = arr.splice(d.from, 1)[0]; arr.splice(d.to, 0, it); render(); }
+      if (d.to !== d.from) { var dd = state.draft, arr = dd[d.kind], it = arr.splice(d.from, 1)[0]; arr.splice(d.to, 0, it); if (d.kind === 'stps') { var sx = dd.ssec.splice(d.from, 1)[0]; dd.ssec.splice(d.to, 0, sx); } render(); }
     }
     function down(e, x, y) {
       var t = e.target; if (!t.closest) return; var row = t.closest('#ingbox .ingrow, #stepbox .steprow'); if (!row) return;
@@ -4126,12 +4189,19 @@ body.inchat nav.tabs { display: none !important; }
       state.sheetServ = Math.min(50, Math.max(1, nn)); updateScale();
     }
     else if (act === 'servreset') { var pp0 = byId(state.sheetId); if (pp0) { state.sheetServ = pp0.serv; updateScale(); } }
+    else if (act === 'togsec') {
+      keepFields(); var tk = el.getAttribute('data-k'), ti = parseInt(el.getAttribute('data-i'), 10), td = state.draft;
+      var cur = tk === 'ings' ? !!td.ings[ti].sec : !!td.ssec[ti], cnt = tk === 'ings' ? td.ings.filter(function (x) { return x.sec; }).length : td.ssec.filter(Boolean).length;
+      if (!cur && cnt >= 2) { toast(tk === 'ings' ? 'Puoi nascondere al massimo 2 ingredienti' : 'Puoi nascondere al massimo 2 passaggi'); return; }
+      if (tk === 'ings') td.ings[ti].sec = !cur; else td.ssec[ti] = !cur;
+      render();
+    }
     else if (act === 'adding' || act === 'rming' || act === 'addstep' || act === 'rmstep') {
       keepFields(); var dd = state.draft, ix = parseInt(el.getAttribute('data-i'), 10);
       if (act === 'adding') dd.ings.push({ n: '', q: '', u: 'g' });
       if (act === 'rming' && dd.ings.length > 1) dd.ings.splice(ix, 1);
-      if (act === 'addstep') dd.stps.push('');
-      if (act === 'rmstep' && dd.stps.length > 1) dd.stps.splice(ix, 1);
+      if (act === 'addstep') { dd.stps.push(''); dd.ssec.push(false); }
+      if (act === 'rmstep' && dd.stps.length > 1) { dd.stps.splice(ix, 1); dd.ssec.splice(ix, 1); }
       render();
       if (act === 'adding') { var a = document.querySelectorAll('.in-n'); a[a.length - 1].focus(); }
       if (act === 'addstep') { var b = document.querySelectorAll('.in-s'); b[b.length - 1].focus(); }
@@ -4317,8 +4387,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 59; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611072010';
+  var VERSION = 60; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611072100';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}

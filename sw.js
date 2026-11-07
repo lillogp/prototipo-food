@@ -6,7 +6,7 @@ self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (x) { d = { title: 'Frog’s', body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.registration.showNotification(d.title || 'Frog’s', {
-    body: d.body || '', tag: d.tag || undefined, icon: 'icon-192.png', badge: 'icon-192.png', data: { url: d.url || './index.html' }
+    body: d.body || '', tag: d.tag || undefined, icon: d.icon || 'icon-192.png', badge: d.badge || 'badge-96.png', data: { url: d.url || './index.html' }
   }));
 });
 self.addEventListener('notificationclick', function (e) {

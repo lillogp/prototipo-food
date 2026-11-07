@@ -186,3 +186,5 @@ create policy "leggo i messaggi del mio collegamento" on public.messages for sel
 create policy "scrivo nel mio collegamento attivo" on public.messages for insert to authenticated
   with check ((select auth.uid()) = sender_id
     and exists (select 1 from public.client_links l where l.id = link_id and l.status = 'active' and (select auth.uid()) in (l.pro_id, l.client_id)));
+
+-- Vedi anche supabase/028_segreti.sql (segreti nelle ricette: recipe_secrets, secret_requests).

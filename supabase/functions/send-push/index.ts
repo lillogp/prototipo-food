@@ -35,6 +35,8 @@ const NOTIF: Record<string, [string, string]> = {
   comment: ["comments", "ha commentato un tuo piatto"],
   client_joined: ["pro", "è ora tuo cliente"],
   plan: ["pro", "ti ha inviato un nuovo piano"],
+  secret_request: ["follows", "vuole vedere i segreti di una tua ricetta"],
+  secret_accepted: ["follows", "ti ha sbloccato i segreti di una ricetta"],
 };
 
 Deno.serve(async (req) => {
@@ -61,15 +63,16 @@ Deno.serve(async (req) => {
 
   const { data: prof } = await db.from("profiles").select("push_prefs").eq("id", to).maybeSingle();
   if (!prof || (prof.push_prefs && prof.push_prefs[cat] === false)) return json({ ok: true });
-  const { data: who } = await db.from("profiles").select("display_name,handle").eq("id", actor).maybeSingle();
+  const { data: who } = await db.from("profiles").select("display_name,handle,avatar_url").eq("id", actor).maybeSingle();
   const name = who?.display_name || (who?.handle ? "@" + who.handle : "Frog’s");
   const title = table === "dm_messages" ? name : "Frog’s";
   const body = table === "dm_messages" ? text : name + " " + text;
 
   const { data: subs } = await db.from("push_subscriptions").select("id,endpoint,p256dh,auth").eq("user_id", to);
   if (!subs || !subs.length) return json({ ok: true });
-  webpush.setVapidDetails("https://lillogp.github.io/prototipo-food/", m.vapid_public, m.vapid_private);
-  const payload = JSON.stringify({ title, body, tag, url });
+  webpush.setVapidDetails("https://frogsapp.com/", m.vapid_public, m.vapid_private);
+  const ORIGIN = "https://frogsapp.com/";
+  const payload = JSON.stringify({ title, body, tag, url, icon: who?.avatar_url || ORIGIN + "icon-192.png", badge: ORIGIN + "badge-96.png" });
   await Promise.all(subs.map(async (s: { id: number; endpoint: string; p256dh: string; auth: string }) => {
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, payload, { TTL: 86400 });
