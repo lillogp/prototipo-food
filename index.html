@@ -562,20 +562,46 @@ details.more[open] > summary::after { content: ' ▴'; }
   body.printing > *:not(#printroot) { display: none !important; }
   html, body.printing { background: #fff !important; background-image: none !important; }
   body.printing #printroot { display: block; }
-  .pdoc { break-after: page; color: #111; font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  .pdoc, .pcover, .pdoc *, .pcover * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pdoc { break-after: page; color: #1d2614; font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; min-height: 238mm; }
   .pdoc:last-child { break-after: auto; }
-  .pdoc h1 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 28px; line-height: 1.15; margin: 0 0 6px; color: #222B16; }
-  .pdoc .pmeta { color: #444; margin: 0 0 12px; font-size: 13px; }
-  .pdoc .pimg { display: block; width: 100%; max-height: 95mm; object-fit: cover; border-radius: 8px; margin: 0 0 14px; }
-  .pdoc .pcols { display: grid; grid-template-columns: 36% 1fr; gap: 22px; align-items: start; }
-  .pdoc h2 { font-size: 15px; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1.5px solid #45802A; color: #2F5A1B; }
+  .pdoc .ph { display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 3px solid #45802A; margin-bottom: 14px; }
+  .pdoc .ph .logo { font-size: 26px; color: #45802A; }
+  .pdoc .ph .phr { font-size: 12px; color: #626E50; letter-spacing: .02em; }
+  .pdoc .phero { position: relative; margin: 0 0 14px; }
+  .pdoc .pimg { display: block; width: 100%; height: 88mm; object-fit: cover; border-radius: 14px; }
+  .pdoc .ptag { position: absolute; left: 12px; bottom: 12px; background: #45802A; color: #fff; font-weight: 700; font-size: 12px; padding: 5px 14px; border-radius: 99px; letter-spacing: .03em; }
+  .pdoc .phero.noimg { display: none; }
+  .pdoc h1 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 10px; color: #222B16; }
+  .pdoc .ptagi { display: inline-block; background: #45802A; color: #fff; font-weight: 700; font-size: 12px; padding: 3px 12px; border-radius: 99px; margin: 0 0 8px; }
+  .pdoc .pchips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+  .pdoc .pchips span { display: inline-flex; align-items: center; gap: 6px; background: #EEF4DC; color: #2F5A1B; font-weight: 600; font-size: 12.5px; padding: 4px 12px; border-radius: 99px; }
+  .pdoc .pchips svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .pdoc .pcols { display: grid; grid-template-columns: 37% 1fr; gap: 20px; align-items: start; }
+  .pdoc .pcard { background: #F4F8E8; border: 1px solid #DDE8C2; border-radius: 12px; padding: 12px 14px; }
+  .pdoc h2 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 17px; margin: 0 0 8px; color: #2F5A1B; }
   .pdoc ul, .pdoc ol { list-style: none; margin: 0; padding: 0; }
-  .pdoc li { break-inside: avoid; padding: 4px 0; border-bottom: 0.5px solid #ddd; display: flex; gap: 8px; align-items: baseline; }
-  .pdoc .pbox { flex: none; width: 10px; height: 10px; border: 1.2px solid #444; border-radius: 2px; transform: translateY(1px); }
-  .pdoc .pn { flex: 1; } .pdoc .pq { color: #444; white-space: nowrap; }
-  .pdoc .pnum { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #45802A; color: #fff; text-align: center; line-height: 22px; font-weight: 700; font-size: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  .pdoc ol li { padding: 7px 0; align-items: flex-start; }
-  .pdoc .pfoot { margin-top: 18px; padding-top: 8px; border-top: 0.5px solid #999; color: #555; font-size: 11px; }
+  .pdoc li { break-inside: avoid; padding: 5px 0; border-bottom: 0.5px dashed #B9C79A; display: flex; gap: 8px; align-items: baseline; }
+  .pdoc li:last-child { border-bottom: 0; }
+  .pdoc .pbox { flex: none; width: 11px; height: 11px; border: 1.5px solid #45802A; border-radius: 50%; background: #fff; transform: translateY(1px); }
+  .pdoc .pn { flex: 1; } .pdoc .pq { color: #4c5a38; white-space: nowrap; font-weight: 600; }
+  .pdoc .pnum { flex: none; width: 24px; height: 24px; border-radius: 50%; background: #45802A; color: #fff; text-align: center; line-height: 24px; font-weight: 700; font-size: 12px; }
+  .pdoc ol li { padding: 8px 0; align-items: flex-start; border-bottom: 0; font-size: 13.5px; }
+  .pdoc .pnotes { margin-top: 18px; break-inside: avoid; }
+  .pdoc .pnotes i { display: block; height: 24px; border-bottom: 1px dotted #8a9870; }
+  .pdoc .pfoot { margin-top: 16px; padding-top: 8px; border-top: 3px solid #45802A; display: flex; justify-content: space-between; align-items: center; color: #626E50; font-size: 11px; break-inside: avoid; }
+  .pdoc .pfoot .logo { font-size: 17px; color: #45802A; }
+  .pcover { break-after: page; min-height: 238mm; text-align: center; font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; color: #1d2614; }
+  .pcover .pcb { background: #45802A; color: #fff; border-radius: 20px; padding: 36mm 10mm 30mm; margin-bottom: 14mm; }
+  .pcover .pcb .logo { font-size: 64px; color: #fff; }
+  .pcover .pcb .logo .ey { border-color: #fff; }
+  .pcover h1 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 36px; margin: 14px 0 4px; color: #fff; }
+  .pcover .pcs { font-size: 14px; opacity: .92; }
+  .pcover h2 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 18px; color: #2F5A1B; margin: 0 0 8px; text-align: left; }
+  .pcover ol { list-style: none; margin: 0; padding: 0; text-align: left; counter-reset: pi; }
+  .pcover li { counter-increment: pi; display: flex; align-items: baseline; gap: 8px; padding: 5px 0; font-size: 14px; }
+  .pcover li::before { content: counter(pi); width: 22px; height: 22px; border-radius: 50%; background: #EEF4DC; color: #2F5A1B; font-weight: 700; font-size: 11px; text-align: center; line-height: 22px; flex: none; }
+  .pcover li b { font-weight: 600; } .pcover li i { flex: 1; border-bottom: 1px dotted #8a9870; transform: translateY(-3px); } .pcover li span { color: #626E50; font-size: 12px; }
 }
 </style>
 </head>
@@ -1593,15 +1619,28 @@ details.more[open] > summary::after { content: ' ▴'; }
       list.forEach(function (p) { if (p.real && ids.indexOf(p.dbId) > -1) { p.secData = by[p.dbId] || {}; secApply(p); } });
     }, function () {});
   }
+  var PI = { clock: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>', users: '<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 19c0-3.3 2.7-5.5 6-5.5s6 2.2 6 5.5"/><path d="M16 5.2a3 3 0 010 5.6M18 14c1.8.7 3 2.4 3 5"/></svg>', tag: '<svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18 9 9 0 000-18z"/><path d="M8 12h8M12 8v8"/></svg>' };
+  var LOGO = 'Fr<i class="ey"></i>g’s';
   function printDoc(p, serv) {
     var f = serv / p.serv, nm = p.user || '', hd = hnd(p);
     var ing = p.ing.map(function (i) { return '<li><span class="pbox"></span><span class="pn">' + esc(i.n) + '</span><span class="pq">' + esc(ingText(i, f)) + '</span></li>'; }).join('');
     var steps = []; p.steps.forEach(function (t, i) { if (!(p.stSec && p.stSec[i] === 2)) steps.push(t); });
     var stp = steps.map(function (t, i) { return '<li><span class="pnum">' + (i + 1) + '</span><span>' + esc(t) + '</span></li>'; }).join('');
-    var img = p.media && p.media.type === 'image' && p.media.src && (!p.real || p.mediaUrl) ? '<img class="pimg" src="' + esc(p.media.src) + '" alt="">' : '';
-    var src = p.mine ? 'Frog’s · frogsapp.com' : 'Fonte: ricetta di ' + esc(nm) + (hd && hd !== nm ? ' (' + esc(hd) + ')' : '') + ' su Frog’s · frogsapp.com';
-    return '<section class="pdoc">' + img + '<h1>' + esc(p.title) + '</h1><p class="pmeta">' + esc(fmtTime(p.time)) + ' · ' + serv + (serv === 1 ? ' porzione' : ' porzioni') + ' · ' + esc(p.tag) + (p.from ? ' · Variante di ' + esc(fromTxt(p.from)) : '') + '</p>' +
-      '<div class="pcols"><div><h2>Ingredienti</h2><ul>' + ing + '</ul></div><div><h2>Procedimento</h2><ol>' + stp + '</ol></div></div><p class="pfoot">' + src + '</p></section>';
+    var hasImg = p.media && p.media.type === 'image' && p.media.src && (!p.real || p.mediaUrl);
+    var who = p.mine ? (state.profile && state.profile.display_name) || '' : nm;
+    var head = '<header class="ph"><span class="logo" role="img" aria-label="Frog’s">' + LOGO + '</span><span class="phr">' + (p.mine ? (who ? 'Dalla cucina di ' + esc(who) : 'Dalla mia cucina') : 'Ricetta di ' + esc(nm)) + '</span></header>';
+    var src = p.mine ? 'frogsapp.com' : 'Fonte: ricetta di ' + esc(nm) + (hd && hd !== nm ? ' (' + esc(hd) + ')' : '') + ' su Frog’s · frogsapp.com';
+    return '<section class="pdoc">' + head +
+      (hasImg ? '<div class="phero"><img class="pimg" src="' + esc(p.media.src) + '" alt=""><span class="ptag">' + esc(p.tag) + '</span></div>' : '<span class="ptagi">' + esc(p.tag) + '</span>') +
+      '<h1>' + esc(p.title) + '</h1><div class="pchips"><span>' + PI.clock + esc(fmtTime(p.time)) + '</span><span>' + PI.users + serv + (serv === 1 ? ' porzione' : ' porzioni') + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div>' +
+      '<div class="pcols"><div class="pcard"><h2>Ingredienti</h2><ul>' + ing + '</ul></div><div><h2>Procedimento</h2><ol>' + stp + '</ol></div></div>' +
+      '<div class="pnotes"><h2>Le mie note</h2><i></i><i></i><i></i></div>' +
+      '<footer class="pfoot"><span class="logo" aria-hidden="true">' + LOGO + '</span><span>' + src + '</span></footer></section>';
+  }
+  function printCover(list) {
+    var nm = (state.profile && state.profile.display_name) || '', d = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+    return '<section class="pcover"><div class="pcb"><span class="logo" role="img" aria-label="Frog’s">' + LOGO + '</span><h1>Il mio ricettario</h1><div class="pcs">' + (nm ? esc(nm) + ' · ' : '') + d + '</div></div>' +
+      '<h2>' + list.length + ' ricette</h2><ol>' + list.map(function (p) { return '<li><b>' + esc(p.title) + '</b><i></i><span>' + esc(p.tag) + '</span></li>'; }).join('') + '</ol></section>';
   }
   function runPrint(list, servMap) {
     if (!list.length) { toast('Scegli almeno una ricetta'); return; }
@@ -1609,7 +1648,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     printSecrets(list).then(function () {
       var root = document.getElementById('printroot');
       if (!root) { root = document.createElement('div'); root.id = 'printroot'; document.body.appendChild(root); }
-      root.innerHTML = list.map(function (p) { return printDoc(p, (servMap && servMap[p.id]) || p.serv); }).join('');
+      root.innerHTML = (list.length > 1 ? printCover(list) : '') + list.map(function (p) { return printDoc(p, (servMap && servMap[p.id]) || p.serv); }).join('');
       return Promise.all(Array.prototype.map.call(root.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; setTimeout(res, 4000); }); }));
     }).then(function () {
       closeSheet(); document.body.classList.add('printing');
@@ -4612,8 +4651,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 66; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611081300';
+  var VERSION = 67; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611081400';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
