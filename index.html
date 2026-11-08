@@ -542,6 +542,41 @@ body.inchat nav.tabs { display: none !important; }
 @keyframes svglow { 50% { box-shadow: 0 0 0 4px #DDEBCB; } }
 @keyframes svshine { 0%, 55% { left: -80px; } 100% { left: 110%; } }
 @media (prefers-reduced-motion: reduce) { .svuota, .svuota::after { animation: none; } }
+details.more { margin-top: 4px; }
+details.more > summary { list-style: none; cursor: pointer; text-align: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; font-weight: 600; background: var(--surface); }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::after { content: ' ▾'; }
+details.more[open] > summary::after { content: ' ▴'; }
+.morebody { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.morebody .btn { margin: 0; }
+.pbgrp { display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--line); padding: 4px 0; }
+.pbgrp > input { margin-top: 14px; flex: none; }
+.pbgrp details { flex: 1; min-width: 0; }
+.pbgrp summary { padding: 12px 0; cursor: pointer; font-weight: 600; }
+.pbgrp summary small { color: var(--muted); font-weight: 400; }
+.pblist { display: flex; flex-direction: column; padding: 0 0 8px 2px; }
+.pbrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; font-size: 15px; }
+#printroot { display: none; }
+@media print {
+  @page { size: A4; margin: 14mm; }
+  body.printing > *:not(#printroot) { display: none !important; }
+  html, body.printing { background: #fff !important; background-image: none !important; }
+  body.printing #printroot { display: block; }
+  .pdoc { break-after: page; color: #111; font: 13px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif; }
+  .pdoc:last-child { break-after: auto; }
+  .pdoc h1 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 28px; line-height: 1.15; margin: 0 0 6px; color: #222B16; }
+  .pdoc .pmeta { color: #444; margin: 0 0 12px; font-size: 13px; }
+  .pdoc .pimg { display: block; width: 100%; max-height: 95mm; object-fit: cover; border-radius: 8px; margin: 0 0 14px; }
+  .pdoc .pcols { display: grid; grid-template-columns: 36% 1fr; gap: 22px; align-items: start; }
+  .pdoc h2 { font-size: 15px; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1.5px solid #45802A; color: #2F5A1B; }
+  .pdoc ul, .pdoc ol { list-style: none; margin: 0; padding: 0; }
+  .pdoc li { break-inside: avoid; padding: 4px 0; border-bottom: 0.5px solid #ddd; display: flex; gap: 8px; align-items: baseline; }
+  .pdoc .pbox { flex: none; width: 10px; height: 10px; border: 1.2px solid #444; border-radius: 2px; transform: translateY(1px); }
+  .pdoc .pn { flex: 1; } .pdoc .pq { color: #444; white-space: nowrap; }
+  .pdoc .pnum { flex: none; width: 22px; height: 22px; border-radius: 50%; background: #45802A; color: #fff; text-align: center; line-height: 22px; font-weight: 700; font-size: 12px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .pdoc ol li { padding: 7px 0; align-items: flex-start; }
+  .pdoc .pfoot { margin-top: 18px; padding-top: 8px; border-top: 0.5px solid #999; color: #555; font-size: 11px; }
+}
 </style>
 </head>
 <body>
@@ -1180,6 +1215,7 @@ body.inchat nav.tabs { display: none !important; }
     if (liveMode() && state.profile && !isPro()) rows.push(['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno']);
     if (liveMode() && state.profile) rows.push(['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']);
     if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
+    rows.push(['printbook', 'Stampa ricettario', 'Stampa le tue ricette e quelle salvate']);
     rows.push(['legalterms', 'Termini d\'uso', 'Le regole di Frog’s'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
       ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
@@ -1517,7 +1553,7 @@ body.inchat nav.tabs { display: none !important; }
   function openSheet(id, keep) {
     var p = byId(id); if (!p) return;
     var oldTop = keep ? (document.querySelector('#layer .sheet') || {}).scrollTop : 0;
-    if (state.sheetId !== p.id) { state.sheetId = p.id; state.sheetServ = p.serv; }
+    if (state.sheetId !== p.id) { state.sheetId = p.id; state.sheetServ = p.serv; state.moreOpen = false; }
     var soc = !p.priv && !p.cook, layer = document.getElementById('layer');
     layer.innerHTML = '<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(p.title) + '" data-stop="1">' +
       '<div class="sheet-top"><div><h2>' + esc(p.title) + '</h2><div class="meta" style="margin-top:6px"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + (p.cook ? 'Ricettario privato' : 'di ' + esc(hnd(p))) + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div></div>' +
@@ -1533,16 +1569,86 @@ body.inchat nav.tabs { display: none !important; }
       '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s, i) { var k = p.stSec && p.stSec[i]; return '<li' + (k === 2 ? ' class="seclocked"' : '') + '>' + (k ? '<span class="seclab">' + ICONS.lock + '</span>' : '') + esc(s) + (k === 2 ? secAsk(p) : '') + '</li>'; }).join('') + '</ol></section>' +
       (!soc ? '' : '<section class="cmsec" id="cmsec"><h3 id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</h3><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
       '<form class="cmf2" id="cmf" data-id="' + p.id + '">' + avHTML(state.profile && state.profile.avatar_url, (state.profile && state.profile.display_name) || 'Tu') + '<input type="text" id="cmi" placeholder="Aggiungi un commento…" aria-label="Commento" maxlength="200" autocomplete="off"><button class="cpost" type="submit">Pubblica</button></form></section>') +
+      '<details class="more"' + (state.moreOpen ? ' open' : '') + '><summary>Altre opzioni</summary><div class="morebody">' +
+      (printable(p) ? '<button class="btn ghost" data-act="printone" data-id="' + p.id + '">Stampa la ricetta</button>' : '') +
       (!soc ? '' : '<button class="btn ghost" data-act="share" data-id="' + p.id + '">Invia in chat</button>') +
       (state.saved[p.id] ? '<button class="btn ghost" data-act="fmove" data-id="' + p.id + '">' + (state.fof[p.id] ? 'Cartella: ' + esc(folderName(state.fof[p.id])) + ' (cambia)' : 'Metti in una cartella') + '</button>' : '') +
       (!soc ? '' : '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>') +
       (!soc ? '' : '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>') +
       (p.mine && !p.cook ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
-      (p.mine && p.real && !p.priv ? '<button class="btn ghost" data-act="editrec" data-id="' + p.id + '">Modifica la ricetta</button><button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina il piatto</button>' : '') +
-      (!p.mine && p.real && !p.priv && liveMode() ? '<button class="reset" data-act="reportrec" data-id="' + p.id + '" style="color:var(--muted);align-self:center;padding:8px">Segnala questo piatto</button>' : '') + '</div></div>';
+      (p.mine && p.real && !p.priv ? '<button class="btn ghost" data-act="editrec" data-id="' + p.id + '">Modifica la ricetta</button><button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina ' + (p.cook ? 'la ricetta' : 'il piatto') + '</button>' : '') +
+      (!p.mine && p.real && soc && liveMode() ? '<button class="reset" data-act="reportrec" data-id="' + p.id + '" style="color:var(--muted);align-self:center;padding:8px">Segnala questo piatto</button>' : '') +
+      '</div></details></div></div>';
     if (oldTop) { var shn = document.querySelector('#layer .sheet'); if (shn) shn.scrollTop = oldTop; }
     if (p.real && soc && liveMode() && !keep) { loadComments(p); if (p.hasSec) loadSecrets(p); }
   }
+
+  /* ---------- Stampa ---------- */
+  function printable(p) { return !!(p.mine || state.saved[p.id]); }
+  function printSecrets(list) {
+    var ids = list.filter(function (p) { return p.real && p.hasSec && !p.secData; }).map(function (p) { return p.dbId; });
+    if (!ids.length || !liveMode()) return Promise.resolve();
+    return sb.from('recipe_secrets').select('recipe_id,kind,idx,content').in('recipe_id', ids).then(function (r) {
+      var by = {}; ((r && r.data) || []).forEach(function (x) { (by[x.recipe_id] = by[x.recipe_id] || {})[x.kind + x.idx] = x.content; });
+      list.forEach(function (p) { if (p.real && ids.indexOf(p.dbId) > -1) { p.secData = by[p.dbId] || {}; secApply(p); } });
+    }, function () {});
+  }
+  function printDoc(p, serv) {
+    var f = serv / p.serv, nm = p.user || '', hd = hnd(p);
+    var ing = p.ing.map(function (i) { return '<li><span class="pbox"></span><span class="pn">' + esc(i.n) + '</span><span class="pq">' + esc(ingText(i, f)) + '</span></li>'; }).join('');
+    var steps = []; p.steps.forEach(function (t, i) { if (!(p.stSec && p.stSec[i] === 2)) steps.push(t); });
+    var stp = steps.map(function (t, i) { return '<li><span class="pnum">' + (i + 1) + '</span><span>' + esc(t) + '</span></li>'; }).join('');
+    var img = p.media && p.media.type === 'image' && p.media.src && (!p.real || p.mediaUrl) ? '<img class="pimg" src="' + esc(p.media.src) + '" alt="">' : '';
+    var src = p.mine ? 'Frog’s · frogsapp.com' : 'Fonte: ricetta di ' + esc(nm) + (hd && hd !== nm ? ' (' + esc(hd) + ')' : '') + ' su Frog’s · frogsapp.com';
+    return '<section class="pdoc">' + img + '<h1>' + esc(p.title) + '</h1><p class="pmeta">' + esc(fmtTime(p.time)) + ' · ' + serv + (serv === 1 ? ' porzione' : ' porzioni') + ' · ' + esc(p.tag) + (p.from ? ' · Variante di ' + esc(fromTxt(p.from)) : '') + '</p>' +
+      '<div class="pcols"><div><h2>Ingredienti</h2><ul>' + ing + '</ul></div><div><h2>Procedimento</h2><ol>' + stp + '</ol></div></div><p class="pfoot">' + src + '</p></section>';
+  }
+  function runPrint(list, servMap) {
+    if (!list.length) { toast('Scegli almeno una ricetta'); return; }
+    toast('Preparo la stampa…');
+    printSecrets(list).then(function () {
+      var root = document.getElementById('printroot');
+      if (!root) { root = document.createElement('div'); root.id = 'printroot'; document.body.appendChild(root); }
+      root.innerHTML = list.map(function (p) { return printDoc(p, (servMap && servMap[p.id]) || p.serv); }).join('');
+      return Promise.all(Array.prototype.map.call(root.querySelectorAll('img'), function (im) { return im.complete ? 0 : new Promise(function (res) { im.onload = im.onerror = res; setTimeout(res, 4000); }); }));
+    }).then(function () {
+      closeSheet(); document.body.classList.add('printing');
+      setTimeout(function () { try { window.print(); } catch (e) { toast('La stampa non è disponibile qui: aprila dal browser.'); } }, 150);
+    });
+  }
+  state.pbSel = {};
+  function pbGroups() {
+    return [['pub', 'Ricette pubblicate', posts.filter(function (p) { return p.mine && !p.priv; })], ['cook', 'Il mio ricettario privato', COOK.slice()], ['sav', 'Ricette salvate', posts.filter(function (p) { return !p.mine && state.saved[p.id]; })]].filter(function (g) { return g[2].length; });
+  }
+  function openPrintBook() {
+    var gs = pbGroups();
+    sheetOpen('Stampa', 'Stampa ricettario',
+      '<p class="hint" style="margin:0">Scegli cosa stampare. Per le ricette di altri viene stampata anche la fonte; dei segreti stampi solo ciò che hai sbloccato.</p>' +
+      (gs.length ? gs.map(function (g) {
+        return '<div class="pbgrp"><input type="checkbox" class="pbm" data-g="' + g[0] + '" aria-label="Seleziona tutte: ' + esc(g[1]) + '"><details><summary>' + g[1] + ' <small>(' + g[2].length + ')</small></summary><div class="pblist">' +
+          g[2].map(function (p) { return '<label class="pbrow"><input type="checkbox" class="pbc" data-g="' + g[0] + '" data-id="' + p.id + '"' + (state.pbSel[p.id] ? ' checked' : '') + '><span>' + esc(p.title) + '</span></label>'; }).join('') + '</div></details></div>';
+      }).join('') : '<div class="empty"><b>Niente da stampare</b>Pubblica o salva qualche ricetta, poi torna qui.</div>') +
+      '<button class="btn" data-act="printgo" id="pbgo">Stampa</button>');
+    pbSync();
+  }
+  function pbSync() {
+    var all = document.querySelectorAll('.pbc'), n = 0;
+    Array.prototype.forEach.call(all, function (c) { if (c.checked) n++; });
+    Array.prototype.forEach.call(document.querySelectorAll('.pbm'), function (m) {
+      var g = m.getAttribute('data-g'), cs = document.querySelectorAll('.pbc[data-g="' + g + '"]'), k = 0;
+      Array.prototype.forEach.call(cs, function (c) { if (c.checked) k++; });
+      m.checked = k > 0 && k === cs.length; m.indeterminate = k > 0 && k < cs.length;
+    });
+    var b = document.getElementById('pbgo'); if (b) b.textContent = n ? 'Stampa ' + n + (n === 1 ? ' ricetta' : ' ricette') : 'Stampa';
+  }
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!t || !t.classList) return;
+    if (t.classList.contains('pbm')) {
+      Array.prototype.forEach.call(document.querySelectorAll('.pbc[data-g="' + t.getAttribute('data-g') + '"]'), function (c) { c.checked = t.checked; state.pbSel[c.getAttribute('data-id')] = t.checked; });
+      pbSync();
+    } else if (t.classList.contains('pbc')) { state.pbSel[t.getAttribute('data-id')] = t.checked; pbSync(); }
+  });
+  document.addEventListener('toggle', function (e) { var t = e.target; if (t && t.classList && t.classList.contains('more')) state.moreOpen = t.open; }, true);
   function loadSecrets(p) {
     var q1 = sb.from('recipe_secrets').select('kind,idx,content').eq('recipe_id', p.dbId), q2 = p.mine ? Promise.resolve({ data: null }) : sb.from('secret_requests').select('id,status').eq('recipe_id', p.dbId).eq('requester_id', state.user.id).maybeSingle();
     Promise.all([q1, q2]).then(function (a) {
@@ -3824,6 +3930,12 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'notiftap') { var nn = state.notifs[parseInt(el.getAttribute('data-i'), 10)]; if (nn) notifOpen(nn); return true; }
     if (act === 'authmode') { state.authMode = state.authMode === 'in' || state.authMode === 'forgot' ? (state.authMode === 'forgot' ? 'in' : 'up') : 'in'; authMsg = ''; render(); return true; }
     if (act === 'authforgot') { state.authMode = 'forgot'; authMsg = ''; render(); return true; }
+    if (act === 'printone') { var pp = byId(id); if (!pp || !printable(pp)) return true; var sm = {}; sm[pp.id] = state.sheetId === pp.id ? state.sheetServ : pp.serv; runPrint([pp], sm); return true; }
+    if (act === 'printbook') { openPrintBook(); return true; }
+    if (act === 'printgo') {
+      var chosen = []; Array.prototype.forEach.call(document.querySelectorAll('.pbc:checked'), function (c) { var cid = c.getAttribute('data-id'), f1 = null; pbGroups().forEach(function (g) { g[2].forEach(function (p) { if (String(p.id) === cid) f1 = p; }); }); if (f1) chosen.push(f1); });
+      runPrint(chosen); return true;
+    }
     if (act === 'pweye') { var pi = el.parentNode.querySelector('input'); if (pi) { var sh = pi.type === 'password'; pi.type = sh ? 'text' : 'password'; el.setAttribute('aria-pressed', sh ? 'true' : 'false'); el.setAttribute('aria-label', sh ? 'Nascondi la password' : 'Mostra la password'); } return true; }
     if (act === 'google') {
       if (authBusy || !sb) return true;
@@ -4500,8 +4612,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 65; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611081230';
+  var VERSION = 66; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611081300';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
