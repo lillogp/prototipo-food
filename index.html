@@ -1478,7 +1478,7 @@ body.inchat nav.tabs { display: none !important; }
   }
   function secAsk(p) {
     if (p.mine || !p.real) return '';
-    var st = p.secReq, lab = st === 'pending' ? 'Richiesto' : st ? 'Non concesso' : 'Chiedi';
+    var st = p.secReq, lab = st ? 'Richiesto' : 'Chiedi';
     return '<button type="button" class="secask" data-act="secreq" data-id="' + p.id + '"' + (st && st !== 'pending' ? ' disabled' : '') + ' aria-label="' + (st === 'pending' ? 'Richiesta inviata: tocca per annullare' : 'Chiedi all\'autore di vedere i segreti') + '">' + lab + '</button>';
   }
   function secBoxHTML(p) {
@@ -4500,8 +4500,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 64; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611081200';
+  var VERSION = 65; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611081230';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
