@@ -549,6 +549,21 @@ details.more > summary::after { content: ' ▾'; }
 details.more[open] > summary::after { content: ' ▴'; }
 .morebody { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .morebody .btn { margin: 0; }
+.sbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-bottom: 1px solid var(--line); margin: 0 0 12px; }
+.sbar button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; font-size: 11px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.sbar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sbar button[aria-pressed="true"] { color: var(--fg); border-bottom-color: var(--fg); }
+.crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 14px; margin: 0 0 10px; color: var(--muted); }
+.crumbs button { font-weight: 600; color: var(--fg); } .crumbs b { color: var(--fg); }
+.ftiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.ftile { display: flex; align-items: center; gap: 8px; padding: 12px; background: var(--soft); border-radius: 12px; text-align: left; min-width: 0; }
+.ftile svg { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round; }
+.ftile b { display: block; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .ftile small { color: var(--muted); font-size: 12px; }
+.ftile > span { min-width: 0; }
+.ftools { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; font-size: 14px; }
+.pbf { display: flex; align-items: flex-start; gap: 10px; }
+.pbf > input { margin-top: 12px; flex: none; } .pbf details { flex: 1; min-width: 0; }
+.pbf summary { padding: 10px 0; cursor: pointer; font-weight: 600; }
 .pbgrp { display: flex; align-items: flex-start; gap: 10px; border-bottom: 1px solid var(--line); padding: 4px 0; }
 .pbgrp > input { margin-top: 14px; flex: none; }
 .pbgrp details { flex: 1; min-width: 0; }
@@ -572,6 +587,9 @@ details.more[open] > summary::after { content: ' ▴'; }
   .pdoc .pimg { display: block; width: 100%; height: 88mm; object-fit: cover; border-radius: 14px; }
   .pdoc .ptag { position: absolute; left: 12px; bottom: 12px; background: #45802A; color: #fff; font-weight: 700; font-size: 12px; padding: 5px 14px; border-radius: 99px; letter-spacing: .03em; }
   .pdoc .phero.noimg { display: none; }
+  .pdoc .pfold { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #C8472B; margin: 0 0 6px; }
+  .pcover li.pch { counter-increment: none; font-weight: 700; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: #C8472B; padding-top: 12px; }
+  .pcover li.pch::before { display: none; }
   .pdoc h1 { font-family: 'Fredoka', system-ui, sans-serif; font-weight: 600; font-size: 34px; line-height: 1.1; margin: 0 0 10px; color: #222B16; }
   .pdoc .ptagi { display: inline-block; background: #45802A; color: #fff; font-weight: 700; font-size: 12px; padding: 3px 12px; border-radius: 99px; margin: 0 0 8px; }
   .pdoc .pchips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
@@ -632,6 +650,9 @@ details.more[open] > summary::after { content: ' ▴'; }
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
     send: '<svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7z"/><path d="M10 13l11-10"/></svg>',
     save: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>',
+    book: '<svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h11"/><path d="M9 8h6"/></svg>',
+    fork: '<svg viewBox="0 0 24 24"><path d="M6 3v7a2 2 0 004 0V3M8 12v9M17 21V3c-2.4 1.4-3.4 4-3.4 7.5H17"/></svg>',
+    folder: '<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>',
     user: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
     heart: '<svg viewBox="0 0 24 24"><path d="M12 20s-8-5-8-11a4.5 4.5 0 018-2.8A4.5 4.5 0 0120 9c0 6-8 11-8 11z"/></svg>',
     chat: '<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/></svg>',
@@ -701,8 +722,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   });
 
   var ME = { name: 'Tu', handle: 'tuo.nome' };
-  var state = { tab: 'home', filter: 'Tutti', liked: {}, saved: {}, following: {}, viewing: null, draft: null, note: true, plan: {}, extra: {}, order: {}, checked: {}, weekOff: 0, planTab: 'week', people: [{ id: 'p1', name: 'Io' }], vperson: 'p1', q: '', maxT: 0, homeTab: 'dishes', savedTab: 'recipes', folderSel: '', shopper: null, timers: [], cook: null, pantry: [], prefs: { diet: '', allergens: [], hide: true }, folders: [], fof: {}, goal: null, rsaved: {}, rnote: {}, rvisited: {}, myr: [], shopx: [], cmts: {}, pro: null, chat: [], goalBy: null };
-  var KEEP = ['liked', 'saved', 'following', 'plan', 'extra', 'order', 'people', 'vperson', 'checked', 'pantry', 'prefs', 'folders', 'fof', 'goal', 'rsaved', 'rnote', 'rvisited', 'myr', 'shopx', 'cmts', 'pro', 'chat', 'goalBy'];
+  var state = { tab: 'home', cfolders: [], cfof: {}, cfolderSel: '', filter: 'Tutti', liked: {}, saved: {}, following: {}, viewing: null, draft: null, note: true, plan: {}, extra: {}, order: {}, checked: {}, weekOff: 0, planTab: 'week', people: [{ id: 'p1', name: 'Io' }], vperson: 'p1', q: '', maxT: 0, homeTab: 'dishes', savedTab: 'recipes', folderSel: '', shopper: null, timers: [], cook: null, pantry: [], prefs: { diet: '', allergens: [], hide: true }, folders: [], fof: {}, goal: null, rsaved: {}, rnote: {}, rvisited: {}, myr: [], shopx: [], cmts: {}, pro: null, chat: [], goalBy: null };
+  var KEEP = ['liked', 'saved', 'following', 'plan', 'extra', 'order', 'people', 'vperson', 'checked', 'pantry', 'prefs', 'folders', 'fof', 'cfolders', 'cfof', 'goal', 'rsaved', 'rnote', 'rvisited', 'myr', 'shopx', 'cmts', 'pro', 'chat', 'goalBy'];
   try {
     var sv0 = JSON.parse(localStorage.getItem('gusto-v1') || '{}');
     KEEP.forEach(function (k) { if (sv0[k] !== undefined && sv0[k] !== null) state[k] = sv0[k]; });
@@ -719,11 +740,11 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
   function cookRow(p) {
     return '<div class="srow" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ' + esc(p.title) + '"><div class="sthumb">' + thumbTag(p.media) + '</div>' +
-      '<div class="sinfo"><b>' + esc(p.title) + '</b><span>' + esc(p.tag) + '</span><span>' + fmtTime(p.time) + ' · ' + p.serv + ' porzioni</span></div><span class="seclab" aria-label="Privata">' + ICONS.lock + '</span></div>';
+      '<div class="sinfo"><b>' + esc(p.title) + '</b><span>' + esc(p.tag) + '</span><span>' + fmtTime(p.time) + ' · ' + p.serv + ' porzioni</span><button class="reset fbtn" data-act="fmove" data-id="' + p.id + '">' + (fOfp(true, p) ? esc(folderName(fOfp(true, p))) : 'Cartella') + '</button></div><span class="seclab" aria-label="Privata">' + ICONS.lock + '</span></div>';
   }
   function savedRow(p) {
     return '<div class="srow" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ' + esc(p.title) + '"><div class="sthumb">' + thumbTag(p.media) + '</div>' +
-      '<div class="sinfo"><b>' + esc(p.title) + '</b><span>' + esc(hnd(p)) + '</span><span>' + fmtTime(p.time) + ' · ' + p.serv + ' porzioni</span><button class="reset fbtn" data-act="fmove" data-id="' + p.id + '">' + (state.fof[p.id] ? esc(folderName(state.fof[p.id])) : 'Cartella') + '</button></div>' +
+      '<div class="sinfo"><b>' + esc(p.title) + '</b><span>' + esc(hnd(p)) + '</span><span>' + fmtTime(p.time) + ' · ' + p.serv + ' porzioni</span><button class="reset fbtn" data-act="fmove" data-id="' + p.id + '">' + (fOfp(false, p) ? esc(folderName(fOfp(false, p))) : 'Cartella') + '</button></div>' +
       '<button class="ic save" data-act="save" data-id="' + p.id + '" aria-pressed="true" aria-label="Rimuovi dai salvati">' + ICONS.save + '</button></div>';
   }
   function followBtn(h) {
@@ -816,22 +837,34 @@ details.more[open] > summary::after { content: ' ▴'; }
   function viewSearch() {
     return '<div class="view-h"><h1>Cerca</h1></div><input type="search" id="q" class="search sbig" placeholder="Piatti, ingredienti, persone" value="' + esc(state.q) + '" aria-label="Cerca" autocomplete="off"><div id="feedwrap">' + searchBody() + '</div>';
   }
+  function savedBar(st) {
+    var T = [['recipes', 'Salvate', ICONS.save], ['rest', 'Ristoranti', ICONS.fork]]; if (liveMode()) T.unshift(['book', 'Ricettario', ICONS.book]);
+    return '<div class="sbar" role="group" aria-label="Sezione" style="grid-template-columns:repeat(' + T.length + ',1fr)">' + T.map(function (t) {
+      return '<button data-act="stab" data-v="' + t[0] + '" aria-pressed="' + (st === t[0]) + '" aria-label="' + t[1] + '">' + t[2] + '<span>' + t[1] + '</span></button>'; }).join('') + '</div>';
+  }
+  function folderView(c) {
+    var cur = fCur(c), kids = fKids(c, cur), items = fItems(c, cur), cn = c ? '1' : '0', root = c ? 'Il mio ricettario' : 'Salvate';
+    var crumbs = cur ? '<div class="crumbs"><button data-act="fsel" data-c="' + cn + '" data-v="">' + root + '</button>' + fPathIds(c, cur).map(function (f, i, a) {
+      return ' › ' + (i === a.length - 1 ? '<b>' + esc(f.name) + '</b>' : '<button data-act="fsel" data-c="' + cn + '" data-v="' + f.id + '">' + esc(f.name) + '</button>'); }).join('') + '</div>' : '';
+    var tiles = kids.length ? '<div class="ftiles">' + kids.map(function (f) {
+      var n = fCount(c, f.id); return '<button class="ftile" data-act="fsel" data-c="' + cn + '" data-v="' + f.id + '">' + ICONS.folder + '<span><b>' + esc(f.name) + '</b><small>' + n + (n === 1 ? ' ricetta' : ' ricette') + '</small></span></button>'; }).join('') + '</div>' : '';
+    var tools = '<div class="ftools"><button class="reset" data-act="fnew" data-c="' + cn + '">+ ' + (cur ? 'Sottocartella' : 'Cartella') + '</button>' +
+      (c ? '<button class="reset" data-act="newpriv" data-f="' + cur + '">+ Nuova ricetta</button>' : (cur ? '<button class="reset" data-act="fadds">+ Aggiungi ricette</button>' : '')) +
+      (cur ? '<button class="reset" data-act="fdel" data-c="' + cn + '">Elimina cartella</button>' : '') + '</div>';
+    var empty = c ? '<div class="empty"><b>' + (cur ? 'Cartella vuota' : 'Il tuo ricettario è vuoto') + '</b>Scrivi qui le ricette di famiglia o quelle che provi: restano private. Puoi renderle pubbliche in qualsiasi momento.</div>'
+      : '<div class="empty"><b>' + (cur ? 'Cartella vuota' : 'Ancora niente qui') + '</b>' + (cur ? 'Aggiungi ricette salvate o altri piatti.' : 'Tocca il segnalibro su una ricetta del feed per ritrovarla in questa pagina.') + '</div>';
+    return (c ? '<p class="hint" style="margin:0 0 10px"><span class="seclab">' + ICONS.lock + '</span>Solo tu vedi queste ricette: non compaiono nel feed, nel profilo o nelle ricerche.</p>' : '') +
+      crumbs + tools + tiles + (items.length ? '<div class="slist">' + items.map(c ? cookRow : savedRow).join('') + '</div>' : (kids.length ? '' : empty));
+  }
   function viewSaved() {
-    var st = state.savedTab, seg = '<div class="seg" role="group" aria-label="Sezione"><button data-act="stab" data-v="recipes" aria-pressed="' + (st !== 'rest' && st !== 'book') + '">Salvate</button>' + (liveMode() ? '<button data-act="stab" data-v="book" aria-pressed="' + (st === 'book') + '">Il mio ricettario</button>' : '') + '<button data-act="stab" data-v="rest" aria-pressed="' + (st === 'rest') + '">Ristoranti</button></div>';
-    var head = '<div class="view-h"><h1>Salvati</h1><p>Ricette, ricettario e ristoranti da ritrovare.</p></div>' + seg;
-    if (st === 'book' && liveMode()) {
-      return head + '<p class="hint" style="margin:0 0 10px"><span class="seclab">' + ICONS.lock + '</span>Solo tu vedi queste ricette: non compaiono nel feed, nel profilo o nelle ricerche.</p><button class="btn" data-act="newpriv" style="margin-bottom:12px">Nuova ricetta privata</button>' +
-        (COOK.length ? '<div class="slist">' + COOK.map(cookRow).join('') + '</div>' : '<div class="empty"><b>Il tuo ricettario è vuoto</b>Scrivi qui le ricette di famiglia o quelle che provi: restano private. Puoi renderle pubbliche in qualsiasi momento.</div>');
-    }
-    if (state.savedTab === 'rest') {
+    var st = state.savedTab === 'rest' ? 'rest' : state.savedTab === 'book' && liveMode() ? 'book' : 'recipes';
+    var head = '<div class="view-h"><h1>Salvati</h1></div>' + savedBar(st);
+    if (st === 'book') return head + folderView(true);
+    if (st === 'rest') {
       var rl = allRest().filter(function (r) { return state.rsaved[r.id]; });
       return head + (rl.length ? '<div class="slist">' + rl.map(restCard).join('') + '</div>' : '<div class="empty"><b>Nessun ristorante salvato</b>Dalla Home apri Ristoranti e tocca il segnalibro.</div>');
     }
-    var list = savedList(), chips = [['', 'Tutte']].concat(state.folders.length ? [['none', 'Senza cartella']] : []).concat(state.folders.map(function (f) { return [f.id, f.name]; }));
-    return head + '<div class="filters" role="group" aria-label="Cartelle">' + chips.map(function (c) { return '<button data-act="fsel" data-v="' + c[0] + '" aria-pressed="' + (state.folderSel === c[0]) + '">' + esc(c[1]) + '</button>'; }).join('') + '<button data-act="fnew">+ Cartella</button></div>' +
-      (state.folderSel && state.folderSel !== 'none' ? '<div style="margin:-6px 0 8px;display:flex;gap:18px"><button class="reset" data-act="fadds">+ Aggiungi ricette</button><button class="reset" data-act="fdel">Elimina cartella</button></div>' : '') +
-      (list.length ? '<div class="slist">' + list.map(savedRow).join('') + '</div>' :
-        (state.folderSel && state.folderSel !== 'none' ? '<div class="empty"><b>Cartella vuota</b>Aggiungi ricette salvate o altri piatti.<br><button class="btn" data-act="fadds" style="margin-top:12px">Aggiungi ricette</button></div>' : '<div class="empty"><b>Ancora niente qui</b>Tocca il segnalibro su una ricetta del feed per ritrovarla in questa pagina.</div>'));
+    return head + folderView(false);
   }
 
   var UNITS = [['g', 'g (grammi)'], ['kg', 'kg'], ['ml', 'ml'], ['l', 'l (litri)'], ['cucchiaio', 'cucchiai (≈ 15 g)'], ['cucchiaino', 'cucchiaini (≈ 5 g)'], ['pizzico', 'pizzico (≈ 0,5 g)'], ['pezzi', 'pezzi'], ['spicchio', 'spicchi'], ['mazzetto', 'mazzetti'], ['rametto', 'rametti'], ['foglie', 'foglie'], ['fogli', 'fogli']];
@@ -1598,7 +1631,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<details class="more"' + (state.moreOpen ? ' open' : '') + '><summary>Altre opzioni</summary><div class="morebody">' +
       (printable(p) ? '<button class="btn ghost" data-act="printone" data-id="' + p.id + '">Stampa la ricetta</button>' : '') +
       (!soc ? '' : '<button class="btn ghost" data-act="share" data-id="' + p.id + '">Invia in chat</button>') +
-      (state.saved[p.id] ? '<button class="btn ghost" data-act="fmove" data-id="' + p.id + '">' + (state.fof[p.id] ? 'Cartella: ' + esc(folderName(state.fof[p.id])) + ' (cambia)' : 'Metti in una cartella') + '</button>' : '') +
+      ((state.saved[p.id] || p.cook) ? '<button class="btn ghost" data-act="fmove" data-id="' + p.id + '">' + (fOfp(!!p.cook, p) ? 'Cartella: ' + esc(folderName(fOfp(!!p.cook, p))) + ' (cambia)' : 'Metti in una cartella') + '</button>' : '') +
       (!soc ? '' : '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>') +
       (!soc ? '' : '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>') +
       (p.mine && !p.cook ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
@@ -1632,15 +1665,16 @@ details.more[open] > summary::after { content: ' ▴'; }
     var src = p.mine ? 'frogsapp.com' : 'Fonte: ricetta di ' + esc(nm) + (hd && hd !== nm ? ' (' + esc(hd) + ')' : '') + ' su Frog’s · frogsapp.com';
     return '<section class="pdoc">' + head +
       (hasImg ? '<div class="phero"><img class="pimg" src="' + esc(p.media.src) + '" alt=""><span class="ptag">' + esc(p.tag) + '</span></div>' : '<span class="ptagi">' + esc(p.tag) + '</span>') +
-      '<h1>' + esc(p.title) + '</h1><div class="pchips"><span>' + PI.clock + esc(fmtTime(p.time)) + '</span><span>' + PI.users + serv + (serv === 1 ? ' porzione' : ' porzioni') + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div>' +
+      (pathOfPost(p).length ? '<div class="pfold">' + esc(pathOfPost(p).join(' › ')) + '</div>' : '') + '<h1>' + esc(p.title) + '</h1><div class="pchips"><span>' + PI.clock + esc(fmtTime(p.time)) + '</span><span>' + PI.users + serv + (serv === 1 ? ' porzione' : ' porzioni') + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div>' +
       '<div class="pcols"><div class="pcard"><h2>Ingredienti</h2><ul>' + ing + '</ul></div><div><h2>Procedimento</h2><ol>' + stp + '</ol></div></div>' +
       '<div class="pnotes"><h2>Le mie note</h2><i></i><i></i><i></i></div>' +
       '<footer class="pfoot"><span class="logo" aria-hidden="true">' + LOGO + '</span><span>' + src + '</span></footer></section>';
   }
   function printCover(list) {
+    var lastPa = null;
     var nm = (state.profile && state.profile.display_name) || '', d = new Date().toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
     return '<section class="pcover"><div class="pcb"><span class="logo" role="img" aria-label="Frog’s">' + LOGO + '</span><h1>Il mio ricettario</h1><div class="pcs">' + (nm ? esc(nm) + ' · ' : '') + d + '</div></div>' +
-      '<h2>' + list.length + ' ricette</h2><ol>' + list.map(function (p) { return '<li><b>' + esc(p.title) + '</b><i></i><span>' + esc(p.tag) + '</span></li>'; }).join('') + '</ol></section>';
+      '<h2>' + list.length + ' ricette</h2><ol>' + list.map(function (p) { var pa = pathOfPost(p).join(' › '), hh = pa !== lastPa && pa ? '<li class="pch">' + esc(pa) + '</li>' : ''; lastPa = pa; return hh + '<li><b>' + esc(p.title) + '</b><i></i><span>' + esc(p.tag) + '</span></li>'; }).join('') + '</ol></section>';
   }
   function runPrint(list, servMap) {
     if (!list.length) { toast('Scegli almeno una ricetta'); return; }
@@ -1657,24 +1691,33 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
   state.pbSel = {};
   function pbGroups() {
-    return [['pub', 'Ricette pubblicate', posts.filter(function (p) { return p.mine && !p.priv; })], ['cook', 'Il mio ricettario privato', COOK.slice()], ['sav', 'Ricette salvate', posts.filter(function (p) { return !p.mine && state.saved[p.id]; })]].filter(function (g) { return g[2].length; });
+    return [['pub', 'Ricette pubblicate', posts.filter(function (p) { return p.mine && !p.priv; }), false], ['cook', 'Il mio ricettario privato', COOK.slice(), true], ['sav', 'Ricette salvate', posts.filter(function (p) { return !p.mine && state.saved[p.id]; }), false]].filter(function (g) { return g[2].length; });
+  }
+  function pbRow(p) { return '<label class="pbrow"><input type="checkbox" class="pbc" data-id="' + p.id + '"' + (state.pbSel[p.id] ? ' checked' : '') + '><span>' + esc(p.title) + '</span></label>'; }
+  function pbNode(c, pool, parent) {
+    var h = '';
+    fKids(c, parent).forEach(function (f) {
+      var inner = pbNode(c, pool, f.id); if (!inner) return;
+      h += '<div class="pbf"><input type="checkbox" class="pbm" aria-label="Seleziona la cartella ' + esc(f.name) + '"><details><summary>' + esc(f.name) + '</summary><div class="pblist">' + inner + '</div></details></div>';
+    });
+    return h + pool.filter(function (p) { return fOfp(c, p) === parent; }).map(pbRow).join('');
   }
   function openPrintBook() {
     var gs = pbGroups();
     sheetOpen('Stampa', 'Stampa ricettario',
-      '<p class="hint" style="margin:0">Scegli cosa stampare. Per le ricette di altri viene stampata anche la fonte; dei segreti stampi solo ciò che hai sbloccato.</p>' +
+      '<p class="hint" style="margin:0">Scegli cosa stampare: cartelle, sottocartelle o singole ricette. Il nome della cartella compare sulla ricetta. Per le ricette di altri viene stampata anche la fonte; dei segreti stampi solo ciò che hai sbloccato.</p>' +
       (gs.length ? gs.map(function (g) {
-        return '<div class="pbgrp"><input type="checkbox" class="pbm" data-g="' + g[0] + '" aria-label="Seleziona tutte: ' + esc(g[1]) + '"><details><summary>' + g[1] + ' <small>(' + g[2].length + ')</small></summary><div class="pblist">' +
-          g[2].map(function (p) { return '<label class="pbrow"><input type="checkbox" class="pbc" data-g="' + g[0] + '" data-id="' + p.id + '"' + (state.pbSel[p.id] ? ' checked' : '') + '><span>' + esc(p.title) + '</span></label>'; }).join('') + '</div></details></div>';
+        var body = g[0] === 'pub' ? g[2].map(pbRow).join('') : pbNode(g[0] === 'cook', g[2], '');
+        return '<div class="pbgrp"><input type="checkbox" class="pbm" aria-label="Seleziona tutte: ' + esc(g[1]) + '"><details><summary>' + g[1] + ' <small>(' + g[2].length + ')</small></summary><div class="pblist">' + body + '</div></details></div>';
       }).join('') : '<div class="empty"><b>Niente da stampare</b>Pubblica o salva qualche ricetta, poi torna qui.</div>') +
       '<button class="btn" data-act="printgo" id="pbgo">Stampa</button>');
     pbSync();
   }
   function pbSync() {
-    var all = document.querySelectorAll('.pbc'), n = 0;
-    Array.prototype.forEach.call(all, function (c) { if (c.checked) n++; });
+    var n = 0;
+    Array.prototype.forEach.call(document.querySelectorAll('.pbc'), function (c) { if (c.checked) n++; });
     Array.prototype.forEach.call(document.querySelectorAll('.pbm'), function (m) {
-      var g = m.getAttribute('data-g'), cs = document.querySelectorAll('.pbc[data-g="' + g + '"]'), k = 0;
+      var cs = m.parentNode.querySelectorAll('.pbc'), k = 0;
       Array.prototype.forEach.call(cs, function (c) { if (c.checked) k++; });
       m.checked = k > 0 && k === cs.length; m.indeterminate = k > 0 && k < cs.length;
     });
@@ -1683,7 +1726,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   document.addEventListener('change', function (e) {
     var t = e.target; if (!t || !t.classList) return;
     if (t.classList.contains('pbm')) {
-      Array.prototype.forEach.call(document.querySelectorAll('.pbc[data-g="' + t.getAttribute('data-g') + '"]'), function (c) { c.checked = t.checked; state.pbSel[c.getAttribute('data-id')] = t.checked; });
+      Array.prototype.forEach.call(t.parentNode.querySelectorAll('.pbc'), function (c) { c.checked = t.checked; state.pbSel[c.getAttribute('data-id')] = t.checked; });
       pbSync();
     } else if (t.classList.contains('pbc')) { state.pbSel[t.getAttribute('data-id')] = t.checked; pbSync(); }
   });
@@ -1766,6 +1809,7 @@ details.more[open] > summary::after { content: ' ▴'; }
           var save = editing ? sb.from('recipes').update(rowBase).eq('id', d.editDb).select('id').single() : sb.from('recipes').insert(rowBase).select('id').single();
           return save.then(function (r) {
             if (r.error) { if (up) sb.storage.from('media').remove([up.path]); throw r.error; }
+            if (!editing && d.priv && d.cfolder) { state.cfof[RB + r.data.id] = d.cfolder; persist(); }
             if (editing && d.oldPath && d.oldPath.indexOf(state.user.id + '/') === 0 && (up || !d.media)) sb.storage.from('media').remove([d.oldPath]);
             var wipe = editing ? sb.from('recipe_secrets').delete().eq('recipe_id', r.data.id) : Promise.resolve({});
             return wipe.then(function () {
@@ -2051,13 +2095,19 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
 
   /* Cartelle dei salvati */
-  function folderName(id) { var f = state.folders.filter(function (x) { return x.id === id; })[0]; return f ? f.name : ''; }
-  function savedList() {
-    var list = posts.filter(function (p) { return state.saved[p.id]; });
-    if (state.folderSel === 'none') list = list.filter(function (p) { return !state.fof[p.id]; });
-    else if (state.folderSel) list = list.filter(function (p) { return state.fof[p.id] === state.folderSel; });
-    return list;
-  }
+  function FS(c) { return c ? { fol: 'cfolders', map: 'cfof', sel: 'cfolderSel' } : { fol: 'folders', map: 'fof', sel: 'folderSel' }; }
+  function fList(c) { return state[FS(c).fol] || []; }
+  function fFind(id) { for (var i = 0; i < 2; i++) { var f = fList(i).filter(function (x) { return x.id === id; })[0]; if (f) return [!!i, f]; } return null; }
+  function fPathIds(c, id) { var out = [], g = 0, f; while (id && g++ < 20 && (f = fList(c).filter(function (x) { return x.id === id; })[0])) { out.unshift(f); id = f.parent || ''; } return out; }
+  function folderName(id) { var r = fFind(id); return r ? fPathIds(r[0], id).map(function (f) { return f.name; }).join(' › ') : ''; }
+  function fKids(c, parent) { return fList(c).filter(function (f) { return (f.parent || '') === (parent || ''); }); }
+  function fCur(c) { var s0 = state[FS(c).sel]; return s0 && fList(c).some(function (f) { return f.id === s0; }) ? s0 : ''; }
+  function fOfp(c, p) { var id = state[FS(c).map][p.id] || ''; return id && fList(c).some(function (f) { return f.id === id; }) ? id : ''; }
+  function fPool(c) { return c ? COOK.slice() : posts.filter(function (p) { return state.saved[p.id]; }); }
+  function fItems(c, id) { return fPool(c).filter(function (p) { return fOfp(c, p) === id; }); }
+  function fCount(c, id) { var n = fItems(c, id).length; fKids(c, id).forEach(function (k) { n += fCount(c, k.id); }); return n; }
+  function pathOfPost(p) { var c = !!p.cook, id = fOfp(c, p); return id ? fPathIds(c, id).map(function (f) { return f.name; }) : []; }
+  function fFlat(c, parent, d) { var o = []; fKids(c, parent).forEach(function (f) { o.push([f, d]); o = o.concat(fFlat(c, f.id, d + 1)); }); return o; }
   /* ---------- Storie (24 ore) ---------- */
   state.stories = []; state.sv = null; state.stdraft = null; state.slikes = {};
   var SEEN = {}; try { SEEN = JSON.parse(localStorage.getItem('gusto-seen') || '{}'); } catch (e) { SEEN = {}; }
@@ -2231,13 +2281,13 @@ details.more[open] > summary::after { content: ' ▴'; }
       (rest.length ? '<section><h3>Altri piatti (verranno salvati)</h3><div class="slist">' + rows(rest) + '</div></section>' : '') +
       '<button class="btn" data-act="close" style="margin-top:12px">Fatto</button>');
   }
-  function openFolderSheet(pid) {
-    var cur = pid ? state.fof[pid] : null;
-    sheetOpen('Cartelle', pid ? 'Sposta in una cartella' : 'Nuova cartella',
-      (pid ? '<div class="shgroup">' + ['<button class="shrow" role="radio" aria-checked="' + !cur + '" data-act="fset" data-id="' + pid + '" data-f="">Nessuna cartella</button>'].concat(state.folders.map(function (f) {
-        return '<button class="shrow" role="radio" aria-checked="' + (cur === f.id) + '" data-act="fset" data-id="' + pid + '" data-f="' + f.id + '">' + esc(f.name) + (cur === f.id ? ' &check;' : '') + '</button>';
+  function openFolderSheet(pid, c0) {
+    var pp = pid ? byId(pid) : null, c = pp ? !!pp.cook : !!c0, cur = pid ? (state[FS(c).map][pid] || '') : null;
+    sheetOpen('Cartelle', pid ? 'Sposta in una cartella' : (fCur(c) ? 'Nuova sottocartella' : 'Nuova cartella'),
+      (pid ? '<div class="shgroup">' + ['<button class="shrow" role="radio" aria-checked="' + !cur + '" data-act="fset" data-id="' + pid + '" data-f="">Nessuna cartella</button>'].concat(fFlat(c, '', 0).map(function (x) {
+        var f = x[0]; return '<button class="shrow" role="radio" aria-checked="' + (cur === f.id) + '" data-act="fset" data-id="' + pid + '" data-f="' + f.id + '" style="padding-left:' + (14 + x[1] * 18) + 'px">' + esc(f.name) + (cur === f.id ? ' &check;' : '') + '</button>';
       })).join('') + '</div>' : '') +
-      '<form class="cmf" id="fform" data-id="' + (pid || '') + '"><input type="text" id="fname" maxlength="24" placeholder="Nome (es. Cene veloci)" aria-label="Nome della cartella"><button class="btn" type="submit">Crea</button></form>');
+      '<form class="cmf" id="fform" data-id="' + (pid || '') + '" data-c="' + (c ? 1 : 0) + '"><input type="text" id="fname" maxlength="24" placeholder="Nome (es. Ricette di nonna)" aria-label="Nome della cartella"><button class="btn" type="submit">Crea</button></form>');
     document.getElementById('fname').focus();
   }
 
@@ -3795,9 +3845,10 @@ details.more[open] > summary::after { content: ' ▴'; }
     }
     if (id === 'fform') {
       e.preventDefault(); var fn = document.getElementById('fname').value.trim(); if (!fn) return true;
-      var fid = 'f' + Date.now(), pid = parseInt(e.target.getAttribute('data-id'), 10);
-      state.folders.push({ id: fid, name: fn }); if (pid) state.fof[pid] = fid; else state.folderSel = fid;
-      persist(); closeSheet(); render(); if (!pid) openFolderAdd(fid); return true;
+      var fid = 'f' + Date.now(), pid = parseInt(e.target.getAttribute('data-id'), 10), fc = e.target.getAttribute('data-c') === '1';
+      fList(fc).push({ id: fid, name: fn, parent: pid ? '' : fCur(fc) }); if (pid) state[FS(fc).map][pid] = fid; else state[FS(fc).sel] = fid;
+      if (pid && !fc) { var fq0 = byId(pid); if (fq0 && fq0.real && liveMode()) sb.from('saves').update({ folder: fid }).eq('user_id', state.user.id).eq('recipe_id', fq0.dbId).then(function () {}); }
+      persist(); closeSheet(); render(); if (!pid && !fc) openFolderAdd(fid); return true;
     }
     return false;
   }
@@ -3883,7 +3934,7 @@ details.more[open] > summary::after { content: ' ▴'; }
         if (r.error) { closeSheet(); toast('Non riesco a eliminare'); return; }
         if (dq.mediaPath && dq.mediaPath.indexOf(state.user.id + '/') === 0) sb.storage.from('media').remove([dq.mediaPath]);
         var ix = posts.indexOf(dq); if (ix > -1) posts.splice(ix, 1); var ic = COOK.indexOf(dq); if (ic > -1) COOK.splice(ic, 1);
-        delete state.liked[id]; delete state.saved[id]; delete state.fof[id];
+        delete state.liked[id]; delete state.saved[id]; delete state.fof[id]; delete state.cfof[id];
         closeSheet(); render(); toast('Piatto eliminato');
       });
       return true;
@@ -4033,7 +4084,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       return true;
     }
     if (act === 'privtog') { keepFields(); var dd = state.draft; dd.priv = !dd.priv; if (dd.priv) { dd.ssec = dd.ssec.map(function () { return false; }); dd.ings.forEach(function (r) { r.sec = false; }); } render(); return true; }
-    if (act === 'newpriv') { state.draft = { priv: true }; state.tab = 'new'; render(); window.scrollTo(0, 0); return true; }
+    if (act === 'newpriv') { state.draft = { priv: true, cfolder: el.getAttribute('data-f') || '' }; state.tab = 'new'; render(); window.scrollTo(0, 0); return true; }
     if (act === 'editcancel') { var wasP = state.draft && state.draft.priv; state.draft = null; state.tab = wasP ? 'saved' : 'me'; if (wasP) state.savedTab = 'book'; render(); window.scrollTo(0, 0); return true; }
     if (act === 'editrec') {
       var ep = byId(id); if (!ep || !ep.mine || !ep.real) return true;
@@ -4119,9 +4170,9 @@ details.more[open] > summary::after { content: ' ▴'; }
       persist(); closeSheet(); render(); return true;
     }
     if (act === 'stab') { state.savedTab = el.getAttribute('data-v'); render(); return true; }
-    if (act === 'fsel') { state.folderSel = el.getAttribute('data-v'); render(); return true; }
-    if (act === 'fnew') { openFolderSheet(null); return true; }
-    if (act === 'fadds') { if (state.folderSel && state.folderSel !== 'none') openFolderAdd(state.folderSel); return true; }
+    if (act === 'fsel') { state[FS(el.getAttribute('data-c') === '1').sel] = el.getAttribute('data-v'); render(); return true; }
+    if (act === 'fnew') { openFolderSheet(null, el.getAttribute('data-c') === '1'); return true; }
+    if (act === 'fadds') { if (fCur(false)) openFolderAdd(fCur(false)); return true; }
     if (act === 'fadd') {
       var fid = el.getAttribute('data-f'), fp2 = byId(id); if (!fp2 || !fid) return true;
       var was = !!state.saved[id]; state.saved[id] = true; state.fof[id] = fid;
@@ -4134,15 +4185,21 @@ details.more[open] > summary::after { content: ' ▴'; }
     }
     if (act === 'fmove') { openFolderSheet(id); return true; }
     if (act === 'fset') {
-      var f = el.getAttribute('data-f'); if (f) state.fof[id] = f; else delete state.fof[id];
-      var fp = byId(id); if (fp && fp.real && liveMode()) sb.from('saves').update({ folder: f || null }).eq('user_id', state.user.id).eq('recipe_id', fp.dbId).then(function () {});
+      var f = el.getAttribute('data-f'), fp = byId(id), fcs = !!(fp && fp.cook), fmap = state[FS(fcs).map];
+      if (f) fmap[id] = f; else delete fmap[id];
+      if (fp && !fcs && fp.real && liveMode()) sb.from('saves').update({ folder: f || null }).eq('user_id', state.user.id).eq('recipe_id', fp.dbId).then(function () {});
       persist(); closeSheet(); render(); return true;
     }
     if (act === 'fdel') {
-      var sel = state.folderSel; if (!sel || sel === 'none') return true;
-      state.folders = state.folders.filter(function (x) { return x.id !== sel; });
-      Object.keys(state.fof).forEach(function (k) { if (state.fof[k] === sel) delete state.fof[k]; });
-      state.folderSel = ''; persist(); render(); toast('Cartella eliminata'); return true;
+      var dc = el.getAttribute('data-c') === '1', sel = fCur(dc); if (!sel) return true;
+      var fo = fList(dc).filter(function (x) { return x.id === sel; })[0], up = fo.parent || '', map = state[FS(dc).map];
+      state[FS(dc).fol] = fList(dc).map(function (x) { if (x.parent === sel) { x.parent = up; } return x; }).filter(function (x) { return x.id !== sel; });
+      Object.keys(map).forEach(function (k) {
+        if (map[k] !== sel) return;
+        if (up) map[k] = up; else delete map[k];
+        var kp = byId(+k); if (!dc && kp && kp.real && liveMode()) sb.from('saves').update({ folder: up || null }).eq('user_id', state.user.id).eq('recipe_id', kp.dbId).then(function () {});
+      });
+      state[FS(dc).sel] = up; persist(); render(); toast('Cartella eliminata'); return true;
     }
     return false;
   }
@@ -4651,8 +4708,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 67; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611081400';
+  var VERSION = 68; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611081700';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
