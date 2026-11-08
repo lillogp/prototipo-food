@@ -42,7 +42,7 @@ th { background: var(--soft); }
 <h2>2. Quali dati trattiamo</h2>
 <table>
 <tr><th>Categoria</th><th>Esempi</th></tr>
-<tr><td>Account</td><td>email, nome, password (conservata in forma cifrata dal servizio di autenticazione), tipo di account (utente o nutrizionista), data di registrazione, versione dei Termini accettata</td></tr>
+<tr><td>Account</td><td>email, nome, password (conservata in forma cifrata dal servizio di autenticazione), tipo di account (utente o nutrizionista), data di registrazione, versione dei Termini accettata; se accedi con Google, ricevi da Google solo email e nome dell'account (non la password) e noi non pubblichiamo nulla su Google</td></tr>
 <tr><td>Profilo</td><td>foto profilo, nome visibile, impostazioni di privacy (profilo pubblico o privato, conferme di lettura, privacy delle storie)</td></tr>
 <tr><td>Contenuti che pubblichi</td><td>piatti, foto e video, ingredienti e passaggi, commenti, mi piace, ricette salvate e cartelle, ricette del tuo ricettario privato (che solo tu puoi vedere), storie (visibili 24 ore), menu; se lo scegli, ingredienti e passaggi «segreti» (fino a 2 per tipo), che restano nascosti e vengono mostrati solo alle persone che autorizzi</td></tr>
 <tr><td>Relazioni e messaggi</td><td>chi segui e chi ti segue, richieste di follow, blocchi e segnalazioni, richieste di accesso ai segreti di una ricetta (chi le fa e se vengono accettate), messaggi diretti, risposte alle storie, chat con il tuo nutrizionista, eventuali avvisi ricevuti dall'amministrazione (conservati nello storico dell'account finché esiste)</td></tr>
@@ -73,6 +73,7 @@ th { background: var(--soft); }
 <li><b>Fornitori tecnici (responsabili del trattamento)</b>:
   <ul>
   <li>Supabase, per database, autenticazione e archiviazione di foto e video;</li>
+  <li>Google, se scegli «Continua con Google»: Google ti identifica e ci comunica email e nome; Google tratta i tuoi dati secondo la propria informativa;</li>
   <li>GitHub Pages, per la pubblicazione dell'app;</li>
   <li>Cloudflare, per la gestione del nome di dominio frogsapp.com (traduzione del nome in indirizzo, senza accesso ai contenuti dell'app);</li>
   <li>il fornitore che invia le email del servizio (conferma account e recupero password): <mark>[FORNITORE EMAIL, da indicare quando sceglierai il servizio SMTP]</mark>;</li>

@@ -526,6 +526,11 @@ body.inchat nav.tabs { display: none !important; }
 .cpb .cmf { margin: 0 !important; }
 .cpb .procard { margin: 0; }
 .cpb .hint { margin: 0; text-align: center; }
+.pww { position: relative; display: block; } .pww input { width: 100%; padding-right: 48px; }
+.pweye { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; border-radius: 10px; }
+.pweye svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pweye .off { display: none; } .pweye[aria-pressed=true] .on { display: none; } .pweye[aria-pressed=true] .off { display: block; }
+.sepor { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 4px 0; } .sepor::before, .sepor::after { content: ''; flex: 1; height: 1px; background: var(--line); }
 </style>
 </head>
 <body>
@@ -1242,7 +1247,15 @@ body.inchat nav.tabs { display: none !important; }
     var inchat = !!document.querySelector('.chatpage'); document.body.classList.toggle('inchat', inchat);
     if (inchat) { fitChat(); var cc = document.querySelector('.chatpage .chat'); if (cc) cc.scrollTop = cc.scrollHeight; }
     var chatEl = document.getElementById('chat'); if (chatEl) chatEl.scrollTop = chatEl.scrollHeight;
-    state.carEnd = null;
+    state.carEnd = null; pwEyes();
+  }
+  var EYE = '<svg class="on" viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><svg class="off" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.7A10 10 0 0112 5.5c6.4 0 10 6.5 10 6.5a17 17 0 01-3.2 3.9M6.4 6.9A16.7 16.7 0 002 12s3.6 6.5 10 6.5a9.7 9.7 0 004.1-.9M9.9 9.9a3 3 0 004.2 4.2"/></svg>';
+  function pwEyes() {
+    Array.prototype.forEach.call(document.querySelectorAll('#app input[type=password]'), function (i) {
+      if (i.parentNode.classList.contains('pww')) return;
+      var w = document.createElement('span'); w.className = 'pww'; i.parentNode.insertBefore(w, i); w.appendChild(i);
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'pweye'; b.setAttribute('data-act', 'pweye'); b.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-label', 'Mostra la password'); b.innerHTML = EYE; w.appendChild(b);
+    });
   }
 
   /* Valori medi per 100 g (stime indicative). kc = kcal, p = proteine, c = carboidrati, f = grassi, pc = peso di un pezzo in g, d = densità per i liquidi */
@@ -2252,7 +2265,7 @@ body.inchat nav.tabs { display: none !important; }
   var authChecked = !sb, cloudReady = false, syncT = null, authMsg = '', authBusy = false;
   state.user = null; state.authMode = 'in';
   state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {}
-  function needAuth() { return (authChecked && !state.user) || !!state.recovery; }
+  function needAuth() { return (authChecked && !state.user) || !!state.recovery || !!(state.user && state.needTerms); }
   function cloudPack() {
     var o = {}; KEEP.forEach(function (k) { if (k !== 'pantry' && k !== 'prefs' && k !== 'pro' && k !== 'chat') o[k] = state[k]; });
     return { planner: o, pantry: state.pantry, prefs: state.prefs };
@@ -2300,6 +2313,12 @@ body.inchat nav.tabs { display: none !important; }
   }
   var LEGAL_VER = '2026-11-07', AUD = {};
   function viewAuth() {
+    if (state.user && state.needTerms) {
+      return '<div class="view-h" style="margin-top:18px"><h1>Un ultimo passaggio</h1><p>Hai effettuato l\'accesso come ' + esc(state.user.email || '') + '. Prima di usare Frog’s conferma questo:</p></div>' +
+        '<div style="display:flex;gap:10px;align-items:flex-start"><button type="button" class="mchk" style="border:0;width:auto;flex:none;padding:2px" role="checkbox" aria-checked="' + !!state.authTerms + '" aria-label="Accetto Termini e Informativa privacy" data-act="authterms"><span class="box">' + (state.authTerms ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span></button><span style="font-size:14px">Ho almeno 16 anni e accetto i <a href="termini.html" target="_blank" rel="noopener">Termini d\'uso</a> e l\'<a href="privacy.html" target="_blank" rel="noopener">Informativa privacy</a>.</span></div>' +
+        (authMsg ? '<p class="hint" role="status" style="margin:10px 0 0">' + esc(authMsg) + '</p>' : '') +
+        '<button class="btn" data-act="gateok" style="padding:14px 16px;margin-top:14px"' + (authBusy ? ' disabled' : '') + '>Continua</button><button class="btn ghost" data-act="logout">Esci</button>';
+    }
     if (state.recovery) {
       return '<div class="view-h" style="margin-top:18px"><h1>Nuova password</h1><p>Scegli la nuova password per il tuo account.</p></div><form class="new" id="newpwform" novalidate>' +
         '<label class="f" for="np-p">Nuova password <small>almeno 8 caratteri</small><input id="np-p" type="password" autocomplete="new-password" maxlength="72"></label>' +
@@ -2324,25 +2343,36 @@ body.inchat nav.tabs { display: none !important; }
       (authMsg ? '<p class="hint" role="status" style="margin:0">' + esc(authMsg) + '</p>' : '') +
       '<button class="btn" type="submit" style="padding:14px 16px"' + (authBusy ? ' disabled' : '') + '>' + (up ? 'Registrati' : 'Accedi') + '</button></form>' +
       (up ? '' : '<p style="text-align:center;margin:12px 0 0"><button class="reset" data-act="authforgot">Password dimenticata?</button></p>') +
-      '<p style="text-align:center;margin:14px 0 4px"><button class="reset" data-act="authmode">' + (up ? 'Ho già un account' : 'Non ho un account: registrati') + '</button></p>' +
-      '';
+      (up && state.authPro ? '' : '<div class="sepor">oppure</div><button class="btn ghost" type="button" data-act="google"' + (authBusy ? ' disabled' : '') + '>Continua con Google</button>') +
+      '<p style="text-align:center;margin:14px 0 4px"><button class="reset" data-act="authmode">' + (up ? 'Ho già un account' : 'Non ho un account: registrati') + '</button></p>';
   }
   function openAccount() {
     sheetOpen('Account', 'Account',
       (state.user ? '<p style="margin:0">Hai effettuato l\'accesso come <b>' + esc(state.user.email) + '</b>.</p><p class="hint" style="margin:0">Planner, dispensa e preferenze si salvano online e li ritrovi su ogni dispositivo.</p><button class="btn" data-act="logout">Esci</button>'
         : '<p style="margin:0">Stai usando Frog’s senza account: i dati restano solo su questo dispositivo.</p><button class="btn" data-act="authopen">Accedi o registrati</button>'));
   }
+  function chkTerms(u) {
+    var g = u.app_metadata && u.app_metadata.provider === 'google', has = u.user_metadata && u.user_metadata.terms_version;
+    if (!g || has) { state.needTerms = false; return; }
+    var st = null; try { st = localStorage.getItem('gusto-g-terms'); localStorage.removeItem('gusto-g-terms'); } catch (e) {}
+    if (st) { var pr = st.split('|'); sb.auth.updateUser({ data: { terms_version: pr[0], terms_at: pr[1] } }).then(function () {}, function () {}); state.needTerms = false; return; }
+    state.needTerms = true;
+  }
+  try {
+    var hp = new URLSearchParams((location.hash || '').replace(/^#/, '') + '&' + (location.search || '').replace(/^\?/, '')), ed = hp.get('error_description') || hp.get('error');
+    if (ed && /provider|oauth|google|access_denied|exchange/i.test(ed + (hp.get('error') || ''))) { authMsg = 'L\'accesso con Google non è andato a buon fine. Riprova o usa email e password.'; history.replaceState(null, '', location.pathname); }
+  } catch (e) {}
   if (sb) {
     sb.auth.getSession().then(function (r) {
       var u = r.data && r.data.session && r.data.session.user;
-      if (u) { state.user = { id: u.id, email: u.email }; cloudLoad(); }
+      if (u) { state.user = { id: u.id, email: u.email }; chkTerms(u); cloudLoad(); }
       authChecked = true; render();
     }, function () { authChecked = true; render(); });
     sb.auth.onAuthStateChange(function (ev, session) {
       if (ev === 'PASSWORD_RECOVERY') { state.recovery = true; setTimeout(render, 0); }
       setTimeout(function () {
         var u = session && session.user;
-        if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email }; authBusy = false; authMsg = ''; AUD = {}; cloudReady = false; cloudLoad(); }
+        if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email }; chkTerms(u); authBusy = false; authMsg = ''; AUD = {}; cloudReady = false; cloudLoad(); }
         else if (!u && state.user && ev === 'SIGNED_OUT') { state.user = null; render(); }
       }, 0);
     });
@@ -3775,6 +3805,26 @@ body.inchat nav.tabs { display: none !important; }
     if (act === 'notiftap') { var nn = state.notifs[parseInt(el.getAttribute('data-i'), 10)]; if (nn) notifOpen(nn); return true; }
     if (act === 'authmode') { state.authMode = state.authMode === 'in' || state.authMode === 'forgot' ? (state.authMode === 'forgot' ? 'in' : 'up') : 'in'; authMsg = ''; render(); return true; }
     if (act === 'authforgot') { state.authMode = 'forgot'; authMsg = ''; render(); return true; }
+    if (act === 'pweye') { var pi = el.parentNode.querySelector('input'); if (pi) { var sh = pi.type === 'password'; pi.type = sh ? 'text' : 'password'; el.setAttribute('aria-pressed', sh ? 'true' : 'false'); el.setAttribute('aria-label', sh ? 'Nascondi la password' : 'Mostra la password'); } return true; }
+    if (act === 'google') {
+      if (authBusy || !sb) return true;
+      if (state.authMode === 'up' && !state.authTerms) { authMsg = 'Per registrarti accetta i Termini d\'uso e l\'Informativa privacy.'; render(); return true; }
+      try { if (state.authMode === 'up') localStorage.setItem('gusto-g-terms', LEGAL_VER + '|' + new Date().toISOString()); else localStorage.removeItem('gusto-g-terms'); } catch (x) {}
+      authBusy = true; authMsg = 'Ti porto su Google…'; render();
+      sb.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: location.origin + location.pathname } }).then(function (r) {
+        if (r && r.error) { authBusy = false; authMsg = 'L\'accesso con Google non è disponibile al momento. Usa email e password.'; render(); }
+      }, function () { authBusy = false; authMsg = 'Connessione non riuscita. Riprova.'; render(); });
+      return true;
+    }
+    if (act === 'gateok') {
+      if (!state.authTerms) { authMsg = 'Per continuare accetta i Termini d\'uso e l\'Informativa privacy.'; render(); return true; }
+      authBusy = true; authMsg = ''; render();
+      sb.auth.updateUser({ data: { terms_version: LEGAL_VER, terms_at: new Date().toISOString() } }).then(function (r) {
+        authBusy = false; if (r && r.error) { authMsg = 'Operazione non riuscita. Riprova.'; render(); return; }
+        state.needTerms = false; state.authTerms = false; authMsg = ''; render();
+      }, function () { authBusy = false; authMsg = 'Connessione non riuscita. Riprova.'; render(); });
+      return true;
+    }
     if (act === 'authterms') { var e2 = document.getElementById('au-e'), p2 = document.getElementById('au-n'), q2 = document.getElementById('au-p'); var ev2 = e2 ? e2.value : '', nv2 = p2 ? p2.value : '', pv2 = q2 ? q2.value : ''; state.authTerms = !state.authTerms; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev2; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv2; if (document.getElementById('au-p')) document.getElementById('au-p').value = pv2; return true; }
     if (act === 'authpro') { var e1 = document.getElementById('au-e'), p1 = document.getElementById('au-n'); var ev1 = e1 ? e1.value : '', nv1 = p1 ? p1.value : ''; state.authPro = !state.authPro; render(); if (document.getElementById('au-e')) document.getElementById('au-e').value = ev1; if (document.getElementById('au-n')) document.getElementById('au-n').value = nv1; return true; }
     if (act === 'authopen') { state.guest = false; try { localStorage.removeItem('gusto-guest'); } catch (e) {} closeSheet(); render(); return true; }
@@ -4431,8 +4481,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 61; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611080900';
+  var VERSION = 62; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611081000';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
