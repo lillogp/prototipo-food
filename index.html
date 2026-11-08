@@ -549,6 +549,11 @@ details.more > summary::after { content: ' ▾'; }
 details.more[open] > summary::after { content: ' ▴'; }
 .morebody { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .morebody .btn { margin: 0; }
+.srow { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; position: relative; }
+.srow.sel { outline: 2px solid var(--fg); outline-offset: -2px; background: var(--soft); }
+.srow.sel::after { content: '\2713'; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 13px; line-height: 22px; text-align: center; }
+.selbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin: 0 0 10px; background: var(--fg); color: #fff; border-radius: 12px; font-size: 14px; }
+.selbar button { color: #fff; font-weight: 700; }
 .sbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-bottom: 1px solid var(--line); margin: 0 0 12px; }
 .sbar button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; font-size: 11px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .sbar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -739,11 +744,12 @@ details.more[open] > summary::after { content: ' ▴'; }
     return m.type === 'video' ? '<video src="' + m.src + '" muted playsinline preload="metadata"></video>' : '<img src="' + m.src + '" alt="">';
   }
   function cookRow(p) {
-    return '<div class="srow" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ' + esc(p.title) + '"><div class="sthumb">' + thumbTag(p.media) + '</div>' +
+    return '<div class="srow' + selOn(p) + '" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ' + esc(p.title) + '"><div class="sthumb">' + thumbTag(p.media) + '</div>' +
       '<div class="sinfo"><b>' + esc(p.title) + '</b><span>' + esc(p.tag) + '</span><span>' + fmtTime(p.time) + ' · ' + p.serv + ' porzioni</span><button class="reset fbtn" data-act="fmove" data-id="' + p.id + '">' + (fOfp(true, p) ? esc(folderName(fOfp(true, p))) : 'Cartella') + '</button></div><span class="seclab" aria-label="Privata">' + ICONS.lock + '</span></div>';
   }
+  function selOn(p) { return state.sel && state.sel.ids[p.id] ? ' sel' : ''; }
   function savedRow(p) {
-    return '<div class="srow" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ' + esc(p.title) + '"><div class="sthumb">' + thumbTag(p.media) + '</div>' +
+    return '<div class="srow' + selOn(p) + '" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ' + esc(p.title) + '"><div class="sthumb">' + thumbTag(p.media) + '</div>' +
       '<div class="sinfo"><b>' + esc(p.title) + '</b><span>' + esc(hnd(p)) + '</span><span>' + fmtTime(p.time) + ' · ' + p.serv + ' porzioni</span><button class="reset fbtn" data-act="fmove" data-id="' + p.id + '">' + (fOfp(false, p) ? esc(folderName(fOfp(false, p))) : 'Cartella') + '</button></div>' +
       '<button class="ic save" data-act="save" data-id="' + p.id + '" aria-pressed="true" aria-label="Rimuovi dai salvati">' + ICONS.save + '</button></div>';
   }
@@ -853,10 +859,12 @@ details.more[open] > summary::after { content: ' ▴'; }
       (cur ? '<button class="reset" data-act="fdel" data-c="' + cn + '">Elimina cartella</button>' : '') + '</div>';
     var empty = c ? '<div class="empty"><b>' + (cur ? 'Cartella vuota' : 'Il tuo ricettario è vuoto') + '</b>Scrivi qui le ricette di famiglia o quelle che provi: restano private. Puoi renderle pubbliche in qualsiasi momento.</div>'
       : '<div class="empty"><b>' + (cur ? 'Cartella vuota' : 'Ancora niente qui') + '</b>' + (cur ? 'Aggiungi ricette salvate o altri piatti.' : 'Tocca il segnalibro su una ricetta del feed per ritrovarla in questa pagina.') + '</div>';
-    return (c ? '<p class="hint" style="margin:0 0 10px"><span class="seclab">' + ICONS.lock + '</span>Solo tu vedi queste ricette: non compaiono nel feed, nel profilo o nelle ricerche.</p>' : '') +
+    var nsel = state.sel ? Object.keys(state.sel.ids).length : 0;
+    return (nsel ? '<div class="selbar"><button data-act="selx">Annulla</button><b>' + nsel + (nsel === 1 ? ' selezionata' : ' selezionate') + '</b><button data-act="selmove">Sposta</button></div>' : '') + (c ? '<p class="hint" style="margin:0 0 10px"><span class="seclab">' + ICONS.lock + '</span>Solo tu vedi queste ricette: non compaiono nel feed, nel profilo o nelle ricerche.</p>' : '') +
       crumbs + tools + tiles + (items.length ? '<div class="slist">' + items.map(c ? cookRow : savedRow).join('') + '</div>' : (kids.length ? '' : empty));
   }
   function viewSaved() {
+    if (state.sel && (state.tab !== 'saved' || (state.sel.c ? state.savedTab !== 'book' : state.savedTab === 'book' || state.savedTab === 'rest'))) state.sel = null;
     var st = state.savedTab === 'rest' ? 'rest' : state.savedTab === 'book' && liveMode() ? 'book' : 'recipes';
     var head = '<div class="view-h"><h1>Salvati</h1></div>' + savedBar(st);
     if (st === 'book') return head + folderView(true);
@@ -1730,6 +1738,31 @@ details.more[open] > summary::after { content: ' ▴'; }
       pbSync();
     } else if (t.classList.contains('pbc')) { state.pbSel[t.getAttribute('data-id')] = t.checked; pbSync(); }
   });
+  (function () {
+    var lt = null, sx = 0, sy = 0, fired = false;
+    function clr() { clearTimeout(lt); lt = null; }
+    document.addEventListener('pointerdown', function (e) {
+      var r = e.target.closest && e.target.closest('#app .srow[data-id]'); fired = false; clr();
+      if (!r || state.tab !== 'saved' || state.savedTab === 'rest' || e.target.closest('.save')) return;
+      sx = e.clientX; sy = e.clientY;
+      lt = setTimeout(function () {
+        var id = r.getAttribute('data-id'), p = byId(isNaN(+id) ? id : +id); if (!p || state.sel) return;
+        fired = true; state.sel = { c: !!p.cook, ids: {} }; state.sel.ids[p.id] = true; try { navigator.vibrate && navigator.vibrate(15); } catch (x) {} render();
+      }, 450);
+    });
+    document.addEventListener('pointermove', function (e) { if (lt && (Math.abs(e.clientX - sx) > 10 || Math.abs(e.clientY - sy) > 10)) clr(); });
+    ['pointerup', 'pointercancel', 'scroll'].forEach(function (n) { document.addEventListener(n, clr, true); });
+    document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('#app .srow')) e.preventDefault(); });
+    window.addEventListener('click', function (e) {
+      var r = e.target.closest && e.target.closest('#app .srow[data-id]'); if (!r) return;
+      if (fired) { fired = false; e.preventDefault(); e.stopPropagation(); return; }
+      if (!state.sel) return;
+      e.preventDefault(); e.stopPropagation();
+      var id = r.getAttribute('data-id'), p = byId(isNaN(+id) ? id : +id); if (!p) return;
+      if (state.sel.ids[p.id]) delete state.sel.ids[p.id]; else state.sel.ids[p.id] = true;
+      if (!Object.keys(state.sel.ids).length) state.sel = null; render();
+    }, true);
+  })();
   document.addEventListener('toggle', function (e) { var t = e.target; if (t && t.classList && t.classList.contains('more')) state.moreOpen = t.open; }, true);
   function loadSecrets(p) {
     var q1 = sb.from('recipe_secrets').select('kind,idx,content').eq('recipe_id', p.dbId), q2 = p.mine ? Promise.resolve({ data: null }) : sb.from('secret_requests').select('id,status').eq('recipe_id', p.dbId).eq('requester_id', state.user.id).maybeSingle();
@@ -2280,6 +2313,14 @@ details.more[open] > summary::after { content: ' ▴'; }
       (sv.length ? '<section><h3>Tra i tuoi salvati</h3><div class="slist">' + rows(sv) + '</div></section>' : '') +
       (rest.length ? '<section><h3>Altri piatti (verranno salvati)</h3><div class="slist">' + rows(rest) + '</div></section>' : '') +
       '<button class="btn" data-act="close" style="margin-top:12px">Fatto</button>');
+  }
+  function moveSel(f) {
+    if (!state.sel) return; var sc = state.sel.c, map = state[FS(sc).map], n = 0;
+    Object.keys(state.sel.ids).forEach(function (k) {
+      n++; if (f) map[k] = f; else delete map[k];
+      var kp = byId(+k); if (!sc && kp && kp.real && liveMode()) sb.from('saves').update({ folder: f || null }).eq('user_id', state.user.id).eq('recipe_id', kp.dbId).then(function () {});
+    });
+    state.sel = null; persist(); closeSheet(); render(); toast(n + (n === 1 ? ' ricetta spostata' : ' ricette spostate') + (f ? ' in ' + folderName(f) : ''));
   }
   function openFolderSheet(pid, c0) {
     var pp = pid ? byId(pid) : null, c = pp ? !!pp.cook : !!c0, cur = pid ? (state[FS(c).map][pid] || '') : null;
@@ -3847,6 +3888,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       e.preventDefault(); var fn = document.getElementById('fname').value.trim(); if (!fn) return true;
       var fid = 'f' + Date.now(), pid = parseInt(e.target.getAttribute('data-id'), 10), fc = e.target.getAttribute('data-c') === '1';
       fList(fc).push({ id: fid, name: fn, parent: pid ? '' : fCur(fc) }); if (pid) state[FS(fc).map][pid] = fid; else state[FS(fc).sel] = fid;
+      if (e.target.getAttribute('data-sel') === '1') { fList(fc)[fList(fc).length - 1].parent = ''; moveSel(fid); return true; }
       if (pid && !fc) { var fq0 = byId(pid); if (fq0 && fq0.real && liveMode()) sb.from('saves').update({ folder: fid }).eq('user_id', state.user.id).eq('recipe_id', fq0.dbId).then(function () {}); }
       persist(); closeSheet(); render(); if (!pid && !fc) openFolderAdd(fid); return true;
     }
@@ -4169,8 +4211,8 @@ details.more[open] > summary::after { content: ' ▴'; }
       var did = el.getAttribute('data-r'); state.myr = state.myr.filter(function (r) { return r.id !== did; }); delete state.rsaved[did]; delete state.rnote[did]; delete state.rvisited[did];
       persist(); closeSheet(); render(); return true;
     }
-    if (act === 'stab') { state.savedTab = el.getAttribute('data-v'); render(); return true; }
-    if (act === 'fsel') { state[FS(el.getAttribute('data-c') === '1').sel] = el.getAttribute('data-v'); render(); return true; }
+    if (act === 'stab') { state.sel = null; state.savedTab = el.getAttribute('data-v'); render(); return true; }
+    if (act === 'fsel') { state.sel = null; state[FS(el.getAttribute('data-c') === '1').sel] = el.getAttribute('data-v'); render(); return true; }
     if (act === 'fnew') { openFolderSheet(null, el.getAttribute('data-c') === '1'); return true; }
     if (act === 'fadds') { if (fCur(false)) openFolderAdd(fCur(false)); return true; }
     if (act === 'fadd') {
@@ -4184,6 +4226,16 @@ details.more[open] > summary::after { content: ' ▴'; }
       render(); toast('Aggiunta a ' + folderName(fid)); return true;
     }
     if (act === 'fmove') { openFolderSheet(id); return true; }
+    if (act === 'selx') { state.sel = null; render(); return true; }
+    if (act === 'selmove') {
+      if (!state.sel) return true; var sc = state.sel.c, n0 = Object.keys(state.sel.ids).length;
+      sheetOpen('Sposta', 'Sposta ' + n0 + (n0 === 1 ? ' ricetta' : ' ricette'),
+        '<div class="shgroup">' + ['<button class="shrow" data-act="fmovesel" data-f="">Nessuna cartella</button>'].concat(fFlat(sc, '', 0).map(function (x) {
+          return '<button class="shrow" data-act="fmovesel" data-f="' + x[0].id + '" style="padding-left:' + (14 + x[1] * 18) + 'px">' + esc(x[0].name) + '</button>'; })).join('') + '</div>' +
+        '<form class="cmf" id="fform" data-id="" data-sel="1" data-c="' + (sc ? 1 : 0) + '"><input type="text" id="fname" maxlength="24" placeholder="Nuova cartella" aria-label="Nome della cartella"><button class="btn" type="submit">Crea e sposta</button></form>');
+      return true;
+    }
+    if (act === 'fmovesel') { moveSel(el.getAttribute('data-f')); return true; }
     if (act === 'fset') {
       var f = el.getAttribute('data-f'), fp = byId(id), fcs = !!(fp && fp.cook), fmap = state[FS(fcs).map];
       if (f) fmap[id] = f; else delete fmap[id];
@@ -4708,8 +4760,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 68; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611081700';
+  var VERSION = 69; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611090940';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
