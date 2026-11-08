@@ -531,6 +531,15 @@ body.inchat nav.tabs { display: none !important; }
 .pweye svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .pweye .off { display: none; } .pweye[aria-pressed=true] .on { display: none; } .pweye[aria-pressed=true] .off { display: block; }
 .sepor { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 4px 0; } .sepor::before, .sepor::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.svuota { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 18px; border: 0; border-radius: 16px; background: var(--accent); color: var(--accent-fg); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 0 0 3px #CFE3B8, 0 6px 16px rgba(69, 128, 42, .35); animation: svglow 2.8s ease-in-out infinite; }
+.svuota svg { width: 30px; height: 30px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.svuota b { display: block; font-size: 19px; font-weight: 700; letter-spacing: .2px; line-height: 1.15; }
+.svuota small { display: block; font-size: 13px; opacity: .92; margin-top: 2px; }
+.svuota::after { content: ''; position: absolute; top: 0; bottom: 0; width: 60px; left: -80px; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent); animation: svshine 4s ease-in-out infinite; }
+.svuota:active { transform: scale(.98); }
+@keyframes svglow { 50% { box-shadow: 0 0 0 6px #DDEBCB, 0 8px 20px rgba(69, 128, 42, .45); } }
+@keyframes svshine { 0%, 55% { left: -80px; } 100% { left: 110%; } }
+@media (prefers-reduced-motion: reduce) { .svuota, .svuota::after { animation: none; } }
 </style>
 </head>
 <body>
@@ -779,6 +788,8 @@ body.inchat nav.tabs { display: none !important; }
     if (!d.ssec || d.ssec.length !== d.stps.length) d.ssec = d.stps.map(function (_, i) { return !!(d.ssec && d.ssec[i]); });
     return d;
   }
+  var WAND = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19L16 8"/><path d="M14 6l4 4"/><path d="M18 3v3M16.5 4.5h3"/><path d="M6 6v2M5 7h2"/><path d="M19 15v2M18 16h2"/></svg>';
+  function SVUOTA(mb) { return '<button class="svuota" data-act="pcook" style="margin:0 0 ' + mb + 'px">' + WAND + '<span><b>Svuotafrigo</b><small>Cosa cucino con quello che ho?</small></span></button>'; }
   function ingBox(d) {
     var rows = d.ings.map(function (r, i) {
       return '<div class="ingrow" data-oi="' + i + '"><div class="namewrap"><input type="text" class="in-n" list="ingl" placeholder="Ingrediente (es. Farina 00)" maxlength="40" aria-label="Ingrediente ' + (i + 1) + '" value="' + esc(r.n) + '">' +
@@ -1148,7 +1159,7 @@ body.inchat nav.tabs { display: none !important; }
     var rows = state.pantry.map(function (x, i) {
       return '<li class="pitem"><span class="pn1">' + esc(x.n) + '</span><span class="pq">' + esc(pQty(x)) + '</span><button class="rm" data-act="pdel" data-i="' + i + '" aria-label="Rimuovi ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>';
     }).join('');
-    return '<button class="btn" data-act="pcook" style="width:100%;margin:0 0 12px">Cosa posso cucinare con la dispensa?</button>' + '<button type="button" class="btn ghost micbtn" data-act="voice" data-v="pantry" style="width:100%;margin:0 0 10px"><i class="micic" aria-hidden="true"></i>Aggiungi con la voce</button>' + '<p class="hint" style="margin:0 0 10px">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
+    return SVUOTA(12) + '<button type="button" class="btn ghost micbtn" data-act="voice" data-v="pantry" style="width:100%;margin:0 0 10px"><i class="micic" aria-hidden="true"></i>Aggiungi con la voce</button>' + '<p class="hint" style="margin:0 0 10px">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
       '<form class="pform" id="pantryform"><input type="text" id="pnn" list="ingl" maxlength="40" placeholder="Ingrediente" aria-label="Ingrediente"><input type="number" id="pqq" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità">' +
       '<select id="puu" aria-label="Unità"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="pezzi">pezzi</option></select><button class="btn" type="submit">Aggiungi</button></form>' +
       (rows ? '<ul class="ing plist" style="margin-top:12px">' + rows + '</ul>' : '<div class="empty" style="padding:18px;margin-top:12px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
@@ -1723,7 +1734,7 @@ body.inchat nav.tabs { display: none !important; }
       return '<li class="pitem"><span class="pn1">' + esc(x.n) + '</span><span class="pq">' + esc(pQty(x)) + '</span><button class="rm" data-act="pdel" data-i="' + i + '" aria-label="Rimuovi ' + esc(x.n) + '"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></li>';
     }).join('');
     sheetOpen('Dispensa', 'Dispensa',
-      '<button class="btn" data-act="pcook" style="width:100%;margin:0">Cosa posso cucinare con la dispensa?</button>' + '<button type="button" class="btn ghost micbtn" data-act="voice" data-v="pantry" style="width:100%;margin:0 0 10px"><i class="micic" aria-hidden="true"></i>Aggiungi con la voce</button>' + '<p class="hint" style="margin:0">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
+      SVUOTA(0) + '<button type="button" class="btn ghost micbtn" data-act="voice" data-v="pantry" style="width:100%;margin:0 0 10px"><i class="micic" aria-hidden="true"></i>Aggiungi con la voce</button>' + '<p class="hint" style="margin:0">Quello che hai già in casa. La lista della spesa lo sottrae da quello che serve.</p>' +
       '<form class="pform" id="pantryform"><input type="text" id="pnn" list="ingl" maxlength="40" placeholder="Ingrediente" aria-label="Ingrediente"><input type="number" id="pqq" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità">' +
       '<select id="puu" aria-label="Unità"><option value="g">g</option><option value="kg">kg</option><option value="ml">ml</option><option value="l">l</option><option value="pezzi">pezzi</option></select><button class="btn" type="submit">Aggiungi</button></form>' +
       (rows ? '<ul class="ing plist">' + rows + '</ul>' : '<div class="empty" style="padding:18px"><b>Dispensa vuota</b>Aggiungi gli ingredienti che hai in casa.</div>') +
@@ -4481,8 +4492,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 62; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611081000';
+  var VERSION = 63; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611081100';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
