@@ -291,6 +291,8 @@ textarea { min-height: 112px; resize: vertical; }
 .rm.sec[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
 .seclocked { color: var(--muted); font-style: italic; }
 .seclocked svg, .seclab svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; vertical-align: -2px; margin-right: 4px; }
+.secask { flex: none; margin-left: 8px; padding: 2px 10px; border: 1px solid var(--accent); border-radius: 99px; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 600; font-style: normal; line-height: 1.5; cursor: pointer; }
+.secask:disabled { opacity: .55; cursor: default; }
 .secbox { border: 1.5px dashed var(--accent); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .secbox b { display: block; }
 .rm.mic.rec { background: var(--accent); color: #fff; }
@@ -531,13 +533,13 @@ body.inchat nav.tabs { display: none !important; }
 .pweye svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .pweye .off { display: none; } .pweye[aria-pressed=true] .on { display: none; } .pweye[aria-pressed=true] .off { display: block; }
 .sepor { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 4px 0; } .sepor::before, .sepor::after { content: ''; flex: 1; height: 1px; background: var(--line); }
-.svuota { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; min-height: 64px; padding: 12px 18px; border: 0; border-radius: 16px; background: var(--accent); color: var(--accent-fg); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 0 0 3px #CFE3B8, 0 6px 16px rgba(69, 128, 42, .35); animation: svglow 2.8s ease-in-out infinite; }
-.svuota svg { width: 30px; height: 30px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-.svuota b { display: block; font-size: 19px; font-weight: 700; letter-spacing: .2px; line-height: 1.15; }
-.svuota small { display: block; font-size: 13px; opacity: .92; margin-top: 2px; }
+.svuota { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 46px; padding: 7px 14px; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-fg); font: inherit; text-align: left; cursor: pointer; box-shadow: 0 0 0 2px #CFE3B8; animation: svglow 2.8s ease-in-out infinite; }
+.svuota svg { width: 22px; height: 22px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.svuota b { display: block; font-size: 16px; font-weight: 700; line-height: 1.15; }
+.svuota small { display: block; font-size: 12px; opacity: .92; margin-top: 1px; }
 .svuota::after { content: ''; position: absolute; top: 0; bottom: 0; width: 60px; left: -80px; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .35), transparent); animation: svshine 4s ease-in-out infinite; }
 .svuota:active { transform: scale(.98); }
-@keyframes svglow { 50% { box-shadow: 0 0 0 6px #DDEBCB, 0 8px 20px rgba(69, 128, 42, .45); } }
+@keyframes svglow { 50% { box-shadow: 0 0 0 4px #DDEBCB; } }
 @keyframes svshine { 0%, 55% { left: -80px; } 100% { left: 110%; } }
 @media (prefers-reduced-motion: reduce) { .svuota, .svuota::after { animation: none; } }
 </style>
@@ -1472,12 +1474,18 @@ body.inchat nav.tabs { display: none !important; }
   }
   function ingItems(p, serv) {
     var f = serv / p.serv;
-    return p.ing.map(function (i) { return '<li><span>' + (i.sec ? '<span class="seclab">' + ICONS.lock + '</span>' : '') + esc(i.n) + (i.prod ? '<small class="brand">' + esc(i.prod.brand) + '</small>' : '') + '</span><span>' + esc(ingText(i, f)) + '</span></li>'; }).join('') + (p.lockI ? '<li class="seclocked"><span><span class="seclab">' + ICONS.lock + '</span>' + p.lockI + (p.lockI === 1 ? ' ingrediente segreto' : ' ingredienti segreti') + '</span></li>' : '');
+    return p.ing.map(function (i) { return '<li><span>' + (i.sec ? '<span class="seclab">' + ICONS.lock + '</span>' : '') + esc(i.n) + (i.prod ? '<small class="brand">' + esc(i.prod.brand) + '</small>' : '') + '</span><span>' + esc(ingText(i, f)) + '</span></li>'; }).join('') + (p.lockI ? '<li class="seclocked"><span><span class="seclab">' + ICONS.lock + '</span>' + p.lockI + (p.lockI === 1 ? ' ingrediente segreto' : ' ingredienti segreti') + '</span>' + secAsk(p) + '</li>' : '');
+  }
+  function secAsk(p) {
+    if (p.mine || !p.real) return '';
+    var st = p.secReq, lab = st === 'pending' ? 'Richiesto' : st ? 'Non concesso' : 'Chiedi';
+    return '<button type="button" class="secask" data-act="secreq" data-id="' + p.id + '"' + (st && st !== 'pending' ? ' disabled' : '') + ' aria-label="' + (st === 'pending' ? 'Richiesta inviata: tocca per annullare' : 'Chiedi all\'autore di vedere i segreti') + '">' + lab + '</button>';
   }
   function secBoxHTML(p) {
     if (!p.hasSec) return '';
     if (p.mine) return '<p class="hint" style="margin:0"><span class="seclab">' + ICONS.lock + '</span>Hai nascosto dei segreti: li vedi solo tu e chi accetti dalle notifiche.</p>';
     var n = p.lockI + p.lockS; if (!n) return '<p class="hint" style="margin:0"><span class="seclab">' + ICONS.lock + '</span>L\'autore ti ha sbloccato i segreti di questa ricetta.</p>';
+    return '';
     var st = p.secReq;
     return '<div class="secbox"><div><b>Questa ricetta ha dei segreti</b><span class="hint">' + (p.lockI ? p.lockI + (p.lockI === 1 ? ' ingrediente' : ' ingredienti') : '') + (p.lockI && p.lockS ? ' e ' : '') + (p.lockS ? p.lockS + (p.lockS === 1 ? ' passaggio' : ' passaggi') : '') + ' che l\'autore mostra solo a chi lo chiede e viene accettato.</span></div>' +
       (st ? '<button class="btn ghost" data-act="secreq" data-id="' + p.id + '"' + (st === 'pending' ? '' : ' disabled') + '>Richiesto</button>' : '<button class="btn" data-act="secreq" data-id="' + p.id + '">Chiedi di vederli</button>') + '</div>';
@@ -1522,7 +1530,7 @@ body.inchat nav.tabs { display: none !important; }
       (!soc ? '' : secBoxHTML(p)) +
       '<section><h3>Ingredienti</h3>' + servBox(p) + '<ul class="ing" id="inglist">' + ingItems(p, state.sheetServ) + '</ul><p class="hint" id="scalehint"></p></section>' +
       nutriHTML(p) + allergenHTML(p) +
-      '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s, i) { var k = p.stSec && p.stSec[i]; return '<li' + (k === 2 ? ' class="seclocked"' : '') + '>' + (k ? '<span class="seclab">' + ICONS.lock + '</span>' : '') + esc(s) + '</li>'; }).join('') + '</ol></section>' +
+      '<section><h3>Procedimento</h3><ol class="steps">' + p.steps.map(function (s, i) { var k = p.stSec && p.stSec[i]; return '<li' + (k === 2 ? ' class="seclocked"' : '') + '>' + (k ? '<span class="seclab">' + ICONS.lock + '</span>' : '') + esc(s) + (k === 2 ? secAsk(p) : '') + '</li>'; }).join('') + '</ol></section>' +
       (!soc ? '' : '<section class="cmsec" id="cmsec"><h3 id="cmh">Commenti (' + (p.ccount != null ? p.ccount : p.comments.length) + ')</h3><div class="cm" id="cm">' + commentsHTML(p) + '</div>' +
       '<form class="cmf2" id="cmf" data-id="' + p.id + '">' + avHTML(state.profile && state.profile.avatar_url, (state.profile && state.profile.display_name) || 'Tu') + '<input type="text" id="cmi" placeholder="Aggiungi un commento…" aria-label="Commento" maxlength="200" autocomplete="off"><button class="cpost" type="submit">Pubblica</button></form></section>') +
       (!soc ? '' : '<button class="btn ghost" data-act="share" data-id="' + p.id + '">Invia in chat</button>') +
@@ -4492,8 +4500,8 @@ body.inchat nav.tabs { display: none !important; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 63; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611081100';
+  var VERSION = 64; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611081200';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
