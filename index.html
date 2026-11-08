@@ -2026,8 +2026,8 @@ details.more[open] > summary::after { content: ' ▴'; }
     var x = state.realP[id]; if (!x) return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button><div class="empty"><b>Profilo non trovato</b></div>';
     var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
-      '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : '') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
-      (liveMode() && id !== state.user.id ? '<div style="margin-top:12px"><button class="btn ghost" data-act="dmstart" data-u="' + esc(id) + '">Scrivi un messaggio</button></div>' : '') +
+      '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : '') + '</div></div></div>' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-top:12px">' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="dmstart" data-u="' + esc(id) + '" aria-label="Scrivi un messaggio">' + ICONS.chat + '</button><button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
       (x.bio && (!x.is_private || state.following[h] || id === (state.user && state.user.id)) ? '<p class="bio">' + esc(x.bio) + '</p>' : '') +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
@@ -4826,8 +4826,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 72; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611091100';
+  var VERSION = 73; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
