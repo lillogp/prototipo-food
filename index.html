@@ -554,6 +554,14 @@ details.more[open] > summary::after { content: ' ▴'; }
 .srow.sel::after { content: '\2713'; position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%; background: var(--fg); color: #fff; font-size: 13px; line-height: 22px; text-align: center; }
 .selbar { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; margin: 0 0 10px; background: var(--fg); color: #fff; border-radius: 12px; font-size: 14px; }
 .selbar button { color: #fff; font-weight: 700; }
+.tour { position: fixed; inset: 0; z-index: 80; }
+.tour.dim { background: rgba(20, 28, 12, .62); }
+.thole { position: fixed; border-radius: 14px; box-shadow: 0 0 0 100vmax rgba(20, 28, 12, .62); outline: 2px solid #fff; pointer-events: none; }
+.tcard { position: fixed; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; background: var(--surface, #fff); color: var(--fg); border-radius: 16px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.3); }
+.tcard h3 { margin: 0 0 6px; font-size: 18px; } .tcard p { margin: 0 0 14px; font-size: 15px; line-height: 1.4; }
+.tfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tfoot .btn { width: auto; padding: 10px 20px; } .tdots { display: flex; gap: 5px; }
+.tdots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); } .tdots i.on { background: var(--fg); }
 .sbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-bottom: 1px solid var(--line); margin: 0 0 12px; }
 .sbar button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; font-size: 11px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .sbar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -728,7 +736,7 @@ details.more[open] > summary::after { content: ' ▴'; }
 
   var ME = { name: 'Tu', handle: 'tuo.nome' };
   var state = { tab: 'home', cfolders: [], cfof: {}, cfolderSel: '', filter: 'Tutti', liked: {}, saved: {}, following: {}, viewing: null, draft: null, note: true, plan: {}, extra: {}, order: {}, checked: {}, weekOff: 0, planTab: 'week', people: [{ id: 'p1', name: 'Io' }], vperson: 'p1', q: '', maxT: 0, homeTab: 'dishes', savedTab: 'recipes', folderSel: '', shopper: null, timers: [], cook: null, pantry: [], prefs: { diet: '', allergens: [], hide: true }, folders: [], fof: {}, goal: null, rsaved: {}, rnote: {}, rvisited: {}, myr: [], shopx: [], cmts: {}, pro: null, chat: [], goalBy: null };
-  var KEEP = ['liked', 'saved', 'following', 'plan', 'extra', 'order', 'people', 'vperson', 'checked', 'pantry', 'prefs', 'folders', 'fof', 'cfolders', 'cfof', 'goal', 'rsaved', 'rnote', 'rvisited', 'myr', 'shopx', 'cmts', 'pro', 'chat', 'goalBy'];
+  var KEEP = ['liked', 'saved', 'following', 'plan', 'extra', 'order', 'people', 'vperson', 'checked', 'pantry', 'prefs', 'folders', 'fof', 'cfolders', 'cfof', 'tourDone', 'goal', 'rsaved', 'rnote', 'rvisited', 'myr', 'shopx', 'cmts', 'pro', 'chat', 'goalBy'];
   try {
     var sv0 = JSON.parse(localStorage.getItem('gusto-v1') || '{}');
     KEEP.forEach(function (k) { if (sv0[k] !== undefined && sv0[k] !== null) state[k] = sv0[k]; });
@@ -1282,6 +1290,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (liveMode() && state.profile && !isPro()) rows.push(['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno']);
     if (liveMode() && state.profile) rows.push(['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']);
     if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
+    rows.push(['tourstart', 'Rivedi la guida', 'Un giro rapido dei primi passi']);
     rows.push(['printbook', 'Stampa ricettario', 'Stampa le tue ricette e quelle salvate']);
     rows.push(['legalterms', 'Termini d\'uso', 'Le regole di Frog’s'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']);
     rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
@@ -2552,7 +2561,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       try { var o = {}; KEEP.forEach(function (k) { o[k] = state[k]; }); localStorage.setItem('gusto-v1', JSON.stringify(o)); } catch (e) {}
       if (!has) cloudSave();
       render();
-      proLoad();
+      proLoad(); setTimeout(maybeTour, 900);
     });
   }
   try { if (/type=recovery/.test(location.hash + location.search)) state.recovery = true; } catch (e) {}
@@ -2620,14 +2629,14 @@ details.more[open] > summary::after { content: ' ▴'; }
   if (sb) {
     sb.auth.getSession().then(function (r) {
       var u = r.data && r.data.session && r.data.session.user;
-      if (u) { state.user = { id: u.id, email: u.email }; chkTerms(u); cloudLoad(); }
+      if (u) { state.user = { id: u.id, email: u.email, created_at: u.created_at }; chkTerms(u); cloudLoad(); }
       authChecked = true; render();
     }, function () { authChecked = true; render(); });
     sb.auth.onAuthStateChange(function (ev, session) {
       if (ev === 'PASSWORD_RECOVERY') { state.recovery = true; setTimeout(render, 0); }
       setTimeout(function () {
         var u = session && session.user;
-        if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email }; chkTerms(u); authBusy = false; authMsg = ''; AUD = {}; cloudReady = false; cloudLoad(); }
+        if (u && (!state.user || state.user.id !== u.id)) { state.user = { id: u.id, email: u.email, created_at: u.created_at }; chkTerms(u); authBusy = false; authMsg = ''; AUD = {}; cloudReady = false; cloudLoad(); }
         else if (!u && state.user && ev === 'SIGNED_OUT') { state.user = null; render(); }
       }, 0);
     });
@@ -2972,6 +2981,48 @@ details.more[open] > summary::after { content: ' ▴'; }
     sheetOpen('Persone', k === 'followers' ? 'Seguaci' : 'Seguiti', rows || '<div class="empty"><b>' + (k === 'followers' ? 'Ancora nessun seguace' : 'Non segui ancora nessuno') + '</b>' + (k === 'followers' ? 'Quando qualcuno ti segue, lo trovi qui.' : 'Cerca persone e tocca Segui.') + '</div>');
   }
   function hnameOf(h) { return h.charAt(0) === '@' ? h : '@' + h; }
+  var TOUR = [
+    { tab: 'home', h: 'Benvenuto su Frog’s', t: 'Il social dedicato solo al cibo. Ti mostro in un minuto come muoverti: puoi saltare quando vuoi.' },
+    { tab: 'home', sel: '#tabs [data-v=home]', h: 'Home', t: 'Qui scorri i piatti di chi segui e degli altri: metti mi piace, commenta e salva le ricette che ti piacciono.' },
+    { tab: 'home', sel: '#pubtop', h: 'Pubblica', t: 'Tocca il + per condividere un tuo piatto. Vediamo come si fa.' },
+    { tab: 'new', sel: '#f-title', h: '1 · Foto e nome', t: 'In alto aggiungi una foto o un video (o usa una foto di esempio). Poi scrivi il nome del piatto, il tempo, le porzioni e la categoria.' },
+    { tab: 'new', sel: '#ingbox', h: '2 · Ingredienti', t: 'Per ogni ingrediente scrivi nome, quantità e unità. Con il lucchetto puoi renderne segreto uno: lo vede solo chi te lo chiede e tu accetti.' },
+    { tab: 'new', sel: '#stepbox', h: '3 · Procedimento', t: 'Scrivi un passo per riga. Tieni premuta una riga per cambiarne l’ordine.' },
+    { tab: 'new', sel: '#newform button[type=submit]', h: '4 · Pubblica', t: 'Quando è tutto pronto, tocca Pubblica: il piatto compare nel feed.' },
+    { tab: 'plan', sel: '#tabs [data-v=plan]', h: 'Planner', t: 'Organizza i pasti della settimana, scegli chi mangia cosa e vedi i valori nutrizionali.' },
+    { tab: 'shop', sel: '#tabs [data-v=shop]', h: 'Spesa', t: 'La lista della spesa si compila dalle ricette che pianifichi.' },
+    { tab: 'me', sel: '#tabs [data-v=me]', h: 'Il tuo profilo', t: 'Qui trovi i tuoi piatti, i seguaci e le impostazioni. Da Impostazioni puoi rivedere questa guida quando vuoi.' }
+  ];
+  function tourEnd() {
+    var r = document.getElementById('tour'); if (r) r.remove();
+    state.tourI = -1; state.tourDone = '1'; try { localStorage.setItem('gusto-tour', '1'); } catch (e) {}
+    state.tab = 'home'; state.draft = null; persist(); render(); window.scrollTo(0, 0);
+  }
+  function tourShow() {
+    var st = TOUR[state.tourI]; if (!st) { tourEnd(); return; }
+    if (st.tab && state.tab !== st.tab) { state.tab = st.tab; render(); window.scrollTo(0, 0); }
+    var el = st.sel ? document.querySelector(st.sel) : null;
+    if (st.sel && !el) { state.tourI++; tourShow(); return; }
+    var root = document.getElementById('tour'); if (!root) { root = document.createElement('div'); root.id = 'tour'; root.className = 'tour'; document.body.appendChild(root); }
+    var hole = '', pos = 'top:50%;transform:translateY(-50%)';
+    if (el) {
+      try { el.scrollIntoView({ block: 'center', behavior: 'instant' }); } catch (e) { el.scrollIntoView(); }
+      var r = el.getBoundingClientRect(), vh = window.innerHeight;
+      hole = '<div class="thole" style="top:' + (r.top - 6) + 'px;left:' + (r.left - 6) + 'px;width:' + (r.width + 12) + 'px;height:' + (r.height + 12) + 'px"></div>';
+      pos = (r.top + r.height / 2 < vh / 2) ? 'top:' + Math.min(r.bottom + 16, vh - 200) + 'px' : 'bottom:' + Math.min(vh - r.top + 16, vh - 120) + 'px';
+    }
+    var last = state.tourI === TOUR.length - 1;
+    root.className = 'tour' + (el ? '' : ' dim');
+    root.innerHTML = hole + '<div class="tcard" role="dialog" aria-modal="true" aria-label="Guida" style="' + pos + '"><h3>' + esc(st.h) + '</h3><p>' + esc(st.t) + '</p><div class="tfoot"><button class="reset" data-act="tourskip">' + (last ? '' : 'Salta') + '</button><span class="tdots">' +
+      TOUR.map(function (_, i) { return '<i' + (i === state.tourI ? ' class="on"' : '') + '></i>'; }).join('') + '</span><button class="btn" data-act="tournext">' + (last ? 'Fine' : state.tourI === 0 ? 'Iniziamo' : 'Avanti') + '</button></div></div>';
+  }
+  function maybeTour() {
+    if (!liveMode() || !state.user || state.needTerms || state.tourDone || state.tourI >= 0) return;
+    try { if (localStorage.getItem('gusto-tour')) return; } catch (e) {}
+    var cr = state.user.created_at ? Date.parse(state.user.created_at) : 0; if (!cr || Date.now() - cr > 3 * 864e5) return;
+    state.tourI = 0; tourShow();
+  }
+  state.tourI = -1;
   function liveClick(act, el, id) {
     if (act === 'stnew') { var f0 = document.getElementById('stfile'); if (f0) f0.click(); return true; }
     if (act === 'stopen') { openStory(el.getAttribute('data-u')); return true; }
@@ -4426,6 +4477,9 @@ details.more[open] > summary::after { content: ' ▴'; }
   document.addEventListener('click', function (e) {
     var el = e.target.closest('[data-act]'); if (!el) return;
     var act = el.getAttribute('data-act'), id = parseInt(el.getAttribute('data-id'), 10);
+    if (act === 'tourstart') { state.tourI = 0; state.tab = 'home'; render(); tourShow(); return true; }
+    if (act === 'tournext') { state.tourI++; tourShow(); return true; }
+    if (act === 'tourskip') { tourEnd(); return true; }
     if (act === 'plist') { openPList(el.getAttribute('data-k')); return true; }
     if (act === 'gosaved') { state.savedTab = el.getAttribute('data-v'); state.tab = 'saved'; closeSheet(); render(); window.scrollTo(0, 0); return; }
     if (extraClick(act, el, id)) return;
@@ -4772,8 +4826,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 71; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611091020';
+  var VERSION = 72; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611091100';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
