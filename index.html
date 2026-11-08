@@ -2010,14 +2010,14 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (!liveMode() || !state.realRes.length) return '';
     return state.realRes.map(function (x) {
       var nm = x.display_name || ('@' + x.handle), h = 'u:' + x.id;
-      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0">' + avHTML(x.avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : 'Su Frog’s') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0">' + avHTML(x.avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : '') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
     }).join('');
   }
   function viewRealUser(id) {
     var x = state.realP[id]; if (!x) return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button><div class="empty"><b>Profilo non trovato</b></div>';
     var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
     return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button>' +
-      '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : 'Su Frog’s') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
+      '<div class="prof" style="margin-top:6px">' + avHTML(x.avatar_url, nm) + '<div style="min-width:0;flex:1"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">' + (x.handle ? '@' + esc(x.handle) : '') + '</div></div>' + followBtn(h) + (liveMode() && id !== state.user.id ? '<button class="ic" data-act="usermenu" data-u="' + esc(id) + '" aria-label="Altre azioni">' + DOTS + '</button>' : '') + '</div>' +
       (liveMode() && id !== state.user.id ? '<div style="margin-top:12px"><button class="btn ghost" data-act="dmstart" data-u="' + esc(id) + '">Scrivi un messaggio</button></div>' : '') +
       (x.bio && (!x.is_private || state.following[h] || id === (state.user && state.user.id)) ? '<p class="bio">' + esc(x.bio) + '</p>' : '') +
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
@@ -2967,7 +2967,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     var rows = ids.map(function (h) {
       var uid = h.indexOf('u:') === 0 ? h.slice(2) : (k === 'followers' ? h : null), x = uid ? state.realP[uid] : null, hh = uid ? 'u:' + uid : h;
       var nm = x ? (x.display_name || ('@' + x.handle)) : (hnameOf(h));
-      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(hh) + '" style="padding:6px 0">' + avHTML(x ? x.avatar_url : null, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x && x.handle ? '@' + esc(x.handle) : 'Su Frog’s') + '</span></div></button>' + (k === 'following' ? followBtn(hh) : '') + '</div>';
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(hh) + '" style="padding:6px 0">' + avHTML(x ? x.avatar_url : null, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x && x.handle ? '@' + esc(x.handle) : '') + '</span></div></button>' + (k === 'following' ? followBtn(hh) : '') + '</div>';
     }).join('');
     sheetOpen('Persone', k === 'followers' ? 'Seguaci' : 'Seguiti', rows || '<div class="empty"><b>' + (k === 'followers' ? 'Ancora nessun seguace' : 'Non segui ancora nessuno') + '</b>' + (k === 'followers' ? 'Quando qualcuno ti segue, lo trovi qui.' : 'Cerca persone e tocca Segui.') + '</div>');
   }
@@ -3437,7 +3437,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       : sentFirst ? '<p class="hint">Richiesta inviata. Potrai scrivere ancora quando ' + esc(nm) + ' l\'avrà accettata.</p>'
       : '<form class="cmf" id="dmform"><button type="button" class="rm scan" data-act="dmattach" aria-label="Allega una ricetta">' + ICONS.plus + '</button><input type="text" id="dmin" maxlength="280" placeholder="Scrivi a ' + esc(nm) + '" aria-label="Messaggio" enterkeyhint="send"><button class="btn" type="submit">Invia</button></form>';
     return '<div class="chatpage"><div class="cpt"><button class="ic" data-act="inbox" aria-label="Torna ai messaggi"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>' +
-      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span id="dmsub" data-t="' + esc(x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + x.handle : 'Su Frog’s')) + '">' + (typOn(c.id) ? 'sta scrivendo…' : (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : 'Su Frog’s'))) + '</span></div></button>' +
+      '<button class="authbtn" data-act="profile" data-h="u:' + esc(o) + '">' + avHTML((state.realP[o] || {}).avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span id="dmsub" data-t="' + esc(x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + x.handle : '')) + '">' + (typOn(c.id) ? 'sta scrivendo…' : (x.account_type === 'pro' && x.pro_verified ? 'Nutrizionista' : (x.handle ? '@' + esc(x.handle) : ''))) + '</span></div></button>' +
       '<button class="ic" data-act="usermenu" data-u="' + esc(o) + '" data-c="' + c.id + '" aria-label="Altre azioni">' + DOTS + '</button></div>' +
       '<div class="chat" id="dmchat">' + dmBubbles(msgs, o) + '</div><div class="cpb"><div id="replybar">' + replyBarHTML() + '</div>' + bottom + '</div></div>';
   }
@@ -3480,13 +3480,13 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (q.length < 2) {
       var me = state.user.id, t = function (c) { var l = lastOf(c.id); return l ? l.created_at : c.created_at; };
       var cs = state.convs.filter(function (c) { return c.status !== 'declined'; }).sort(function (a, b) { return t(b) < t(a) ? -1 : 1; }).slice(0, 10);
-      box.innerHTML = cs.length ? cs.map(function (c) { var o = otherOf(c), x = state.realP[o] || {}; return shareRow(o, pName(o), x.handle ? '@' + x.handle : 'Su Frog’s', x.avatar_url); }).join('') : '<p class="hint">Cerca una persona a cui inviare il piatto.</p>';
+      box.innerHTML = cs.length ? cs.map(function (c) { var o = otherOf(c), x = state.realP[o] || {}; return shareRow(o, pName(o), x.handle ? '@' + x.handle : '', x.avatar_url); }).join('') : '<p class="hint">Cerca una persona a cui inviare il piatto.</p>';
       return;
     }
     sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(8).then(function (r) {
       if (state.shareQ !== q || !document.getElementById('shlist')) return;
       var rows = (r.data || []); rows.forEach(function (x) { state.realP[x.id] = Object.assign({}, state.realP[x.id] || {}, x); });
-      document.getElementById('shlist').innerHTML = rows.length ? rows.map(function (x) { return shareRow(x.id, x.display_name || (x.handle ? '@' + x.handle : 'Utente'), x.handle ? '@' + x.handle : 'Su Frog’s', x.avatar_url); }).join('') : '<p class="hint">Nessuna persona trovata.</p>';
+      document.getElementById('shlist').innerHTML = rows.length ? rows.map(function (x) { return shareRow(x.id, x.display_name || (x.handle ? '@' + x.handle : 'Utente'), x.handle ? '@' + x.handle : '', x.avatar_url); }).join('') : '<p class="hint">Nessuna persona trovata.</p>';
     });
   }
   function shareSend(uid) {
@@ -4772,8 +4772,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 70; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611091000';
+  var VERSION = 71; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611091020';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
