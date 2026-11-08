@@ -974,12 +974,12 @@ details.more[open] > summary::after { content: ' ▴'; }
     var nf = Object.keys(state.following).filter(function (k) { return state.following[k]; }).length;
     var showClients = isPro() && state.profTab === 'clients';
     var pn = liveMode() && state.profile ? (state.profile.display_name || 'Il tuo nome') : ME.name;
-    var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : 'Su Frog’s')) : '@' + ME.handle;
+    var ps = liveMode() && state.profile ? (state.profile.account_type === 'pro' ? (state.profile.pro_verified ? 'Nutrizionista verificato' : 'Nutrizionista in verifica') : (state.profile.is_private ? 'Profilo privato' : '')) : '@' + ME.handle;
     var avh = avHTML(liveMode() && state.profile ? state.profile.avatar_url : null, pn);
     if (liveMode() && state.profile) avh = '<label class="avpick" for="avfile" aria-label="Cambia la foto profilo">' + avh + '<span class="avcam" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></label><input type="file" id="avfile" accept="image/*" hidden>';
-    return '<div class="prof">' + avh + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1><div style="color:var(--muted)">' + esc(ps) + '</div></div>' +
+    return '<div class="prof">' + avh + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1>' + (ps ? '<div style="color:var(--muted)">' + esc(ps) + '</div>' : '') + '</div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
-      '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><div><b>0</b>seguaci</div><div><b>' + nf + '</b>seguiti</div><button class="statbtn" data-act="tab" data-v="saved" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
+      '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
       bioOwnHTML() + profSeg() +
       (showClients ? viewProDash() : (mine.length ? '<div class="grid3">' + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
         phGrid(true) + '<p class="hint" style="text-align:center;margin:14px 0 0">Pubblica il primo piatto: comparirà qui.</p>'));
@@ -2635,7 +2635,7 @@ details.more[open] > summary::after { content: ' ▴'; }
 
   /* ---------- Area nutrizionista e cliente (dati veri) ---------- */
   function liveMode() { return !!(sb && state.user); }
-  state.realRes = []; state.realP = {}; state.fstat = {}; state.reqs = []; state.realQ = ''; state.profile = null; state.clients = []; state.curClient = null; state.myLink = null; state.msgs = []; state.lastPlan = null; state.pcmp = null; state.names = {};
+  state.realRes = []; state.realP = {}; state.fstat = {}; state.reqs = []; state.followers = []; state.realQ = ''; state.profile = null; state.clients = []; state.curClient = null; state.myLink = null; state.msgs = []; state.lastPlan = null; state.pcmp = null; state.names = {};
   try {
     var invQ = new URLSearchParams(location.search).get('invito');
     if (invQ && /^[0-9a-f]{32}$/.test(invQ)) { localStorage.setItem('gusto-invite', invQ); }
@@ -2948,19 +2948,30 @@ details.more[open] > summary::after { content: ' ▴'; }
     var me = state.user.id;
     return Promise.all([
       sb.from('follows').select('followed_id,status').eq('follower_id', me),
-      sb.from('follows').select('follower_id').eq('followed_id', me).eq('status', 'pending'),
+      sb.from('follows').select('follower_id,status').eq('followed_id', me),
       sb.from('blocks').select('blocked_id,blocked_name')
     ]).then(function (a) {
       state.blocked = (a[2] && a[2].data) || [];
       Object.keys(state.following).forEach(function (k) { if (k.indexOf('u:') === 0) delete state.following[k]; });
       state.fstat = {};
       (a[0].data || []).forEach(function (f) { state.fstat['u:' + f.followed_id] = f.status; if (f.status === 'accepted') state.following['u:' + f.followed_id] = true; });
-      state.reqs = (a[1].data || []).map(function (f) { return f.follower_id; });
-      var ids = state.reqs.concat((a[0].data || []).map(function (f) { return f.followed_id; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
+      state.reqs = (a[1].data || []).filter(function (f) { return f.status === 'pending'; }).map(function (f) { return f.follower_id; });
+      state.followers = (a[1].data || []).filter(function (f) { return f.status === 'accepted'; }).map(function (f) { return f.follower_id; });
+      var ids = state.reqs.concat(state.followers).concat((a[0].data || []).map(function (f) { return f.followed_id; })).filter(function (v, i, arr) { return arr.indexOf(v) === i; });
       if (!ids.length) return null;
       return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
     });
   }
+  function openPList(k) {
+    var ids = k === 'followers' ? (state.followers || []).slice() : Object.keys(state.following).filter(function (h) { return state.following[h]; });
+    var rows = ids.map(function (h) {
+      var uid = h.indexOf('u:') === 0 ? h.slice(2) : (k === 'followers' ? h : null), x = uid ? state.realP[uid] : null, hh = uid ? 'u:' + uid : h;
+      var nm = x ? (x.display_name || ('@' + x.handle)) : (hnameOf(h));
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(hh) + '" style="padding:6px 0">' + avHTML(x ? x.avatar_url : null, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x && x.handle ? '@' + esc(x.handle) : 'Su Frog’s') + '</span></div></button>' + (k === 'following' ? followBtn(hh) : '') + '</div>';
+    }).join('');
+    sheetOpen('Persone', k === 'followers' ? 'Seguaci' : 'Seguiti', rows || '<div class="empty"><b>' + (k === 'followers' ? 'Ancora nessun seguace' : 'Non segui ancora nessuno') + '</b>' + (k === 'followers' ? 'Quando qualcuno ti segue, lo trovi qui.' : 'Cerca persone e tocca Segui.') + '</div>');
+  }
+  function hnameOf(h) { return h.charAt(0) === '@' ? h : '@' + h; }
   function liveClick(act, el, id) {
     if (act === 'stnew') { var f0 = document.getElementById('stfile'); if (f0) f0.click(); return true; }
     if (act === 'stopen') { openStory(el.getAttribute('data-u')); return true; }
@@ -4415,6 +4426,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   document.addEventListener('click', function (e) {
     var el = e.target.closest('[data-act]'); if (!el) return;
     var act = el.getAttribute('data-act'), id = parseInt(el.getAttribute('data-id'), 10);
+    if (act === 'plist') { openPList(el.getAttribute('data-k')); return true; }
     if (act === 'gosaved') { state.savedTab = el.getAttribute('data-v'); state.tab = 'saved'; closeSheet(); render(); window.scrollTo(0, 0); return; }
     if (extraClick(act, el, id)) return;
     if (act === 'close') { if (el.classList.contains('sheet-bg') && e.target !== el) return; closeSheet(); if (state.tab !== 'new') render(); return; }
@@ -4760,8 +4772,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 69; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611090940';
+  var VERSION = 70; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611091000';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
