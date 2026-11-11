@@ -1296,14 +1296,14 @@ details.more[open] > summary::after { content: ' ▴'; }
   function legalRows() { return [['legalterms', 'Termini d\'uso', 'Le regole di Frog’s'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']]; }
   function viewSettings() {
     var live = liveMode() && state.profile, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
-    rows.push(['privacy', 'Privacy e informazioni', live ? (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '') + ' · notifiche, termini' : 'Termini d\'uso e informativa privacy']);
+    rows.push(['privacy', 'Privacy e informazioni', live ? (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + ' · notifiche, persone bloccate, termini' : 'Termini d\'uso e informativa privacy']);
     if (live && !isPro()) rows.push(['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno']);
     if (!(live && !isPro())) rows.push(goalRow());
     if (!live) rows.push(prefsRow(), ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
     if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
     rows.push(['tourstart', 'Rivedi la guida', 'Un giro rapido dei primi passi']);
     rows.push(['printbook', 'Stampa ricettario', 'Stampa le tue ricette e quelle salvate']);
-    return '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button><div class="view-h"><h1>Impostazioni</h1></div>' + subRows(rows);
+    return '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button><div class="view-h"><h1>Impostazioni</h1></div>' + subRows(rows) + (liveMode() ? '<button class="btn" data-act="logout" style="margin-top:18px">Esci</button>' : '');
   }
   function viewAccount() {
     var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
@@ -1319,8 +1319,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<form class="new accf" id="passform" novalidate><label class="f" for="acc-p">Nuova password<small>Almeno 8 caratteri.</small><input id="acc-p" type="password" autocomplete="new-password" maxlength="72"></label><label class="f" for="acc-p2">Ripeti la password<input id="acc-p2" type="password" autocomplete="new-password" maxlength="72"></label><button class="btn ghost" type="submit">Cambia password</button></form>' +
       '<h3 class="shc">Planner</h3>' + subRows([['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]]) +
       '<h3 class="shc">I tuoi dati</h3><p class="hint" style="margin:0 0 10px">Puoi scaricare una copia dei tuoi dati o eliminare l\'account. L\'eliminazione cancella profilo, piatti, commenti, storie e messaggi e non si può annullare.</p>' +
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><button class="btn ghost" data-act="accexp">Scarica i miei dati</button><button class="btn ghost" data-act="accdel" style="color:#B3261E">Elimina il mio account</button></div>' +
-      '<button class="btn" data-act="logout">Esci</button>';
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><button class="btn ghost" data-act="accexp">Scarica i miei dati</button><button class="btn ghost" data-act="accdel" style="color:#B3261E">Elimina il mio account</button></div>';
   }
   function reqListHTML() {
     if (!state.reqs.length) return '<div class="empty" style="padding:18px"><b>Nessuna richiesta</b>Quando qualcuno chiede di seguirti, la trovi qui.</div>';
@@ -1346,9 +1345,12 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<button class="btn ghost" data-act="sttoggle" data-k="story_replies">' + (sp.story_replies !== false ? 'Disattiva le risposte' : 'Attiva le risposte') + '</button>' +
       '<p class="hint" style="margin:14px 0 8px"><b>Le tue visualizzazioni</b>: ' + (sp.story_views_on !== false ? 'chi pubblica vede che hai guardato la sua storia.' : 'nascoste, nessuno vede che guardi le sue storie (e il segno di "vista" resta solo sul tuo telefono).') + '</p>' +
       '<button class="btn ghost" data-act="sttoggle" data-k="story_views_on">' + (sp.story_views_on !== false ? 'Nascondi le mie visualizzazioni' : 'Mostra le mie visualizzazioni') + '</button></section>' +
-      '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML() +
-      '<h3 class="shc">Persone bloccate' + (state.blocked.length ? ' (' + state.blocked.length + ')' : '') + '</h3>' + blockList() +
-      '<h3 class="shc">Notifiche e informazioni</h3>' + subRows([['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']].concat(legalRows()));
+      '<h3 class="shc">Notifiche e informazioni</h3>' + subRows([['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere'], ['blocked', 'Persone bloccate', state.blocked.length ? state.blocked.length + (state.blocked.length === 1 ? ' persona' : ' persone') : 'Nessuna']].concat(legalRows()));
+  }
+  function viewBlocked() {
+    var back = '<button class="ic" data-act="privacy" style="margin-left:-8px">&lsaquo; Privacy e informazioni</button>';
+    if (!liveMode() || !state.profile) return back + '<div class="view-h"><h1>Persone bloccate</h1></div><div class="empty"><b>Serve un account</b>Accedi per gestire le persone bloccate.</div>';
+    return back + '<div class="view-h"><h1>Persone bloccate</h1></div>' + blockList();
   }
   function fitChat() {
     var vv = window.visualViewport, root = document.documentElement; if (!vv) return;
@@ -1363,9 +1365,9 @@ details.more[open] > summary::after { content: ' ▴'; }
     var app = document.getElementById('app'), sc = {};
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) { sc[c.getAttribute('data-dt') + '|' + c.getAttribute('data-s')] = c.scrollLeft; });
     var gate = needAuth(); if (state.tab === 'home' && state.q) { state.q = ''; state.realRes = []; }
-    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'search' ? viewSearch() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'pushset' ? viewPushSet() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
+    app.innerHTML = gate ? viewAuth() : state.tab === 'home' ? viewHome() : state.tab === 'saved' ? viewSaved() : state.tab === 'new' ? viewNew() : state.tab === 'search' ? viewSearch() : state.tab === 'user' ? viewUser(state.viewing) : state.tab === 'plan' ? viewPlanner() : state.tab === 'pro' ? viewPro() : state.tab === 'shop' ? viewShopTab() : state.tab === 'settings' ? viewSettings() : state.tab === 'account' ? viewAccount() : state.tab === 'privacy' ? viewPrivacy() : state.tab === 'pushset' ? viewPushSet() : state.tab === 'blocked' ? viewBlocked() : state.tab === 'notifs' ? viewNotifs() : state.tab === 'inbox' ? viewInbox() : state.tab === 'dm' ? viewDm() : state.tab === 'prochat' ? (liveMode() ? viewProChat() : viewProfile()) : viewProfile();
     var T = [['home', 'Home', ICONS.home], ['plan', 'Planner', ICONS.cal], ['search', 'Cerca', ICONS.search], ['shop', 'Spesa', ICONS.cart], ['me', 'Profilo', ICONS.user]];
-    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'pushset', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
+    var cur = ['saved', 'pro', 'settings', 'account', 'privacy', 'pushset', 'blocked', 'user', 'notifs', 'inbox', 'dm'].indexOf(state.tab) > -1 ? (state.tab === 'user' ? 'home' : (state.tab === 'notifs' || state.tab === 'inbox' || state.tab === 'dm') ? '' : 'me') : state.tab;
     document.getElementById('tabs').innerHTML = T.map(function (t) {
       return '<button class="tab" data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + t[2] + '<span>' + t[1] + '</span></button>';
     }).join('');
@@ -3418,7 +3420,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     }).then(function () { state.pushOn = false; toast('Notifiche disattivate'); render(); }).catch(function () { toast('Non riesco a disattivarle'); });
   }
   function viewPushSet() {
-    var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
+    var back = '<button class="ic" data-act="privacy" style="margin-left:-8px">&lsaquo; Privacy e informazioni</button>';
     if (!liveMode() || !state.profile) return back + '<div class="view-h"><h1>Notifiche</h1></div><div class="empty"><b>Serve un account</b>Accedi per ricevere le notifiche.</div>';
     var pr = state.profile.push_prefs || {}, sup = pushSupported(), ios = /iphone|ipad|ipod/i.test(navigator.userAgent), standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
     var dev;
@@ -4131,6 +4133,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       });
       return true;
     }
+    if (act === 'blocked') { state.tab = 'blocked'; closeSheet(); render(); window.scrollTo(0, 0); return true; }
     if (act === 'pushset') { state.tab = 'pushset'; closeSheet(); render(); window.scrollTo(0, 0); pushCheck(); return true; }
     if (act === 'pushon') { pushEnable(); return true; }
     if (act === 'pushoff') { pushDisable(); return true; }
@@ -4873,7 +4876,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 77; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 78; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
