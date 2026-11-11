@@ -93,7 +93,7 @@ header.top {
 .sp { flex: 1; }
 .btn { background: var(--accent); color: var(--accent-fg); font-weight: 600; border-radius: 12px; padding: 10px 16px; }
 .btn.ghost { background: var(--soft); color: var(--fg); }
-.btn.gbtn { background: #fff; color: #3c4043; border: 1px solid #dadce0; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; }
+.btn.gbtn { margin-left: auto; margin-right: auto; background: #fff; color: #3c4043; border: 1px solid #dadce0; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 600; }
 .btn.gbtn:hover { background: #f8f9fa; }
 .btn.gbtn .gico { flex: none; }
 .btn:disabled { opacity: .5; cursor: not-allowed; }
@@ -4829,7 +4829,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 74; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 75; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
