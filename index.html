@@ -992,7 +992,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     return '<div class="prof">' + avh + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1>' + (ps ? '<div style="color:var(--muted)">' + esc(ps) + '</div>' : '') + '</div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
-      bioOwnHTML() + profSeg() +
+      bioOwnHTML() + (!isPro() ? '<div style="margin:8px 0 4px">' + subRows([prefsRow()]) + '</div>' : '') + profSeg() +
       (showClients ? viewProDash() : (mine.length ? '<div class="grid3">' + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
         phGrid(true) + '<p class="hint" style="text-align:center;margin:14px 0 0">Pubblica il primo piatto: comparirà qui.</p>'));
   }
@@ -1288,20 +1288,22 @@ details.more[open] > summary::after { content: ' ▴'; }
       (pan ? viewPantry() : weekNavHTML(days) + viewShop());
   }
   /* Impostazioni, account e privacy */
+  function subRows(rows) {
+    return '<div class="menu" style="margin-top:0">' + rows.map(function (x) { return '<button class="mrow" data-act="' + x[0] + '"><span><b>' + x[1] + '</b><small>' + esc(x[2]) + '</small></span><span class="chev">&rsaquo;</span></button>'; }).join('') + '</div>';
+  }
+  function goalRow() { return ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato']; }
+  function prefsRow() { return ['prefs', 'Allergie e intolleranze', state.prefs.allergens.length ? state.prefs.allergens.join(', ') : 'Nessuna']; }
+  function legalRows() { return [['legalterms', 'Termini d\'uso', 'Le regole di Frog’s'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']]; }
   function viewSettings() {
-    var pr = state.prefs, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
-    if (liveMode() && state.profile) rows.push(['privacy', 'Privacy', (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '')]);
-    if (liveMode() && state.profile && !isPro()) rows.push(['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno']);
-    if (liveMode() && state.profile) rows.push(['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']);
+    var live = liveMode() && state.profile, rows = [['account', 'Account', liveMode() ? state.user.email : 'Non hai effettuato l\'accesso']];
+    rows.push(['privacy', 'Privacy e informazioni', live ? (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + (state.reqs.length ? ' · ' + state.reqs.length + ' richieste' : '') + (state.blocked.length ? ' · ' + state.blocked.length + ' bloccati' : '') + ' · notifiche, termini' : 'Termini d\'uso e informativa privacy']);
+    if (live && !isPro()) rows.push(['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno']);
+    if (!(live && !isPro())) rows.push(goalRow());
+    if (!live) rows.push(prefsRow(), ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
     if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
     rows.push(['tourstart', 'Rivedi la guida', 'Un giro rapido dei primi passi']);
     rows.push(['printbook', 'Stampa ricettario', 'Stampa le tue ricette e quelle salvate']);
-    rows.push(['legalterms', 'Termini d\'uso', 'Le regole di Frog’s'], ['legalpriv', 'Informativa privacy', 'Come trattiamo i tuoi dati']);
-    rows.push(['prefs', 'Allergie e intolleranze', pr.allergens.length ? pr.allergens.join(', ') : 'Nessuna'],
-      ['goalopen', 'Obiettivo giornaliero', state.goal ? state.goal + ' kcal al giorno' : 'Non impostato'],
-      ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
-    return '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button><div class="view-h"><h1>Impostazioni</h1></div>' +
-      '<div class="menu" style="margin-top:0">' + rows.map(function (x) { return '<button class="mrow" data-act="' + x[0] + '"><span><b>' + x[1] + '</b><small>' + esc(x[2]) + '</small></span><span class="chev">&rsaquo;</span></button>'; }).join('') + '</div>';
+    return '<button class="ic" data-act="tab" data-v="me" style="margin-left:-8px">&lsaquo; Profilo</button><div class="view-h"><h1>Impostazioni</h1></div>' + subRows(rows);
   }
   function viewAccount() {
     var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
@@ -1315,6 +1317,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<form class="new accf" id="bioform" novalidate><label class="f" for="acc-b">Descrizione<small>Poche righe su di te: la vedono le persone che aprono il tuo profilo. Con il profilo privato la vedono solo i tuoi follower.</small><textarea id="acc-b" rows="3" maxlength="200" placeholder="Es. Cucina semplice e di stagione. Nutrizionista a Forlì.">' + esc((state.profile && state.profile.bio) || '') + '</textarea></label><button class="btn ghost" type="submit">Salva la descrizione</button></form>' +
       '<form class="new accf" id="emailform" novalidate><label class="f" for="acc-e">Email<small>Ora: ' + esc(state.user.email) + '. Ti mandiamo un\'email per confermare il nuovo indirizzo.</small><input id="acc-e" type="email" inputmode="email" autocomplete="email" autocapitalize="none" placeholder="Nuovo indirizzo" maxlength="120"></label><button class="btn ghost" type="submit">Cambia email</button></form>' +
       '<form class="new accf" id="passform" novalidate><label class="f" for="acc-p">Nuova password<small>Almeno 8 caratteri.</small><input id="acc-p" type="password" autocomplete="new-password" maxlength="72"></label><label class="f" for="acc-p2">Ripeti la password<input id="acc-p2" type="password" autocomplete="new-password" maxlength="72"></label><button class="btn ghost" type="submit">Cambia password</button></form>' +
+      '<h3 class="shc">Planner</h3>' + subRows([['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]]) +
       '<h3 class="shc">I tuoi dati</h3><p class="hint" style="margin:0 0 10px">Puoi scaricare una copia dei tuoi dati o eliminare l\'account. L\'eliminazione cancella profilo, piatti, commenti, storie e messaggi e non si può annullare.</p>' +
       '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px"><button class="btn ghost" data-act="accexp">Scarica i miei dati</button><button class="btn ghost" data-act="accdel" style="color:#B3261E">Elimina il mio account</button></div>' +
       '<button class="btn" data-act="logout">Esci</button>';
@@ -1328,9 +1331,9 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
   function viewPrivacy() {
     var back = '<button class="ic" data-act="tab" data-v="settings" style="margin-left:-8px">&lsaquo; Impostazioni</button>';
-    if (!liveMode() || !state.profile) return back + '<div class="view-h"><h1>Privacy</h1></div><div class="empty"><b>Serve un account</b>Accedi per gestire la privacy del tuo profilo.</div>';
+    if (!liveMode() || !state.profile) return back + '<div class="view-h"><h1>Privacy e informazioni</h1></div><div class="empty"><b>Serve un account</b>Accedi per gestire la privacy del tuo profilo.</div><h3 class="shc">Informazioni legali</h3>' + subRows(legalRows());
     var on = !!state.profile.is_private, sp = state.profile;
-    return back + '<div class="view-h"><h1>Privacy</h1></div>' +
+    return back + '<div class="view-h"><h1>Privacy e informazioni</h1></div>' +
       '<section class="procard" style="margin-top:0"><h3>' + (on ? 'Profilo privato' : 'Profilo pubblico') + '</h3><p class="hint" style="margin:0 0 12px">' +
       (on ? 'Il tuo nome compare nella ricerca, ma i tuoi piatti li vede solo chi accetti.' : 'Chiunque può vedere i tuoi piatti. Con il profilo privato il nome resta cercabile, ma i piatti li vede solo chi accetti.') + '</p>' +
       '<button class="btn" data-act="privtoggle">' + (on ? 'Rendi il profilo pubblico' : 'Rendi il profilo privato') + '</button></section>' +
@@ -1344,7 +1347,8 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<p class="hint" style="margin:14px 0 8px"><b>Le tue visualizzazioni</b>: ' + (sp.story_views_on !== false ? 'chi pubblica vede che hai guardato la sua storia.' : 'nascoste, nessuno vede che guardi le sue storie (e il segno di "vista" resta solo sul tuo telefono).') + '</p>' +
       '<button class="btn ghost" data-act="sttoggle" data-k="story_views_on">' + (sp.story_views_on !== false ? 'Nascondi le mie visualizzazioni' : 'Mostra le mie visualizzazioni') + '</button></section>' +
       '<h3 class="shc">Richieste di follow' + (state.reqs.length ? ' (' + state.reqs.length + ')' : '') + '</h3>' + reqListHTML() +
-      '<h3 class="shc">Persone bloccate' + (state.blocked.length ? ' (' + state.blocked.length + ')' : '') + '</h3>' + blockList();
+      '<h3 class="shc">Persone bloccate' + (state.blocked.length ? ' (' + state.blocked.length + ')' : '') + '</h3>' + blockList() +
+      '<h3 class="shc">Notifiche e informazioni</h3>' + subRows([['pushset', 'Notifiche', 'Avvisi fuori dall\'app e cosa ricevere']].concat(legalRows()));
   }
   function fitChat() {
     var vv = window.visualViewport, root = document.documentElement; if (!vv) return;
@@ -2818,12 +2822,12 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
   function viewClientPro() {
     var head = '<div class="view-h"><h1>Il mio nutrizionista</h1><p>Collegati al professionista che ti segue.</p></div>';
-    if (!state.myLink) return head + '<div class="empty"><b>Nessun nutrizionista collegato</b>Chiedi al tuo nutrizionista il link di invito. Aprendolo dopo aver effettuato l\'accesso ti colleghi subito.</div>';
+    if (!state.myLink) return head + subRows([goalRow()]) + '<div class="empty"><b>Nessun nutrizionista collegato</b>Chiedi al tuo nutrizionista il link di invito. Aprendolo dopo aver effettuato l\'accesso ti colleghi subito.</div>';
     var nm = state.myLink.proName || 'Nutrizionista', pl = PLANS[0];
     return '<div class="prof" style="margin-top:6px"><div class="av">' + esc(nm[0]) + '</div><div style="flex:1;min-width:0"><h1 style="font-size:24px">' + esc(nm) + '</h1><div style="color:var(--muted)">Il tuo nutrizionista</div></div><button class="reset" data-act="clientend" data-id="' + state.myLink.id + '">Scollega</button></div>' +
       '<p class="hint" style="margin:8px 0 0">Il tuo nutrizionista vede solo il piano e i messaggi tra voi. Il tuo planner, la dispensa e i salvati restano privati.</p>' +
       '<section class="procard">' + (pl ? '<h3>Piano di ' + esc(nm) + '</h3><p class="hint" style="margin:0 0 10px">Circa ' + (pl.goal || planKcal(pl)) + ' kcal al giorno.</p><div class="shopact"><button class="btn ghost" data-act="plan" data-pl="mp">Vedi il piano</button><button class="btn" data-act="planapply" data-pl="mp">Applica alla settimana</button></div>'
-        : '<h3>Piano settimanale</h3><p class="hint" style="margin:0">Il tuo nutrizionista non ha ancora inviato un piano.</p>') + '</section>' + allergenShareSection(nm) + chatSection(nm);
+        : '<h3>Piano settimanale</h3><p class="hint" style="margin:0">Il tuo nutrizionista non ha ancora inviato un piano.</p>') + '</section>' + subRows([goalRow()]) + allergenShareSection(nm) + chatSection(nm);
   }
   function allergenShareSection(nm) {
     var sh = state.myLink && state.myLink.shared_allergens, on = Array.isArray(sh), mine = state.prefs.allergens;
@@ -4869,7 +4873,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 76; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 77; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
