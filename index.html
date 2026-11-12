@@ -310,6 +310,17 @@ input:disabled { opacity: .45; }
 .grid3 button.draftc { position: relative; background: var(--soft); border: 1.5px dashed var(--line, rgba(0,0,0,.2)); display: flex; align-items: flex-end; justify-content: flex-start; text-align: left; padding: 8px; }
 .draftb { position: absolute; top: 6px; left: 6px; background: #1F1F1F; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; }
 .draftt { font-size: 12.5px; font-weight: 600; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+.reptag { font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 0 4px 8px; }
+.tagline { margin: 8px 0 0; font-size: 14px; color: var(--muted); }
+.tagline .reset { color: var(--accent); font-weight: 600; padding: 0; }
+.tagcs { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.tagc { display: inline-flex; align-items: center; gap: 2px; background: #EEF4DC; color: #2F5A1B; font-weight: 600; font-size: 13px; padding: 4px 4px 4px 12px; border-radius: 99px; }
+.tagc button { font-size: 18px; line-height: 1; padding: 0 8px; color: inherit; }
+.tagrow { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 4px; text-align: left; border-radius: 10px; }
+.tagrow small { color: var(--muted); }
+.tagbn { background: var(--soft); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; }
+.tagbn div { display: flex; gap: 8px; }
+.tagbn .btn { flex: 1; padding: 11px 12px; }
 .grid3 .ph svg { width: 26px; height: 26px; opacity: .55; }
 .grid3 button.ph:first-child { color: var(--fg); }
 .grid3 img, .grid3 video { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -777,6 +788,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmtTime(m) { if (m >= 1440) return Math.round(m / 60) + ' h (con lievitazione)'; if (m >= 60) return Math.floor(m / 60) + ' h ' + (m % 60 ? (m % 60) + ' min' : ''); return m + ' min'; }
   var PRIV = [], COOK = [], DRAFTS = [];
+  state.tags = {};
   function byId(id) { return posts.filter(function (p) { return p.id === id; })[0] || PRIV.filter(function (p) { return p.id === id; })[0] || COOK.filter(function (p) { return p.id === id; })[0] || DRAFTS.filter(function (p) { return p.id === id; })[0]; }
   function toastAct(msg, label, act, id) {
     var t = document.getElementById('toast'); t.innerHTML = esc(msg) + ' <button class="tbtn" data-act="' + act + '" data-id="' + id + '">' + esc(label) + '</button>'; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 4500);
@@ -788,10 +800,10 @@ details.more[open] > summary::after { content: ' ▴'; }
 
   function card(p) {
     var liked = !!state.liked[p.id], saved = !!state.saved[p.id];
-    return '<article class="post"><div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '">' + avHTML(p.avatar, p.user) + '<div class="who"><b>' + esc(p.user) + '</b><span>' + esc(p.t) + '</span></div></button>' +
+    return '<article class="post">' + repLine(p) + '<div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '">' + avHTML(p.avatar, p.user) + '<div class="who"><b>' + esc(p.user) + '</b><span>' + esc(p.t) + '</span></div></button>' +
       (p.role ? '<span class="role">' + esc(p.role) + '</span>' : '') + (p.mine ? '' : followBtn(p.handle)) + '</div>' +
       (p.media.type === 'video' ? mediaTag(p.media, 'media') : '<div class="tap" role="button" tabindex="0" data-act="open" data-id="' + p.id + '" aria-label="Apri ricetta ' + esc(p.title) + '">' + mediaTag(p.media, 'media') + '</div>') +
-      '<div class="post-b"><div class="tap tapb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '"><h2>' + esc(p.title) + '</h2><div class="meta"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + esc(p.tag) + '</span>' + (p.sample ? '<span class="role">Esempio</span>' : '') + (nutriKcal(p) && !(p.hideN && !p.mine) ? '<span>≈ ' + nutriKcal(p) + ' kcal a porzione</span>' : '') + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + (state.filter === 'Dalla dispensa' ? covBadge(p) : '') + '</div>' + warnHTML(p) + '</div>' +
+      '<div class="post-b"><div class="tap tapb" role="button" tabindex="0" data-act="open" data-id="' + p.id + '"><h2>' + esc(p.title) + '</h2><div class="meta"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + esc(p.tag) + '</span>' + (p.tags && p.tags.length ? '<span>con ' + esc(tagNames(p).slice(0, 2).map(function (n) { return n.nm; }).join(', ')) + (p.tags.length > 2 ? ' +' + (p.tags.length - 2) : '') + '</span>' : '') + (p.sample ? '<span class="role">Esempio</span>' : '') + (nutriKcal(p) && !(p.hideN && !p.mine) ? '<span>≈ ' + nutriKcal(p) + ' kcal a porzione</span>' : '') + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + (state.filter === 'Dalla dispensa' ? covBadge(p) : '') + '</div>' + warnHTML(p) + '</div>' +
       '<div class="acts"><button class="ic like" data-act="like" data-id="' + p.id + '" aria-pressed="' + liked + '" aria-label="Mi piace">' + ICONS.heart + '<span>' + (p.likes + (liked ? 1 : 0)) + '</span></button>' +
       '<button class="ic" data-act="open" data-id="' + p.id + '" aria-label="Commenti">' + ICONS.chat + '<span>' + (p.ccount != null ? p.ccount : p.comments.length) + '</span></button>' +
       '<button class="ic" data-act="share" data-id="' + p.id + '" aria-label="Invia in chat">' + ICONS.send + '</button><button class="ic save" data-act="save" data-id="' + p.id + '" aria-pressed="' + saved + '" aria-label="Salva ricetta">' + ICONS.save + '</button><span class="sp"></span>' +
@@ -945,6 +957,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<label class="f" for="f-tag">Categoria<select id="f-tag"><option>Colazione</option><option>Primi</option><option>Secondi</option><option>Contorni</option><option>Dolci</option><option>Lievitati</option><option>Light</option><option>Spuntini</option><option>Aperitivi</option><option>Altro</option></select></label>' +
       '<div class="fbox" id="ingbox">' + ingBox(d) + '</div>' +
       '<div class="fbox" id="stepbox">' + stepBox(d) + '</div>' +
+      (liveMode() && !d.priv ? tagBoxHTML(d) : '') +
       (liveMode() && !d.wasPriv ? '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + !!d.priv + '" data-act="privtog"><span class="box">' + (d.priv ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Solo per me: salva nel ricettario privato (nessun altro la vede)</span></button>' : '') +
       (d.priv ? '' : '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + (d.showN !== false) + '" data-act="shownut"><span class="box">' + (d.showN !== false ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Mostra calorie e valori nutrizionali agli altri</span></button>') +
       (d.wasPriv && d.priv ? '<button type="button" class="btn" data-act="pubnow" style="padding:14px 16px">Pubblica</button>' : '') +
@@ -986,7 +999,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     return '<div class="grid3">' + o + '</div>';
   }
   function viewProfile() {
-    var mine = posts.filter(function (p) { return p.mine; });
+    var mine = posts.filter(function (p) { return p.mine || (p.repBy && state.user && p.repBy[state.user.id]); });
     var saved = Object.keys(state.saved).filter(function (k) { return state.saved[k]; }).length;
     var nf = Object.keys(state.following).filter(function (k) { return state.following[k]; }).length;
     var showClients = isPro() && state.profTab === 'clients';
@@ -1343,6 +1356,9 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<button class="btn" data-act="privtoggle">' + (on ? 'Rendi il profilo pubblico' : 'Rendi il profilo privato') + '</button></section>' +
       '<section class="procard"><h3>Conferme di lettura</h3><p class="hint" style="margin:0 0 12px">' + (state.profile.read_receipts !== false ? 'Chi ti scrive vede quando hai letto i suoi messaggi. Se le disattivi, non vedrai nemmeno quelle degli altri.' : 'Disattivate: nessuno vede quando leggi i messaggi, e tu non vedi quando leggono i tuoi.') + '</p>' +
       '<button class="btn ghost" data-act="rrtoggle">' + (state.profile.read_receipts !== false ? 'Disattiva le conferme di lettura' : 'Attiva le conferme di lettura') + '</button></section>' +
+      '<section class="procard"><h3>Tag</h3><p class="hint" style="margin:0 0 8px"><b>Chi può taggarti nei piatti</b></p><div class="seg" role="group" aria-label="Chi può taggarti">' +
+      [['everyone', 'Tutti'], ['following', 'Solo chi segui'], ['nobody', 'Nessuno']].map(function (o) { return '<button data-act="tagpol" data-v="' + o[0] + '" aria-pressed="' + ((sp.tag_policy || 'following') === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>' +
+      '<p class="hint" style="margin:8px 0 0">' + ((sp.tag_policy || 'following') === 'everyone' ? 'Chiunque può taggarti. Se ti tagga, decidi tu se ripubblicare il piatto.' : (sp.tag_policy === 'nobody' ? 'Nessuno può taggarti nei suoi piatti.' : 'Solo le persone che segui possono taggarti. Se ti tagga, decidi tu se ripubblicare il piatto.')) + '</p></section>' +
       '<section class="procard"><h3>Storie</h3>' +
       '<p class="hint" style="margin:0 0 8px"><b>Chi può vedere le tue storie</b></p><div class="seg" role="group" aria-label="Chi vede le storie"><button data-act="staud" data-v="followers" aria-pressed="' + (sp.story_audience !== 'mutual') + '">Chi ti segue</button><button data-act="staud" data-v="mutual" aria-pressed="' + (sp.story_audience === 'mutual') + '">Solo chi segui anche tu</button></div>' +
       '<p class="hint" style="margin:8px 0 14px">' + (sp.story_audience === 'mutual' ? 'Le vedono solo le persone che ti seguono e che segui anche tu.' : 'Le vedono tutte le persone che ti seguono. Il blocco di una persona le nasconde subito.') + '</p>' +
@@ -1728,6 +1744,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<button class="x" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="sheetmedia">' + mediaTag(p.media, 'media') + '</div>' +
       (!soc ? '' : '<div class="acts sheetacts" id="sheetacts">' + sheetActsHTML(p) + '</div>') +
+      tagsLineHTML(p) + tagBanner(p) +
       (p.priv ? (p.from && p.from.note ? '<div class="note" style="margin:0"><b>Nota del nutrizionista</b><br>' + esc(p.from.note) + '</div>' : '') : '') +
       (p.draft ? '<div class="note" style="margin:0"><b>Bozza</b><br>Gli altri non la vedono. Aggiungi la foto per pubblicarla.</div><button class="btn" data-act="editrec" data-id="' + p.id + '">Aggiungi la foto e pubblica</button>' : '') +
       warnHTML(p) +
@@ -1927,6 +1944,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     im.src = src;
   }
   function bindForm() {
+    var tq = document.getElementById('tagq'); if (tq) tq.addEventListener('input', function () { tagSearch(tq.value); });
     var inp = document.getElementById('media');
     inp.addEventListener('change', function () {
       var f = inp.files && inp.files[0]; if (!f) return;
@@ -1997,7 +2015,7 @@ details.more[open] > summary::after { content: ' ▴'; }
             return wipe.then(function () {
               if (!secRows.length) return;
               return sb.from('recipe_secrets').insert(secRows.map(function (x) { return { recipe_id: r.data.id, kind: x.kind, idx: x.idx, content: x.content }; })).then(function (q) { if (q.error) toast('Piatto salvato, ma i segreti non sono stati salvati'); });
-            });
+            }).then(function () { return saveTags(r.data.id, d, d.priv || asDraft); });
           });
         }).then(function () {
           if (more && !d.priv) { state.draft = { menuId: d.menuId, menuName: d.menuName, menuPos: (d.menuPos || 0) + 1 }; state.filter = 'Tutti'; state.q = ''; loadFeed(); return 'more'; }
@@ -2125,7 +2143,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   function visiblePosts() {
     var words = state.q.toLowerCase().split(/\s+/).filter(Boolean), f = state.filter;
     var list = posts.filter(function (p) {
-      if (f === 'Seguiti' && !(p.mine || state.following[p.handle])) return false;
+      if (f === 'Seguiti' && !(p.mine || state.following[p.handle] || repNames(p).length)) return false;
       if (f !== 'Tutti' && f !== 'Seguiti' && f !== 'Dalla dispensa' && p.tag !== f) return false;
       if (state.maxT && p.time > state.maxT) return false;
       if (state.prefs.hide && conflicts(p).length) return false;
@@ -2173,7 +2191,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       (x.account_type === 'pro' ? '<p style="margin:12px 0 0">' + (x.pro_verified ? '<span class="role">Nutrizionista verificato</span>' : '<span class="chip">Nutrizionista in verifica</span>') + '</p>' : '') +
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
         : (function () {
-          var ps = posts.filter(function (q) { return q.authorId === id; });
+          var ps = posts.filter(function (q) { return q.authorId === id || (q.repBy && q.repBy[id]); });
           return ps.length ? '<div class="stats"><div><b>' + ps.length + '</b>' + (ps.length === 1 ? 'piatto' : 'piatti') + '</div></div><div class="grid3">' + ps.map(function (q) { return '<button data-act="open" data-id="' + q.id + '" aria-label="' + esc(q.title) + '">' + mediaTag(q.media, '') + '</button>'; }).join('') + '</div>'
             : '<div class="stats"><div><b>0</b>piatti</div></div>' + phGrid(false) + '<p class="hint" style="text-align:center;margin:14px 0 0">Ancora nessun piatto: quando pubblicherà delle ricette le troverai qui.</p>';
         })());
@@ -2891,7 +2909,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (!liveMode()) return;
     state.pro = null; state.chat = []; PLANS.length = 0;
     var PC = 'id,display_name,account_type,pro_verified,is_private,avatar_url,read_receipts,push_prefs,bio,suspended,suspended_until';
-    sb.from('profiles').select(PC + ',story_audience,story_replies,story_views_on').eq('id', state.user.id).maybeSingle().then(function (r) {
+    sb.from('profiles').select(PC + ',story_audience,story_replies,story_views_on,tag_policy').eq('id', state.user.id).maybeSingle().then(function (r) {
       if (r.error) return sb.from('profiles').select(PC).eq('id', state.user.id).maybeSingle();
       return r;
     }).then(function (r) {
@@ -3371,7 +3389,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   var NTXT = {
     follow: 'ha iniziato a seguirti', follow_request: 'ha chiesto di seguirti', follow_accepted: 'ha accettato la tua richiesta',
     like: 'ha messo mi piace a un tuo piatto', story_like: 'ha messo mi piace alla tua storia', comment_like: 'ha messo mi piace al tuo commento', comment: 'ha commentato un tuo piatto', client_joined: 'è ora tuo cliente',
-    plan: 'ti ha inviato un nuovo piano', admin_warning: 'ti ha inviato un avviso', secret_request: 'vuole vedere i segreti di', secret_accepted: 'ti ha sbloccato i segreti di'
+    plan: 'ti ha inviato un nuovo piano', admin_warning: 'ti ha inviato un avviso', secret_request: 'vuole vedere i segreti di', secret_accepted: 'ti ha sbloccato i segreti di', tag: 'ti ha taggato in un piatto'
   };
   function avHTML(url, nm) { return '<div class="av">' + (url ? '<img src="' + esc(url) + '" alt="" loading="lazy">' : esc(((nm || '?')[0] || '?').toUpperCase())) + '</div>'; }
   function ago(iso) {
@@ -3428,7 +3446,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       sheetOpen('Avviso da Frog’s', 'Avviso da Frog’s', (rf.reason ? '<div class="meta"><span>' + esc(rf.reason) + '</span></div>' : '') + '<p style="margin:0;white-space:pre-wrap">' + esc(rf.body || '') + '</p><p class="hint" style="margin:0">È un messaggio dell\'amministrazione di Frog’s, a senso unico. Per i dettagli leggi i <a href="termini.html" target="_blank" rel="noopener">Termini</a>.</p><button class="btn" data-act="close">Ho capito</button>');
       return;
     }
-    if ((t === 'like' || t === 'comment' || t === 'comment_like' || t === 'secret_request' || t === 'secret_accepted') && n.ref && n.ref.recipe_id) {
+    if ((t === 'like' || t === 'comment' || t === 'comment_like' || t === 'secret_request' || t === 'secret_accepted' || t === 'tag') && n.ref && n.ref.recipe_id) {
       var rpid = RB + n.ref.recipe_id;
       if (byId(rpid)) { openSheet(rpid); return; }
       loadFeed().then(function () { if (byId(rpid)) openSheet(rpid); else toast('Il piatto non è più disponibile'); });
@@ -3838,6 +3856,77 @@ details.more[open] > summary::after { content: ' ▴'; }
       COOK.length = 0; DRAFTS.length = 0; (r.data || []).forEach(function (x) { var m = mapRecipe(x); (m.draft ? DRAFTS : COOK).push(m); });
     }, function () {});
   }
+  /* Tag e ripubblicazioni (stile Instagram) */
+  var PSEL = 'id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio';
+  function loadTags(real) {
+    return sb.from('recipe_tags').select('recipe_id,user_id,tagged_by,reposted').order('created_at', { ascending: false }).limit(600).then(function (r) {
+      if (r.error) return real;
+      state.tags = {};
+      (r.data || []).forEach(function (x) { (state.tags[x.recipe_id] = state.tags[x.recipe_id] || []).push({ u: x.user_id, rep: !!x.reposted, by: x.tagged_by }); });
+      var me = state.user.id, have = {}; real.forEach(function (p) { have[p.dbId] = 1; });
+      var miss = Object.keys(state.tags).filter(function (id) { return !have[id] && state.tags[id].some(function (t) { return t.rep && (t.u === me || state.following['u:' + t.u]); }); }).slice(0, 40);
+      var q = miss.length ? sb.from('recipes').select(RSEL).in('id', miss).is('for_link_id', null).eq('is_private', false) : Promise.resolve({ data: [] });
+      return q.then(function (m) {
+        (m.data || []).forEach(function (x) { real.push(mapRecipe(x)); });
+        var ids = {}; Object.keys(state.tags).forEach(function (id) { state.tags[id].forEach(function (t) { ids[t.u] = 1; ids[t.by] = 1; }); });
+        var need = Object.keys(ids).filter(function (i) { return !state.realP[i]; });
+        var done = function () {
+          real.forEach(function (p) { p.tags = state.tags[p.dbId] || []; p.repBy = {}; p.tags.forEach(function (t) { if (t.rep) p.repBy[t.u] = 1; }); });
+          return real;
+        };
+        return need.length ? sb.from('profiles').select(PSEL).in('id', need).then(function (z) { (z.data || []).forEach(function (x) { state.realP[x.id] = x; }); return done(); }, done) : done();
+      });
+    }, function () { return real; });
+  }
+  function repNames(p) {
+    var me = state.user && state.user.id, out = [];
+    Object.keys(p.repBy || {}).forEach(function (u) { if (u === me || state.following['u:' + u]) { var x = state.realP[u]; out.push(u === me ? 'te' : (x && (x.display_name || '@' + x.handle)) || 'qualcuno'); } });
+    return out;
+  }
+  function repLine(p) { var n = repNames(p); return n.length ? '<div class="reptag">&#8635; Ripubblicata da ' + esc(n.join(', ')) + '</div>' : ''; }
+  function tagNames(p) { return (p.tags || []).map(function (t) { var x = state.realP[t.u]; return { id: t.u, nm: (x && (x.display_name || ('@' + x.handle))) || 'Utente' }; }); }
+  function tagsLineHTML(p) {
+    var t = tagNames(p); if (!t.length) return '';
+    return '<p class="tagline">Con ' + t.map(function (x) { return '<button class="reset" data-act="profile" data-h="u:' + esc(x.id) + '">' + esc(x.nm) + '</button>'; }).join(', ') + '</p>';
+  }
+  function tagBanner(p) {
+    var me = state.user && state.user.id; if (!me || !p.tags) return '';
+    var mt = p.tags.filter(function (t) { return t.u === me; })[0]; if (!mt) return '';
+    var by = state.realP[mt.by], nm = by ? (by.display_name || '@' + by.handle) : 'Qualcuno';
+    return mt.rep
+      ? '<div class="tagbn"><span>Hai ripubblicato questo piatto: lo vedono i tuoi seguaci.</span><div><button class="btn ghost" data-act="unrepost" data-id="' + p.id + '">Annulla ripubblicazione</button><button class="btn ghost" data-act="untag" data-id="' + p.id + '">Rimuovi tag</button></div></div>'
+      : '<div class="tagbn"><span><b>' + esc(nm) + '</b> ti ha taggato in questo piatto.</span><div><button class="btn" data-act="reposttag" data-id="' + p.id + '">Ripubblica</button><button class="btn ghost" data-act="untag" data-id="' + p.id + '">Rimuovi tag</button></div></div>';
+  }
+  function tagBoxHTML(d) {
+    var chips = (d.tags || []).map(function (t) { var x = state.realP[t.id], nm = x ? (x.display_name || '@' + x.handle) : 'Utente'; return '<span class="tagc">' + esc(nm) + '<button type="button" data-act="tagrm" data-u="' + esc(t.id) + '" aria-label="Togli ' + esc(nm) + '">&times;</button></span>'; }).join('');
+    return '<div class="fbox" id="tagbox"><span>Tagga persone</span><small>Chi tagghi riceve una notifica e può ripubblicare il piatto. I tag si salvano quando pubblichi.</small>' + (chips ? '<div class="tagcs">' + chips + '</div>' : '') +
+      '<input id="tagq" type="text" placeholder="Cerca per nome" autocomplete="off" maxlength="40" aria-label="Cerca una persona da taggare"><div id="tagres"></div></div>';
+  }
+  var tagT = null;
+  function tagSearch(q) {
+    clearTimeout(tagT);
+    var box = document.getElementById('tagres'); if (!box) return;
+    q = (q || '').replace(/[^\p{L}\p{N} ._-]/gu, ' ').replace(/\s+/g, ' ').trim();
+    if (q.length < 2) { box.innerHTML = ''; return; }
+    tagT = setTimeout(function () {
+      sb.from('profiles').select(PSEL + ',tag_policy').or('display_name.ilike.%' + q + '%,handle.ilike.%' + q + '%').neq('id', state.user.id).limit(15).then(function (r) {
+        var b2 = document.getElementById('tagres'); if (!b2 || r.error) return;
+        var sel = ((state.draft && state.draft.tags) || []).map(function (t) { return t.id; });
+        var ok = (r.data || []).filter(function (x) { return (x.display_name || x.handle) && sel.indexOf(x.id) < 0 && (x.tag_policy === 'everyone' || (x.tag_policy !== 'nobody' && state.followers.indexOf(x.id) > -1)); });
+        ok.forEach(function (x) { state.realP[x.id] = x; });
+        b2.innerHTML = ok.length ? ok.slice(0, 6).map(function (x) { var nm = x.display_name || ('@' + x.handle); return '<button type="button" class="tagrow" data-act="tagadd" data-u="' + esc(x.id) + '">' + avHTML(x.avatar_url, nm) + '<span><b>' + esc(nm) + '</b><br><small>' + (x.handle ? '@' + esc(x.handle) : '') + '</small></span></button>'; }).join('')
+          : '<p class="hint" style="margin:6px 0 0">Nessuna persona trovata. Chi non vuole essere taggato non compare qui.</p>';
+      });
+    }, 250);
+  }
+  function saveTags(recId, d, skip) {
+    if (skip) return Promise.resolve();
+    var me = state.user.id, want = (d.tags || []).map(function (x) { return x.id; }), have = (state.tags[recId] || []).filter(function (t) { return t.by === me; }).map(function (t) { return t.u; });
+    var add = want.filter(function (i) { return have.indexOf(i) < 0; }), del = have.filter(function (i) { return want.indexOf(i) < 0; }), ps = [];
+    if (del.length) ps.push(sb.from('recipe_tags').delete().eq('recipe_id', recId).in('user_id', del));
+    if (add.length) ps.push(sb.from('recipe_tags').insert(add.map(function (i) { return { recipe_id: recId, user_id: i, tagged_by: me }; })));
+    return Promise.all(ps).then(function (rs) { if (rs.some(function (x) { return x && x.error; })) toast('Piatto salvato, ma qualche tag non è stato salvato'); }, function () {});
+  }
   function loadFeed() {
     if (!liveMode()) return Promise.resolve();
     var me = state.user.id;
@@ -3850,7 +3939,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       if (a[0].error) return null;
       [state.liked, state.saved, state.fof].forEach(function (o) { Object.keys(o).forEach(function (k) { if (+k >= RB) delete o[k]; }); });
       var lk = {}, sv = {}; (a[1].data || []).forEach(function (x) { lk[RB + x.recipe_id] = 1; }); (a[2].data || []).forEach(function (x) { sv[RB + x.recipe_id] = x.folder || null; });
-      var real = (a[0].data || []).map(mapRecipe);
+      return loadTags((a[0].data || []).map(mapRecipe)).then(function (real) {
       real.forEach(function (p) {
         if (lk[p.id]) { state.liked[p.id] = true; p.likes = Math.max(0, p.likes - 1); }
         if (p.id in sv) { state.saved[p.id] = true; if (sv[p.id]) state.fof[p.id] = sv[p.id]; }
@@ -3858,6 +3947,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       rebuildPosts(real);
       var fw = document.getElementById('feedwrap');
       if (state.tab === 'home' && fw) fw.innerHTML = feedHTML(); else if (state.tab !== 'new' && state.tab !== 'dm' && state.tab !== 'prochat') render();
+      });
     });
   }
   setInterval(function () {
@@ -4374,7 +4464,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       var ep = byId(id); if (!ep || !ep.mine || !ep.real) return true;
       var go = function () {
         var known = UNITS.map(function (u) { return u[0]; });
-        state.draft = { editId: ep.id, editDb: ep.dbId, oldUrl: ep.mediaUrl, oldPath: ep.mediaPath, priv: !!ep.cook && !ep.draft && !el.getAttribute('data-unpriv'), wasPriv: !!ep.cook && !ep.draft, draft: !!ep.draft, title: ep.title, time: String(ep.time), serv: String(ep.serv), tag: ep.tag, showN: !ep.hideN,
+        state.draft = { editId: ep.id, editDb: ep.dbId, oldUrl: ep.mediaUrl, oldPath: ep.mediaPath, priv: !!ep.cook && !ep.draft && !el.getAttribute('data-unpriv'), wasPriv: !!ep.cook && !ep.draft, draft: !!ep.draft, title: ep.title, time: String(ep.time), serv: String(ep.serv), tag: ep.tag, showN: !ep.hideN, tags: (state.tags[ep.dbId] || []).filter(function (t) { return t.by === state.user.id; }).map(function (t) { return { id: t.u }; }),
           media: ep.mediaUrl ? { type: ep.media.type, src: ep.mediaUrl } : null, from: ep.from || null,
           ings: ep.ing.map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null, sec: !!i.sec }; }),
           stps: ep.steps.slice(), ssec: ep.steps.map(function (_, i) { return !!(ep.stSec && ep.stSec[i] === 1); }) };
@@ -4384,6 +4474,29 @@ details.more[open] > summary::after { content: ' ▴'; }
       return true;
     }
     if (act === 'pubnow') { keepFields(); var pd = state.draft; if (!pd.media) { toast('Per pubblicare serve una foto: aggiungila qui sopra'); return true; } pd.priv = false; var nf3 = document.getElementById('newform'); if (nf3.requestSubmit) nf3.requestSubmit(); else nf3.dispatchEvent(new Event('submit', { cancelable: true })); return true; }
+    if (act === 'tagadd') { keepFields(); var tu = el.getAttribute('data-u'), td = state.draft; td.tags = td.tags || []; if (td.tags.length >= 10) { toast('Puoi taggare al massimo 10 persone'); return true; } if (state.realP[tu] && !td.tags.some(function (t) { return t.id === tu; })) td.tags.push({ id: tu }); render(); return true; }
+    if (act === 'tagrm') { keepFields(); var tr = el.getAttribute('data-u'); state.draft.tags = (state.draft.tags || []).filter(function (t) { return t.id !== tr; }); render(); return true; }
+    if (act === 'reposttag' || act === 'unrepost' || act === 'untag') {
+      var tp = byId(id); if (!tp || !tp.dbId || !liveMode()) return true; var me2 = state.user.id;
+      var rq = act === 'untag' ? sb.from('recipe_tags').delete().eq('recipe_id', tp.dbId).eq('user_id', me2) : sb.from('recipe_tags').update({ reposted: act === 'reposttag' }).eq('recipe_id', tp.dbId).eq('user_id', me2);
+      rq.then(function (r) {
+        if (r.error) { toast('Non riesco a salvare. Riprova.'); return; }
+        var arr = state.tags[tp.dbId] || [];
+        if (act === 'untag') arr = arr.filter(function (t) { return t.u !== me2; }); else arr.forEach(function (t) { if (t.u === me2) t.rep = act === 'reposttag'; });
+        state.tags[tp.dbId] = arr; tp.tags = arr; tp.repBy = {}; arr.forEach(function (t) { if (t.rep) tp.repBy[t.u] = 1; });
+        render(); openSheet(tp.id, true);
+        toast(act === 'reposttag' ? 'Ripubblicata: la vedono i tuoi seguaci' : act === 'unrepost' ? 'Ripubblicazione annullata' : 'Tag rimosso');
+      });
+      return true;
+    }
+    if (act === 'tagpol') {
+      var tpv = el.getAttribute('data-v'); if ((state.profile.tag_policy || 'following') === tpv) return true;
+      sb.from('profiles').update({ tag_policy: tpv }).eq('id', state.user.id).then(function (r) {
+        if (r.error) { toast('Non riesco a cambiare l\'impostazione'); return; }
+        state.profile.tag_policy = tpv; render(); toast(tpv === 'everyone' ? 'Chiunque può taggarti' : tpv === 'nobody' ? 'Nessuno può taggarti' : 'Solo chi segui può taggarti');
+      });
+      return true;
+    }
     if (act === 'savedraft') { state.asDraft = true; var nf2 = document.getElementById('newform'); if (nf2.requestSubmit) nf2.requestSubmit(); else nf2.dispatchEvent(new Event('submit', { cancelable: true })); return true; }
     if (act === 'shownut') { keepFields(); state.draft.showN = state.draft.showN === false; render(); return true; }
     if (act === 'togglenut') { var tp = byId(id); if (tp) { tp.hideN = !tp.hideN; if (tp.real && liveMode()) sb.from('recipes').update({ hide_nutrition: tp.hideN }).eq('id', tp.dbId).then(function () {}); openSheet(id); render(); } return true; }
@@ -5010,7 +5123,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 84; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 85; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {

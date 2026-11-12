@@ -37,6 +37,7 @@ const NOTIF: Record<string, [string, string]> = {
   plan: ["pro", "ti ha inviato un nuovo piano"],
   secret_request: ["follows", "vuole vedere i segreti di una tua ricetta"],
   secret_accepted: ["follows", "ti ha sbloccato i segreti di una ricetta"],
+  tag: ["follows", "ti ha taggato in un piatto"],
 };
 
 Deno.serve(async (req) => {
