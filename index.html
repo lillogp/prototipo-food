@@ -937,7 +937,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     return '<div class="view-h"><h1>' + (d.draft ? 'Bozza' : d.editId ? 'Modifica il piatto' : (d.priv ? 'Nuova ricetta privata' : 'Nuovo piatto')) + '</h1><p>' + (d.priv ? 'Solo tu la vedi. La foto è facoltativa.' : 'Foto o video, ingredienti e passaggi.') + '</p></div>' + (d.from ? '<p class="hint" style="margin:-6px 0 10px">Variante di ' + esc(fromTxt(d.from)) + ': ' + esc(d.from.title) + '. L\'autore originale viene citato.</p>' : '') +
       '<form class="new" id="newform" novalidate>' +
       '<label class="drop" for="media">' + (prev || '<span><b>Aggiungi foto o video</b>Tocca per scattare o scegliere un file</span>') + '<input id="media" type="file" accept="image/*,video/*"></label>' +
-      (d.media ? '<button type="button" class="btn ghost" data-act="rmphoto">Rimuovi foto o video</button>' : '<button type="button" class="btn ghost" data-act="samplephoto">Usa una foto di esempio</button>') +
+      (d.media ? (d.media.type === 'image' ? '<button type="button" class="btn ghost" data-act="editphoto">Sposta, ingrandisci o ritaglia la foto</button>' : '') + '<button type="button" class="btn ghost" data-act="rmphoto">Rimuovi foto o video</button>' : '<button type="button" class="btn ghost" data-act="samplephoto">Usa una foto di esempio</button>') +
       (d.menuId ? '<div class="menubar"><b>Menu in corso · piatto ' + ((d.menuPos || 0) + 1) + '</b><label class="f" for="f-menu" style="margin:6px 0 0">Nome del menu<input id="f-menu" type="text" placeholder="Es. Pranzo della domenica" maxlength="40"></label></div>' : '') +
       '<label class="f" for="f-title">Nome del piatto<input id="f-title" type="text" placeholder="Es. Lasagne della domenica" maxlength="60"></label>' +
       '<div class="row2"><label class="f" for="f-time">Tempo (minuti)<input id="f-time" type="number" min="1" inputmode="numeric" placeholder="30"></label>' +
@@ -1728,7 +1728,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<div class="sheetmedia">' + mediaTag(p.media, 'media') + '</div>' +
       (!soc ? '' : '<div class="acts sheetacts" id="sheetacts">' + sheetActsHTML(p) + '</div>') +
       (p.priv ? (p.from && p.from.note ? '<div class="note" style="margin:0"><b>Nota del nutrizionista</b><br>' + esc(p.from.note) + '</div>' : '') : '') +
-      (p.draft ? '<div class="note" style="margin:0"><b>Bozza</b><br>Gli altri non la vedono. Per pubblicarla tocca «Modifica la ricetta» in fondo e aggiungi la foto.</div>' : '') +
+      (p.draft ? '<div class="note" style="margin:0"><b>Bozza</b><br>Gli altri non la vedono. Aggiungi la foto per pubblicarla.</div><button class="btn" data-act="editrec" data-id="' + p.id + '">Aggiungi la foto e pubblica</button>' : '') +
       warnHTML(p) +
       '<button class="btn" data-act="cook" data-id="' + p.id + '">Modalità cucina</button>' +
       (!soc ? '' : secBoxHTML(p)) +
@@ -1875,6 +1875,55 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
   function closeSheet() { try { stopCam(); } catch (e) {} document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
 
+  /* Editor foto: sposta e ingrandisci dentro un quadrato (come nel feed) */
+  function cropEdit(src, done, cancel) {
+    var im = new Image(); if (/^https?:/.test(src)) im.crossOrigin = 'anonymous';
+    im.onerror = function () { toast('Non riesco ad aprire la foto'); if (cancel) cancel(); };
+    im.onload = function () {
+      var W = im.naturalWidth, H = im.naturalHeight, S = Math.max(220, Math.min(window.innerWidth - 32, 420, window.innerHeight - 300));
+      var base = S / Math.min(W, H), z = 1, cx = W / 2, cy = H / 2;
+      var ov = document.createElement('div'); ov.id = 'cropov'; ov.setAttribute('role', 'dialog'); ov.setAttribute('aria-modal', 'true'); ov.setAttribute('aria-label', 'Modifica la foto');
+      ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:#151515;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;font-family:inherit';
+      ov.innerHTML = '<div style="font-weight:700;font-size:18px">Sposta e ingrandisci</div><div style="opacity:.75;font-size:14px;margin-top:-8px;text-align:center">Trascina la foto per centrarla, usa la barra per ingrandire.</div>' +
+        '<div id="cropfr" style="position:relative;width:' + S + 'px;height:' + S + 'px;overflow:hidden;border-radius:12px;background:#000;touch-action:none;cursor:grab"><img id="cropim" alt="" draggable="false" style="position:absolute;max-width:none;user-select:none;-webkit-user-drag:none">' +
+        '<div style="position:absolute;inset:0;pointer-events:none;border:1px solid rgba(255,255,255,.6);background:linear-gradient(to right,transparent 33.2%,rgba(255,255,255,.35) 33.3%,transparent 33.5%,transparent 66.5%,rgba(255,255,255,.35) 66.6%,transparent 66.8%),linear-gradient(to bottom,transparent 33.2%,rgba(255,255,255,.35) 33.3%,transparent 33.5%,transparent 66.5%,rgba(255,255,255,.35) 66.6%,transparent 66.8%)"></div></div>' +
+        '<label style="display:flex;align-items:center;gap:10px;width:' + S + 'px;font-size:14px">Zoom<input id="cropz" type="range" min="1" max="4" step="0.01" value="1" style="flex:1" aria-label="Ingrandisci"></label>' +
+        '<div style="display:flex;gap:10px;width:' + S + 'px"><button type="button" id="cropno" class="btn ghost" style="flex:1;color:#fff;border-color:rgba(255,255,255,.4)">Annulla</button><button type="button" id="cropok" class="btn" style="flex:1">Fatto</button></div>';
+      document.body.appendChild(ov);
+      var fr = ov.querySelector('#cropfr'), img = ov.querySelector('#cropim'), zr = ov.querySelector('#cropz');
+      img.src = src;
+      function clamp() { var half = S / (2 * base * z); cx = Math.min(W - half, Math.max(half, cx)); cy = Math.min(H - half, Math.max(half, cy)); }
+      function draw() { clamp(); var sc = base * z; img.style.width = (W * sc) + 'px'; img.style.height = (H * sc) + 'px'; img.style.left = (S / 2 - cx * sc) + 'px'; img.style.top = (S / 2 - cy * sc) + 'px'; zr.value = z; }
+      draw();
+      var pts = {}, lastD = 0;
+      fr.addEventListener('pointerdown', function (e) { try { fr.setPointerCapture(e.pointerId); } catch (x) {} pts[e.pointerId] = { x: e.clientX, y: e.clientY }; lastD = 0; fr.style.cursor = 'grabbing'; });
+      fr.addEventListener('pointermove', function (e) {
+        var q = pts[e.pointerId]; if (!q) return;
+        var ids = Object.keys(pts);
+        if (ids.length >= 2) {
+          pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+          var a = pts[ids[0]], b = pts[ids[1]], dist = Math.hypot(a.x - b.x, a.y - b.y);
+          if (lastD) { z = Math.min(4, Math.max(1, z * dist / lastD)); draw(); }
+          lastD = dist; return;
+        }
+        var sc = base * z; cx -= (e.clientX - q.x) / sc; cy -= (e.clientY - q.y) / sc; pts[e.pointerId] = { x: e.clientX, y: e.clientY }; draw();
+      });
+      function up(e) { delete pts[e.pointerId]; lastD = 0; if (!Object.keys(pts).length) fr.style.cursor = 'grab'; }
+      fr.addEventListener('pointerup', up); fr.addEventListener('pointercancel', up);
+      fr.addEventListener('wheel', function (e) { e.preventDefault(); z = Math.min(4, Math.max(1, z * (e.deltaY < 0 ? 1.08 : 0.92))); draw(); }, { passive: false });
+      zr.addEventListener('input', function () { z = parseFloat(zr.value) || 1; draw(); });
+      function close() { try { document.body.removeChild(ov); } catch (x) {} }
+      ov.querySelector('#cropno').addEventListener('click', function () { close(); if (cancel) cancel(); });
+      ov.querySelector('#cropok').addEventListener('click', function () {
+        try {
+          var half = S / (2 * base * z), c = document.createElement('canvas'), out = 900; c.width = out; c.height = out;
+          c.getContext('2d').drawImage(im, cx - half, cy - half, half * 2, half * 2, 0, 0, out, out);
+          var url = c.toDataURL('image/jpeg', 0.85); close(); done(url);
+        } catch (err) { close(); toast('Non riesco a modificare questa foto: caricane una nuova'); if (cancel) cancel(); }
+      });
+    };
+    im.src = src;
+  }
   function bindForm() {
     var inp = document.getElementById('media');
     inp.addEventListener('change', function () {
@@ -1892,14 +1941,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       } else {
         var rd = new FileReader();
         rd.onload = function () {
-          var im = new Image();
-          im.onload = function () {
-            var m = 900, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas');
-            c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
-            c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
-            state.draft.media = { type: 'image', src: c.toDataURL('image/jpeg', 0.82) }; state.draft.file = null; keepFields(); render();
-          };
-          im.src = rd.result;
+          cropEdit(rd.result, function (url) { state.draft.media = { type: 'image', src: url }; state.draft.file = null; keepFields(); render(); }, function () { inp.value = ''; });
         };
         rd.readAsDataURL(f);
       }
@@ -4746,6 +4788,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       state.draft.media = { type: 'image', src: plate(['#B8895A', '#E6B65B', '#C8472B', '#8FB86B'], Math.floor(Math.random() * 50) + 1) };
       render(); toast('Foto di esempio aggiunta');
     }
+    else if (act === 'editphoto') { keepFields(); var dm = state.draft && state.draft.media; if (dm && dm.type === 'image') cropEdit(dm.src, function (url) { state.draft.media = { type: 'image', src: url }; state.draft.file = null; render(); }); }
     else if (act === 'rmphoto') { keepFields(); state.draft.media = null; state.draft.file = null; render(); }
     else if (act === 'scan') { keepFields(); state.scanRow = parseInt(el.getAttribute('data-i'), 10); openScan(); }
     else if (act === 'scancam') { startCam(); }
@@ -4963,7 +5006,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 80; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 81; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
