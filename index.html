@@ -307,6 +307,9 @@ input:disabled { opacity: .45; }
 .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 14px; }
 .grid3 button { padding: 0; border-radius: 8px; overflow: hidden; aspect-ratio: 1; }
 .grid3 .ph { aspect-ratio: 1; border-radius: 8px; background: var(--soft); border: 1.5px dashed var(--line, rgba(0,0,0,.15)); display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.grid3 button.draftc { position: relative; background: var(--soft); border: 1.5px dashed var(--line, rgba(0,0,0,.2)); display: flex; align-items: flex-end; justify-content: flex-start; text-align: left; padding: 8px; }
+.draftb { position: absolute; top: 6px; left: 6px; background: #1F1F1F; color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; }
+.draftt { font-size: 12.5px; font-weight: 600; line-height: 1.2; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
 .grid3 .ph svg { width: 26px; height: 26px; opacity: .55; }
 .grid3 button.ph:first-child { color: var(--fg); }
 .grid3 img, .grid3 video { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -773,8 +776,8 @@ details.more[open] > summary::after { content: ' ▴'; }
 
   function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function fmtTime(m) { if (m >= 1440) return Math.round(m / 60) + ' h (con lievitazione)'; if (m >= 60) return Math.floor(m / 60) + ' h ' + (m % 60 ? (m % 60) + ' min' : ''); return m + ' min'; }
-  var PRIV = [], COOK = [];
-  function byId(id) { return posts.filter(function (p) { return p.id === id; })[0] || PRIV.filter(function (p) { return p.id === id; })[0] || COOK.filter(function (p) { return p.id === id; })[0]; }
+  var PRIV = [], COOK = [], DRAFTS = [];
+  function byId(id) { return posts.filter(function (p) { return p.id === id; })[0] || PRIV.filter(function (p) { return p.id === id; })[0] || COOK.filter(function (p) { return p.id === id; })[0] || DRAFTS.filter(function (p) { return p.id === id; })[0]; }
   function toastAct(msg, label, act, id) {
     var t = document.getElementById('toast'); t.innerHTML = esc(msg) + ' <button class="tbtn" data-act="' + act + '" data-id="' + id + '">' + esc(label) + '</button>'; t.hidden = false; clearTimeout(toast.h); toast.h = setTimeout(function () { t.hidden = true; }, 4500);
   }
@@ -931,7 +934,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   function viewNew() {
     var d = ensureDraft();
     var prev = d.media ? mediaTag(d.media, '') : '';
-    return '<div class="view-h"><h1>' + (d.editId ? 'Modifica il piatto' : (d.priv ? 'Nuova ricetta privata' : 'Nuovo piatto')) + '</h1><p>' + (d.priv ? 'Solo tu la vedi. La foto è facoltativa.' : 'Foto o video, ingredienti e passaggi.') + '</p></div>' + (d.from ? '<p class="hint" style="margin:-6px 0 10px">Variante di ' + esc(fromTxt(d.from)) + ': ' + esc(d.from.title) + '. L\'autore originale viene citato.</p>' : '') +
+    return '<div class="view-h"><h1>' + (d.draft ? 'Bozza' : d.editId ? 'Modifica il piatto' : (d.priv ? 'Nuova ricetta privata' : 'Nuovo piatto')) + '</h1><p>' + (d.priv ? 'Solo tu la vedi. La foto è facoltativa.' : 'Foto o video, ingredienti e passaggi.') + '</p></div>' + (d.from ? '<p class="hint" style="margin:-6px 0 10px">Variante di ' + esc(fromTxt(d.from)) + ': ' + esc(d.from.title) + '. L\'autore originale viene citato.</p>' : '') +
       '<form class="new" id="newform" novalidate>' +
       '<label class="drop" for="media">' + (prev || '<span><b>Aggiungi foto o video</b>Tocca per scattare o scegliere un file</span>') + '<input id="media" type="file" accept="image/*,video/*"></label>' +
       (d.media ? '<button type="button" class="btn ghost" data-act="rmphoto">Rimuovi foto o video</button>' : '<button type="button" class="btn ghost" data-act="samplephoto">Usa una foto di esempio</button>') +
@@ -939,12 +942,13 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<label class="f" for="f-title">Nome del piatto<input id="f-title" type="text" placeholder="Es. Lasagne della domenica" maxlength="60"></label>' +
       '<div class="row2"><label class="f" for="f-time">Tempo (minuti)<input id="f-time" type="number" min="1" inputmode="numeric" placeholder="30"></label>' +
       '<label class="f" for="f-serv">Porzioni<input id="f-serv" type="number" min="1" inputmode="numeric" placeholder="4"></label></div>' +
-      '<label class="f" for="f-tag">Categoria<select id="f-tag"><option>Colazione</option><option>Primi</option><option>Secondi</option><option>Contorni</option><option>Dolci</option><option>Lievitati</option><option>Light</option><option>Spuntini</option><option>Altro</option></select></label>' +
+      '<label class="f" for="f-tag">Categoria<select id="f-tag"><option>Colazione</option><option>Primi</option><option>Secondi</option><option>Contorni</option><option>Dolci</option><option>Lievitati</option><option>Light</option><option>Spuntini</option><option>Aperitivi</option><option>Altro</option></select></label>' +
       '<div class="fbox" id="ingbox">' + ingBox(d) + '</div>' +
       '<div class="fbox" id="stepbox">' + stepBox(d) + '</div>' +
       (liveMode() ? '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + !!d.priv + '" data-act="privtog"><span class="box">' + (d.priv ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Solo per me: salva nel ricettario privato (nessun altro la vede)</span></button>' : '') +
       (d.priv ? '' : '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + (d.showN !== false) + '" data-act="shownut"><span class="box">' + (d.showN !== false ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Mostra calorie e valori nutrizionali agli altri</span></button>') +
-      '<button class="btn" type="submit" style="padding:14px 16px">' + (d.editId ? 'Salva le modifiche' : d.priv ? 'Salva nel ricettario' : d.menuId ? 'Pubblica il menu' : 'Pubblica') + '</button>' +
+      '<button class="btn" type="submit" style="padding:14px 16px">' + (d.draft ? 'Pubblica' : d.editId ? 'Salva le modifiche' : d.priv ? 'Salva nel ricettario' : d.menuId ? 'Pubblica il menu' : 'Pubblica') + '</button>' +
+      (liveMode() && !d.priv && !d.menuId ? '<button type="button" class="btn ghost" data-act="savedraft">Salva come bozza (senza foto)</button><p class="hint" style="margin:-4px 0 0">La bozza la vedi solo tu, dal tuo profilo. La pubblichi quando aggiungi la foto.</p>' : '') +
       (d.editId ? '<button type="button" class="btn ghost" data-act="editcancel">Annulla</button>' : d.priv ? '' : '<button type="button" class="btn ghost" data-act="menunext">' + (d.menuId ? 'Aggiungi un altro piatto al menu' : 'Pubblica e aggiungi altri piatti (menu)') + '</button>') + '</form>';
   }
 
@@ -993,7 +997,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
       bioOwnHTML() + (!isPro() ? '<div style="margin:8px 0 4px">' + subRows([prefsRow()]) + '</div>' : '') + profSeg() +
-      (showClients ? viewProDash() : (mine.length ? '<div class="grid3">' + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
+      (showClients ? viewProDash() : ((mine.length || DRAFTS.length) ? '<div class="grid3">' + DRAFTS.map(function (p) { return '<button class="draftc" data-act="open" data-id="' + p.id + '" aria-label="Bozza: ' + esc(p.title) + '"><span class="draftb">Bozza</span><span class="draftt">' + esc(p.title) + '</span></button>'; }).join('') + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
         phGrid(true) + '<p class="hint" style="text-align:center;margin:14px 0 0">Pubblica il primo piatto: comparirà qui.</p>'));
   }
 
@@ -1719,11 +1723,12 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (state.sheetId !== p.id) { state.sheetId = p.id; state.sheetServ = p.serv; state.moreOpen = false; }
     var soc = !p.priv && !p.cook, layer = document.getElementById('layer');
     layer.innerHTML = '<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(p.title) + '" data-stop="1">' +
-      '<div class="sheet-top"><div><h2>' + esc(p.title) + '</h2><div class="meta" style="margin-top:6px"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + (p.cook ? 'Ricettario privato' : 'di ' + esc(hnd(p))) + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div></div>' +
+      '<div class="sheet-top"><div><h2>' + esc(p.title) + '</h2><div class="meta" style="margin-top:6px"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + (p.draft ? 'Bozza · solo tu' : p.cook ? 'Ricettario privato' : 'di ' + esc(hnd(p))) + '</span>' + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div></div>' +
       '<button class="x" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="sheetmedia">' + mediaTag(p.media, 'media') + '</div>' +
       (!soc ? '' : '<div class="acts sheetacts" id="sheetacts">' + sheetActsHTML(p) + '</div>') +
       (p.priv ? (p.from && p.from.note ? '<div class="note" style="margin:0"><b>Nota del nutrizionista</b><br>' + esc(p.from.note) + '</div>' : '') : '') +
+      (p.draft ? '<div class="note" style="margin:0"><b>Bozza</b><br>Gli altri non la vedono. Per pubblicarla tocca «Modifica la ricetta» in fondo e aggiungi la foto.</div>' : '') +
       warnHTML(p) +
       '<button class="btn" data-act="cook" data-id="' + p.id + '">Modalità cucina</button>' +
       (!soc ? '' : secBoxHTML(p)) +
@@ -1904,12 +1909,14 @@ details.more[open] > summary::after { content: ' ▴'; }
     var fm = document.getElementById('f-menu'); if (fm && d.menuName) fm.value = d.menuName;
     document.getElementById('newform').addEventListener('submit', function (ev) {
       ev.preventDefault(); keepFields();
-      var d = state.draft || {}, more = !!state.menuMore; state.menuMore = false;
+      var d = state.draft || {}, more = !!state.menuMore, asDraft = !!state.asDraft; state.menuMore = false; state.asDraft = false;
+      if (asDraft && !liveMode()) { toast('Per salvare una bozza serve un account'); return; }
+      if (asDraft) more = false;
       if (more && !liveMode()) { toast('Per pubblicare un menu serve un account'); return; }
       if (more && !d.menuId) { d.menuId = uuid4(); d.menuPos = 0; }
       if (!d.title || !d.title.trim()) { toast('Scrivi il nome del piatto'); document.getElementById('f-title').focus(); return; }
       if (d.priv && !liveMode()) { toast('Per il ricettario privato serve un account'); return; }
-      if (!d.media && !d.priv) { toast('Aggiungi una foto o un video'); return; }
+      if (!d.media && !d.priv && !asDraft) { toast('Aggiungi una foto o un video (oppure salva come bozza)'); return; }
       var ing = d.ings.filter(function (r) { return r.n.trim(); }).map(function (r) {
         var q = parseFloat(String(r.q).replace(',', '.'));
         return { n: r.n.trim(), q: q > 0 ? q : null, u: r.u, prod: r.prod || null, sec: !!r.sec && liveMode() && !d.priv };
@@ -1923,10 +1930,12 @@ details.more[open] > summary::after { content: ' ▴'; }
       if (!steps.length) { toast('Aggiungi almeno un passaggio'); return; }
       if (sb && !liveMode()) { toast('Accedi o registrati per pubblicare: così gli altri vedono il tuo piatto'); return; }
       if (liveMode()) {
-        var pb = document.querySelector('#newform button[type=submit]'); if (pb) { pb.disabled = true; pb.textContent = d.priv || d.editDb ? 'Salvo…' : 'Pubblico…'; }
+        var pb = document.querySelector('#newform button[type=submit]'); if (pb) { pb.disabled = true; pb.textContent = d.priv || asDraft || (d.editDb && !d.draft) ? 'Salvo…' : 'Pubblico…'; }
         var editing = !!d.editDb, fresh = !!d.media && d.media.src !== d.oldUrl;
         var rowBase = { title: d.title.trim(), tag: d.tag || 'Altro', time_min: Math.max(1, parseInt(d.time, 10) || 30), serv: Math.min(50, Math.max(1, parseInt(d.serv, 10) || 2)),
-          media_type: d.media ? d.media.type : 'image', ingredients: ingPub, steps: stepPub, hide_nutrition: d.showN === false, is_private: !!d.priv };
+          media_type: d.media ? d.media.type : 'image', ingredients: ingPub, steps: stepPub, hide_nutrition: d.showN === false, is_private: !!d.priv || asDraft };
+        if (asDraft) rowBase.from_info = { draft: 1, name: d.from && d.from.name || undefined, title: d.from && d.from.title || undefined };
+        else if (editing && d.draft) rowBase.from_info = d.from ? { name: d.from.name, title: d.from.title } : null;
         if (!editing) {
           rowBase.author_id = state.user.id;
           rowBase.from_recipe_id = d.from && d.from.id >= RB ? d.from.id - RB : null; rowBase.from_info = d.from ? { name: d.from.name, title: d.from.title } : null;
@@ -1949,11 +1958,11 @@ details.more[open] > summary::after { content: ' ▴'; }
         }).then(function () {
           if (more && !d.priv) { state.draft = { menuId: d.menuId, menuName: d.menuName, menuPos: (d.menuPos || 0) + 1 }; state.filter = 'Tutti'; state.q = ''; loadFeed(); return 'more'; }
           state.draft = null; state.filter = 'Tutti'; state.q = '';
-          if (d.priv) { state.tab = 'saved'; state.savedTab = 'book'; } else state.tab = editing ? 'me' : 'home';
+          if (d.priv) { state.tab = 'saved'; state.savedTab = 'book'; } else state.tab = (asDraft || (editing && !d.draft)) ? 'me' : 'home';
           return loadFeed();
         }).then(function (res) {
           if (res === 'more') { render(); window.scrollTo(0, 0); toast('Piatto aggiunto al menu. Ora il prossimo'); return; }
-          render(); window.scrollTo(0, 0); toast(editing ? 'Modifiche salvate' : d.priv ? 'Salvata nel ricettario privato' : d.menuId ? 'Menu pubblicato' : 'Piatto pubblicato');
+          render(); window.scrollTo(0, 0); toast(asDraft ? 'Bozza salvata: la vedi dal tuo profilo' : (editing && !d.draft) ? 'Modifiche salvate' : d.priv ? 'Salvata nel ricettario privato' : d.menuId ? 'Menu pubblicato' : 'Piatto pubblicato');
         }).catch(function (err) {
           if (pb) { pb.disabled = false; pb.textContent = d.editId ? 'Salva le modifiche' : d.priv ? 'Salva nel ricettario' : 'Pubblica'; }
           toast(err && /size|exceed|too large|payload/i.test(err.message || '') ? 'Il file è troppo grande' : 'Salvataggio non riuscito. Riprova.');
@@ -3763,7 +3772,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       avatar: a.avatar_url || null, menuId: r.menu_id || null, menuName: r.menu_name || '', menuPos: r.menu_pos || 0, hd: a.handle ? '@' + a.handle : '', role: a.account_type === 'pro' && a.pro_verified ? 'Nutrizionista' : '', t: ago(r.created_at), created: r.created_at,
       title: r.title, tag: r.tag, time: r.time_min, serv: r.serv, media: { type: r.media_type === 'video' ? 'video' : 'image', src: r.media_url || plate(['#A9B8B2', '#8FB86B', '#F4E7C5', '#C8472B'], r.id % 97) }, mediaPath: pathOf(r.media_url), priv: !!r.for_link_id, linkId: r.for_link_id || null, cook: !!r.is_private, mediaUrl: r.media_url || null,
       rawIng: Array.isArray(r.ingredients) ? r.ingredients : [], rawStp: Array.isArray(r.steps) ? r.steps : [], hideN: !!r.hide_nutrition,
-      from: r.from_info || null, likes: nl, ccount: nc, comments: [], mine: me };
+      draft: !!(r.from_info && r.from_info.draft), from: (r.from_info && !r.from_info.draft) ? r.from_info : (r.from_info && r.from_info.draft && (r.from_info.name || r.from_info.title) ? { name: r.from_info.name, title: r.from_info.title } : null), likes: nl, ccount: nc, comments: [], mine: me };
     o.hasSec = o.rawIng.some(function (x) { return x && x.secret; }) || o.rawStp.indexOf(STEP_SECRET) > -1; secApply(o); return o;
   }
   function rebuildPosts(real) {
@@ -3781,7 +3790,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   function loadCook() {
     return sb.from('recipes').select(RSEL).eq('author_id', state.user.id).eq('is_private', true).order('created_at', { ascending: false }).limit(300).then(function (r) {
       if (r.error) return;
-      COOK.length = 0; (r.data || []).forEach(function (x) { COOK.push(mapRecipe(x)); });
+      COOK.length = 0; DRAFTS.length = 0; (r.data || []).forEach(function (x) { var m = mapRecipe(x); (m.draft ? DRAFTS : COOK).push(m); });
     }, function () {});
   }
   function loadFeed() {
@@ -4320,7 +4329,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       var ep = byId(id); if (!ep || !ep.mine || !ep.real) return true;
       var go = function () {
         var known = UNITS.map(function (u) { return u[0]; });
-        state.draft = { editId: ep.id, editDb: ep.dbId, oldUrl: ep.mediaUrl, oldPath: ep.mediaPath, priv: !!ep.cook, title: ep.title, time: String(ep.time), serv: String(ep.serv), tag: ep.tag, showN: !ep.hideN,
+        state.draft = { editId: ep.id, editDb: ep.dbId, oldUrl: ep.mediaUrl, oldPath: ep.mediaPath, priv: !!ep.cook && !ep.draft, draft: !!ep.draft, title: ep.title, time: String(ep.time), serv: String(ep.serv), tag: ep.tag, showN: !ep.hideN,
           media: ep.mediaUrl ? { type: ep.media.type, src: ep.mediaUrl } : null, from: ep.from || null,
           ings: ep.ing.map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null, sec: !!i.sec }; }),
           stps: ep.steps.slice(), ssec: ep.steps.map(function (_, i) { return !!(ep.stSec && ep.stSec[i] === 1); }) };
@@ -4329,6 +4338,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       if (ep.hasSec && !ep.secData) { sb.from('recipe_secrets').select('kind,idx,content').eq('recipe_id', ep.dbId).then(function (r) { var sd = {}; ((r && r.data) || []).forEach(function (x) { sd[x.kind + x.idx] = x.content; }); ep.secData = sd; secApply(ep); go(); }); } else go();
       return true;
     }
+    if (act === 'savedraft') { state.asDraft = true; var nf2 = document.getElementById('newform'); if (nf2.requestSubmit) nf2.requestSubmit(); else nf2.dispatchEvent(new Event('submit', { cancelable: true })); return true; }
     if (act === 'shownut') { keepFields(); state.draft.showN = state.draft.showN === false; render(); return true; }
     if (act === 'togglenut') { var tp = byId(id); if (tp) { tp.hideN = !tp.hideN; if (tp.real && liveMode()) sb.from('recipes').update({ hide_nutrition: tp.hideN }).eq('id', tp.dbId).then(function () {}); openSheet(id); render(); } return true; }
     if (act === 'htab') { state.homeTab = el.getAttribute('data-v'); render(); return true; }
@@ -4953,7 +4963,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 79; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 80; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
