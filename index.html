@@ -945,9 +945,9 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<label class="f" for="f-tag">Categoria<select id="f-tag"><option>Colazione</option><option>Primi</option><option>Secondi</option><option>Contorni</option><option>Dolci</option><option>Lievitati</option><option>Light</option><option>Spuntini</option><option>Aperitivi</option><option>Altro</option></select></label>' +
       '<div class="fbox" id="ingbox">' + ingBox(d) + '</div>' +
       '<div class="fbox" id="stepbox">' + stepBox(d) + '</div>' +
-      (liveMode() ? '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + !!d.priv + '" data-act="privtog"><span class="box">' + (d.priv ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Solo per me: salva nel ricettario privato (nessun altro la vede)</span></button>' : '') +
+      (liveMode() ? '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + !!d.priv + '" data-act="privtog"><span class="box">' + (d.priv ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Solo per me: salva nel ricettario privato (nessun altro la vede)' + (d.wasPriv && d.priv ? '. Togli la spunta per pubblicarla.' : '') + '</span></button>' : '') +
       (d.priv ? '' : '<button type="button" class="mchk" style="border:0" role="checkbox" aria-checked="' + (d.showN !== false) + '" data-act="shownut"><span class="box">' + (d.showN !== false ? '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</span><span>Mostra calorie e valori nutrizionali agli altri</span></button>') +
-      '<button class="btn" type="submit" style="padding:14px 16px">' + (d.draft ? 'Pubblica' : d.editId ? 'Salva le modifiche' : d.priv ? 'Salva nel ricettario' : d.menuId ? 'Pubblica il menu' : 'Pubblica') + '</button>' +
+      '<button class="btn" type="submit" style="padding:14px 16px">' + ((d.draft || (d.wasPriv && !d.priv)) ? 'Pubblica' : d.editId ? 'Salva le modifiche' : d.priv ? 'Salva nel ricettario' : d.menuId ? 'Pubblica il menu' : 'Pubblica') + '</button>' +
       (liveMode() && !d.priv && !d.menuId ? '<button type="button" class="btn ghost" data-act="savedraft">Salva come bozza (senza foto)</button><p class="hint" style="margin:-4px 0 0">La bozza la vedi solo tu, dal tuo profilo. La pubblichi quando aggiungi la foto.</p>' : '') +
       (d.editId ? '<button type="button" class="btn ghost" data-act="editcancel">Annulla</button>' : d.priv ? '' : '<button type="button" class="btn ghost" data-act="menunext">' + (d.menuId ? 'Aggiungi un altro piatto al menu' : 'Pubblica e aggiungi altri piatti (menu)') + '</button>') + '</form>';
   }
@@ -1744,6 +1744,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       (!soc ? '' : '<button class="btn ghost" data-act="save" data-id="' + p.id + '" data-sheet="1">' + (state.saved[p.id] ? 'Rimuovi dai salvati' : 'Salva ricetta') + '</button>') +
       (!soc ? '' : '<button class="btn ghost" data-act="remix" data-id="' + p.id + '">Crea la mia versione</button>') +
       (p.mine && !p.cook ? '<button class="btn ghost" data-act="togglenut" data-id="' + p.id + '">' + (p.hideN ? 'Mostra' : 'Nascondi') + ' calorie e valori agli altri</button>' : '') +
+      (p.mine && p.real && p.cook && !p.draft ? '<button class="btn ghost" data-act="editrec" data-unpriv="1" data-id="' + p.id + '">Pubblica questa ricetta (la vedranno gli altri)</button>' : '') +
       (p.mine && p.real && !p.priv ? '<button class="btn ghost" data-act="editrec" data-id="' + p.id + '">Modifica la ricetta</button><button class="btn ghost" data-act="delrec" data-id="' + p.id + '" style="color:#B3261E">Elimina ' + (p.cook ? 'la ricetta' : 'il piatto') + '</button>' : '') +
       (!p.mine && p.real && soc && liveMode() ? '<button class="reset" data-act="reportrec" data-id="' + p.id + '" style="color:var(--muted);align-self:center;padding:8px">Segnala questo piatto</button>' : '') +
       '</div></details></div></div>';
@@ -1972,7 +1973,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       if (!steps.length) { toast('Aggiungi almeno un passaggio'); return; }
       if (sb && !liveMode()) { toast('Accedi o registrati per pubblicare: così gli altri vedono il tuo piatto'); return; }
       if (liveMode()) {
-        var pb = document.querySelector('#newform button[type=submit]'); if (pb) { pb.disabled = true; pb.textContent = d.priv || asDraft || (d.editDb && !d.draft) ? 'Salvo…' : 'Pubblico…'; }
+        var pb = document.querySelector('#newform button[type=submit]'); if (pb) { pb.disabled = true; pb.textContent = d.priv || asDraft || (d.editDb && !d.draft && !d.wasPriv) ? 'Salvo…' : 'Pubblico…'; }
         var editing = !!d.editDb, fresh = !!d.media && d.media.src !== d.oldUrl;
         var rowBase = { title: d.title.trim(), tag: d.tag || 'Altro', time_min: Math.max(1, parseInt(d.time, 10) || 30), serv: Math.min(50, Math.max(1, parseInt(d.serv, 10) || 2)),
           media_type: d.media ? d.media.type : 'image', ingredients: ingPub, steps: stepPub, hide_nutrition: d.showN === false, is_private: !!d.priv || asDraft };
@@ -2000,11 +2001,11 @@ details.more[open] > summary::after { content: ' ▴'; }
         }).then(function () {
           if (more && !d.priv) { state.draft = { menuId: d.menuId, menuName: d.menuName, menuPos: (d.menuPos || 0) + 1 }; state.filter = 'Tutti'; state.q = ''; loadFeed(); return 'more'; }
           state.draft = null; state.filter = 'Tutti'; state.q = '';
-          if (d.priv) { state.tab = 'saved'; state.savedTab = 'book'; } else state.tab = (asDraft || (editing && !d.draft)) ? 'me' : 'home';
+          if (d.priv) { state.tab = 'saved'; state.savedTab = 'book'; } else state.tab = (asDraft || (editing && !d.draft && !(d.wasPriv && !d.priv))) ? 'me' : 'home';
           return loadFeed();
         }).then(function (res) {
           if (res === 'more') { render(); window.scrollTo(0, 0); toast('Piatto aggiunto al menu. Ora il prossimo'); return; }
-          render(); window.scrollTo(0, 0); toast(asDraft ? 'Bozza salvata: la vedi dal tuo profilo' : (editing && !d.draft) ? 'Modifiche salvate' : d.priv ? 'Salvata nel ricettario privato' : d.menuId ? 'Menu pubblicato' : 'Piatto pubblicato');
+          render(); window.scrollTo(0, 0); toast(asDraft ? 'Bozza salvata: la vedi dal tuo profilo' : (editing && !d.draft && !(d.wasPriv && !d.priv)) ? 'Modifiche salvate' : d.priv ? 'Salvata nel ricettario privato' : d.menuId ? 'Menu pubblicato' : 'Piatto pubblicato');
         }).catch(function (err) {
           if (pb) { pb.disabled = false; pb.textContent = d.editId ? 'Salva le modifiche' : d.priv ? 'Salva nel ricettario' : 'Pubblica'; }
           toast(err && /size|exceed|too large|payload/i.test(err.message || '') ? 'Il file è troppo grande' : 'Salvataggio non riuscito. Riprova.');
@@ -4371,7 +4372,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       var ep = byId(id); if (!ep || !ep.mine || !ep.real) return true;
       var go = function () {
         var known = UNITS.map(function (u) { return u[0]; });
-        state.draft = { editId: ep.id, editDb: ep.dbId, oldUrl: ep.mediaUrl, oldPath: ep.mediaPath, priv: !!ep.cook && !ep.draft, draft: !!ep.draft, title: ep.title, time: String(ep.time), serv: String(ep.serv), tag: ep.tag, showN: !ep.hideN,
+        state.draft = { editId: ep.id, editDb: ep.dbId, oldUrl: ep.mediaUrl, oldPath: ep.mediaPath, priv: !!ep.cook && !ep.draft && !el.getAttribute('data-unpriv'), wasPriv: !!ep.cook && !ep.draft, draft: !!ep.draft, title: ep.title, time: String(ep.time), serv: String(ep.serv), tag: ep.tag, showN: !ep.hideN,
           media: ep.mediaUrl ? { type: ep.media.type, src: ep.mediaUrl } : null, from: ep.from || null,
           ings: ep.ing.map(function (i) { return { n: i.n, q: i.q == null ? '' : String(i.q), u: known.indexOf(i.u) > -1 ? i.u : 'pezzi', prod: i.prod || null, sec: !!i.sec }; }),
           stps: ep.steps.slice(), ssec: ep.steps.map(function (_, i) { return !!(ep.stSec && ep.stSec[i] === 1); }) };
@@ -5006,7 +5007,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 81; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 82; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
