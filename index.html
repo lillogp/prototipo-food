@@ -1010,7 +1010,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     return '<div class="prof">' + avh + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1>' + (ps ? '<div style="color:var(--muted)">' + esc(ps) + '</div>' : '') + '</div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
       '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
-      bioOwnHTML() + (!isPro() ? '<div style="margin:8px 0 4px">' + subRows([prefsRow()]) + '</div>' : '') + profSeg() +
+      bioOwnHTML() + profSeg() +
       (showClients ? viewProDash() : ((mine.length || DRAFTS.length) ? '<div class="grid3">' + DRAFTS.map(function (p) { return '<button class="draftc" data-act="open" data-id="' + p.id + '" aria-label="Bozza: ' + esc(p.title) + '"><span class="draftb">Bozza</span><span class="draftt">' + esc(p.title) + '</span></button>'; }).join('') + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
         phGrid(true) + '<p class="hint" style="text-align:center;margin:14px 0 0">Pubblica il primo piatto: comparirà qui.</p>'));
   }
@@ -1317,7 +1317,8 @@ details.more[open] > summary::after { content: ' ▴'; }
     rows.push(['privacy', 'Privacy e informazioni', live ? (state.profile.is_private ? 'Profilo privato' : 'Profilo pubblico') + ' · notifiche, persone bloccate, termini' : 'Termini d\'uso e informativa privacy']);
     if (live && !isPro()) rows.push(['mypro', 'Il mio nutrizionista', state.pro ? state.pro.name + ' · collegato' : 'Nessuno']);
     if (!(live && !isPro())) rows.push(goalRow());
-    if (!live) rows.push(prefsRow(), ['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
+    rows.push(prefsRow());
+    if (!live) rows.push(['people', 'Persone del planner', state.people.map(function (q) { return q.name; }).join(', ')]);
     if (window.__canInstall && window.__canInstall()) rows.push(['install', 'Installa l\'app', 'Aggiungila alla schermata Home']);
     rows.push(['tourstart', 'Rivedi la guida', 'Un giro rapido dei primi passi']);
     rows.push(['printbook', 'Stampa ricettario', 'Stampa le tue ricette e quelle salvate']);
@@ -5123,7 +5124,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 85; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 86; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
