@@ -911,7 +911,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       return '<div class="ingrow" data-oi="' + i + '"><div class="namewrap"><input type="text" class="in-n" list="ingl" placeholder="Ingrediente (es. Farina 00)" maxlength="40" aria-label="Ingrediente ' + (i + 1) + '" value="' + esc(r.n) + '">' +
         '<button type="button" class="rm scan" data-act="scan" data-i="' + i + '" aria-label="Scansiona codice a barre">' + ICONS.barcode + '</button>' +
         (liveMode() && !d.priv ? '<button type="button" class="rm sec" data-act="togsec" data-k="ings" data-i="' + i + '" aria-pressed="' + !!r.sec + '" aria-label="' + (r.sec ? 'Ingrediente segreto: tocca per renderlo pubblico' : 'Rendi segreto questo ingrediente') + '">' + ICONS.lock + '</button>' : '') + '</div>' +
-        (r.prod ? '<div class="prodline">' + esc(r.prod.brand) + ' · ' + r.prod.kc + ' kcal per 100 g (dati di esempio)</div>' : '') +
+        (r.prod ? '<div class="prodline">' + (r.prod.brand ? esc(r.prod.brand) + ' · ' : '') + r.prod.kc + ' kcal per 100 g' + (r.prod.real ? '' : ' (dati di esempio)') + '</div>' : '') +
         '<input type="number" class="in-q" inputmode="decimal" min="0" step="any" placeholder="Quantità" aria-label="Quantità" value="' + esc(r.q) + '">' +
         '<select class="in-u" aria-label="Unità">' + UNITS.map(function (u) { return '<option value="' + u[0] + '"' + (r.u === u[0] ? ' selected' : '') + '>' + u[1] + '</option>'; }).join('') + '</select>' +
         '<button type="button" class="rm" data-act="rming" data-i="' + i + '" aria-label="Rimuovi ingrediente"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
@@ -1555,7 +1555,10 @@ details.more[open] > summary::after { content: ' ▴'; }
   function openScan() {
     document.getElementById('layer').innerHTML = '<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="Scansiona prodotto">' +
       '<div class="sheet-top"><h2>Scansiona prodotto</h2><button class="x" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
-      '<div class="scanbox"><span class="scanic">' + ICONS.barcode + '</span><span>Nell\'app vera qui si apre la fotocamera. Nel prototipo scrivi il codice o scegli un esempio.</span></div>' +
+      '<div id="camwrap" hidden style="position:relative;border-radius:16px;overflow:hidden;background:#000;margin-bottom:10px"><video id="camvid" playsinline muted autoplay style="display:block;width:100%;max-height:260px;object-fit:cover"></video><span aria-hidden="true" style="position:absolute;left:12%;right:12%;top:50%;height:2px;background:#F6E27A;box-shadow:0 0 10px 2px rgba(246,226,122,.8)"></span></div>' +
+      '<p class="hint" id="camhint" style="margin:0 0 10px" role="status"></p>' +
+      '<button class="btn" type="button" id="camstart" data-act="scancam" style="margin-bottom:10px">Scansiona con la fotocamera</button>' +
+      '<div class="scanbox"><span class="scanic">' + ICONS.barcode + '</span><span>Inquadra il codice a barre del prodotto. Se non riesci, scrivilo qui sotto.</span></div>' +
       '<form class="cmf" id="scanform"><input type="text" id="scancode" inputmode="numeric" maxlength="13" placeholder="Codice a barre (8-13 cifre)" aria-label="Codice a barre"><button class="btn" type="submit">Cerca</button></form>' +
       '<div class="people" style="margin-top:0"><h3>Codici di prova</h3>' + Object.keys(PRODUCTS).map(function (c) { return '<button data-act="scanpick" data-c="' + c + '">' + esc(PRODUCTS[c].name) + '</button>'; }).join('') + '</div>' +
       '<div id="scanres"></div></div></div>';
@@ -1567,15 +1570,88 @@ details.more[open] > summary::after { content: ' ▴'; }
     return '<div class="row2"><label class="f" for="scanq">Quantità<input type="number" id="scanq" inputmode="decimal" min="0" step="any" placeholder="Es. 200" value="' + (has ? esc(row.q) : '') + '"></label>' +
       '<label class="f" for="scanu">Unità<select id="scanu">' + UNITS.map(function (x) { return '<option value="' + x[0] + '"' + (x[0] === u ? ' selected' : '') + '>' + x[1] + '</option>'; }).join('') + '</select></label></div>';
   }
+  function showProd(p, c) {
+    var res = document.getElementById('scanres'); if (!res) return;
+    res.innerHTML = '<div class="prodcard"><div><b>' + esc(p.name) + '</b><span>' + esc(p.brand || '') + (p.brand ? ' · ' : '') + c + '</span></div>' +
+      '<div class="nutri"><div class="kc"><b>' + p.kc + '</b><span>kcal</span></div><div><b>' + p.p + ' g</b><span>proteine</span></div><div><b>' + p.c + ' g</b><span>carboidrati</span></div><div><b>' + p.f + ' g</b><span>grassi</span></div></div>' +
+      '<p class="hint">Valori per 100 g' + (p.real ? ', da Open Food Facts: possono variare con la confezione.' : ', dati di esempio.') + '</p>' + qtyBlock(p) + '<button class="btn" data-act="scanuse" data-c="' + c + '">Aggiungi alla ricetta</button></div>';
+    var qi = document.getElementById('scanq'); if (qi) qi.focus();
+  }
+  function rnd1(v) { return Math.round((+v || 0) * 10) / 10; }
   function scanSearch(raw) {
     var c = String(raw || '').replace(/\s/g, ''), res = document.getElementById('scanres');
+    if (!res) return;
     if (!/^\d{8,13}$/.test(c)) { res.innerHTML = '<p class="hint">Il codice deve avere da 8 a 13 cifre.</p>'; return; }
     var p = PRODUCTS[c];
-    if (!p) { res.innerHTML = '<div class="empty" style="padding:16px"><b>Prodotto non trovato</b>Controlla il codice o inserisci l\'ingrediente a mano.</div>'; return; }
-    res.innerHTML = '<div class="prodcard"><div><b>' + esc(p.name) + '</b><span>' + esc(p.brand) + ' · ' + c + '</span></div>' +
-      '<div class="nutri"><div class="kc"><b>' + p.kc + '</b><span>kcal</span></div><div><b>' + p.p + ' g</b><span>proteine</span></div><div><b>' + p.c + ' g</b><span>carboidrati</span></div><div><b>' + p.f + ' g</b><span>grassi</span></div></div>' +
-      '<p class="hint">Valori per 100 g, dati di esempio.</p>' + qtyBlock(p) + '<button class="btn" data-act="scanuse" data-c="' + c + '">Aggiungi alla ricetta</button></div>';
-    var qi = document.getElementById('scanq'); if (qi) qi.focus();
+    if (p) { showProd(p, c); return; }
+    res.innerHTML = '<p class="hint" role="status">Cerco il prodotto…</p>';
+    var nf = '<div class="empty" style="padding:16px"><b>Prodotto non trovato</b>Controlla il codice o inserisci l\'ingrediente a mano.</div>';
+    fetch('https://world.openfoodfacts.org/api/v2/product/' + c + '.json?fields=product_name,product_name_it,brands,nutriments').then(function (r) { return r.json(); }).then(function (j) {
+      var d = j && j.status === 1 && j.product, n = d && d.nutriments;
+      var nm = d && (d.product_name_it || d.product_name);
+      if (!d || !nm) { res.innerHTML = nf; return; }
+      var kc = n && (n['energy-kcal_100g'] != null ? n['energy-kcal_100g'] : (n['energy_100g'] != null ? n['energy_100g'] / 4.184 : null));
+      if (kc == null || isNaN(kc)) { res.innerHTML = '<div class="empty" style="padding:16px"><b>' + esc(nm) + '</b>Questo prodotto non ha i valori nutrizionali. Inserisci l\'ingrediente a mano.</div>'; return; }
+      var np = { name: nm, brand: (d.brands || '').split(',')[0].trim(), kc: Math.round(kc), p: rnd1(n.proteins_100g), c: rnd1(n.carbohydrates_100g), f: rnd1(n.fat_100g), real: true };
+      PRODUCTS[c] = np; showProd(np, c);
+    }, function () { res.innerHTML = '<div class="empty" style="padding:16px"><b>Non riesco a cercare</b>Controlla la connessione e riprova, oppure inserisci l\'ingrediente a mano.</div>'; });
+  }
+  /* Fotocamera: lettore integrato se c'è, altrimenti libreria ZXing */
+  var camStream = null, camReader = null, camStop = false;
+  function stopCam() {
+    camStop = true;
+    try { if (camReader && camReader.reset) camReader.reset(); } catch (e) {}
+    camReader = null;
+    try { if (camStream) camStream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+    camStream = null;
+  }
+  function camFound(code) {
+    stopCam();
+    var w = document.getElementById('camwrap'); if (w) w.hidden = true;
+    var h = document.getElementById('camhint'); if (h) h.textContent = '';
+    var b = document.getElementById('camstart'); if (b) b.hidden = false;
+    var i = document.getElementById('scancode'); if (i) i.value = code;
+    scanSearch(code);
+  }
+  function camMsg(t) { var h = document.getElementById('camhint'); if (h) h.textContent = t; }
+  function startCam() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { camMsg('La fotocamera non è disponibile su questo dispositivo. Scrivi il codice a mano.'); return; }
+    stopCam(); camStop = false;
+    var w = document.getElementById('camwrap'), v = document.getElementById('camvid'), b = document.getElementById('camstart');
+    camMsg('Apro la fotocamera…');
+    var done = function () { if (b) b.hidden = true; if (w) w.hidden = false; camMsg('Inquadra il codice a barre.'); };
+    var fail = function (e) {
+      stopCam(); if (w) w.hidden = true; if (b) b.hidden = false;
+      camMsg(e && /denied|permission|notallowed/i.test(e.name + ' ' + e.message) ? 'Non ho il permesso di usare la fotocamera. Consentilo dalle impostazioni del browser, oppure scrivi il codice.' : 'Non riesco ad aprire la fotocamera. Scrivi il codice a mano.');
+    };
+    if ('BarcodeDetector' in window) {
+      var det; try { det = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] }); } catch (e) { det = null; }
+      if (det) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false }).then(function (st) {
+          if (camStop) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
+          camStream = st; v.srcObject = st; v.play().catch(function () {}); done();
+          (function loop() {
+            if (camStop || !camStream) return;
+            det.detect(v).then(function (r) { if (r && r.length && /^\d{8,13}$/.test(r[0].rawValue)) camFound(r[0].rawValue); else setTimeout(loop, 250); }, function () { setTimeout(loop, 400); });
+          })();
+        }, fail);
+        return;
+      }
+    }
+    var run = function () {
+      try {
+        var hints = new Map(); hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8, ZXing.BarcodeFormat.UPC_A, ZXing.BarcodeFormat.UPC_E]);
+        camReader = new ZXing.BrowserMultiFormatReader(hints);
+        done();
+        camReader.decodeFromConstraints({ video: { facingMode: { ideal: 'environment' } }, audio: false }, v, function (res) {
+          if (camStop) return;
+          if (res && /^\d{8,13}$/.test(res.getText())) camFound(res.getText());
+        }).catch(fail);
+      } catch (e) { fail(e); }
+    };
+    if (window.ZXing) { run(); return; }
+    var sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js';
+    sc.onload = run; sc.onerror = function () { fail(); }; document.head.appendChild(sc);
   }
   function fmtNum(n) { return String(n).replace('.', ','); }
   function niceQ(q, u) {
@@ -1792,7 +1868,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       if (state.sheetId === p.id) openSheet(p.id, true);
     });
   }
-  function closeSheet() { document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
+  function closeSheet() { try { stopCam(); } catch (e) {} document.getElementById('layer').innerHTML = ''; state.sheetId = null; }
 
   function bindForm() {
     var inp = document.getElementById('media');
@@ -4662,11 +4738,12 @@ details.more[open] > summary::after { content: ' ▴'; }
     }
     else if (act === 'rmphoto') { keepFields(); state.draft.media = null; state.draft.file = null; render(); }
     else if (act === 'scan') { keepFields(); state.scanRow = parseInt(el.getAttribute('data-i'), 10); openScan(); }
+    else if (act === 'scancam') { startCam(); }
     else if (act === 'scanpick') { var cc = el.getAttribute('data-c'); document.getElementById('scancode').value = cc; scanSearch(cc); }
     else if (act === 'scanuse') {
       var pr = PRODUCTS[el.getAttribute('data-c')], row = state.draft && state.draft.ings[state.scanRow];
       if (pr && row) {
-        row.n = pr.name; row.prod = { label: pr.name, brand: pr.brand, kc: pr.kc, p: pr.p, c: pr.c, f: pr.f, d: pr.d, pc: pr.pc };
+        row.n = pr.name; row.prod = { label: pr.name, brand: pr.brand || '', kc: pr.kc, p: pr.p, c: pr.c, f: pr.f, d: pr.d, pc: pr.pc, real: !!pr.real };
         var qv = document.getElementById('scanq'), uv = document.getElementById('scanu');
         if (qv && qv.value) row.q = qv.value;
         if (uv) row.u = uv.value;
@@ -4876,7 +4953,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 78; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var VERSION = 79; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
   var BUILD = '202611091130';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
