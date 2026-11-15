@@ -606,6 +606,9 @@ details.more[open] > summary::after { content: ' ▴'; }
 .stats .statbtn { display: flex; align-items: baseline; gap: 4px; background: var(--soft); border-radius: 99px; padding: 7px 11px; font-size: 13px; }
 .grid3 button { position: relative; }
 .sheetmedia { position: relative; }
+.meta span:empty { display: none; }
+.apill { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; background: var(--soft); border-radius: 99px; padding: 4px 14px 4px 4px; font-size: 15px; }
+.apill .av { width: 28px; height: 28px; font-size: 13px; } .apill b { font-weight: 600; } .apill i { font-style: normal; font-size: 19px; line-height: 1; color: var(--muted); }
 .tgl { display: flex; flex-direction: column; gap: 4px; padding-bottom: 8px; }
 .tgr { display: flex; align-items: center; gap: 10px; }
 .tgr .authbtn { flex: 1; min-width: 0; padding: 6px 0; }
@@ -1814,7 +1817,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (state.sheetId !== p.id) { state.sheetId = p.id; state.sheetServ = p.serv; state.moreOpen = false; }
     var soc = !p.priv && !p.cook, layer = document.getElementById('layer');
     layer.innerHTML = '<div class="sheet-bg" data-act="close"><div class="sheet" role="dialog" aria-modal="true" aria-label="' + esc(p.title) + '" data-stop="1">' +
-      '<div class="sheet-top"><div><h2>' + esc(p.title) + '</h2><div class="meta" style="margin-top:6px"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + (p.draft ? 'Bozza · solo tu' : p.cook ? (p.srcUrl ? 'Importata · solo per te' : 'Ricettario privato') : 'di ' + esc(hnd(p))) + '</span>' + (p.srcUrl ? '<span>Fonte: <a href="' + esc(p.srcUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(p.srcSite || 'sito') + '</a></span>' : '') + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div></div>' +
+      '<div class="sheet-top"><div><h2>' + esc(p.title) + '</h2><div class="meta" style="margin-top:6px"><span>' + fmtTime(p.time) + '</span><span>' + p.serv + ' porzioni</span><span>' + (p.draft ? 'Bozza · solo tu' : p.cook ? (p.srcUrl ? 'Importata · solo per te' : 'Ricettario privato') : p.mine ? 'di ' + esc(hnd(p)) : '') + '</span>' + (p.srcUrl ? '<span>Fonte: <a href="' + esc(p.srcUrl) + '" target="_blank" rel="noopener noreferrer">' + esc(p.srcSite || 'sito') + '</a></span>' : '') + (p.from ? '<span>Variante di ' + esc(fromTxt(p.from)) + '</span>' : '') + '</div>' + (!p.draft && !p.cook && !p.mine && p.handle ? '<button class="apill" data-act="profile" data-h="' + esc(p.handle) + '" aria-label="Vai al profilo di ' + esc(p.user) + '">' + avHTML(p.avatar, p.user) + '<b>' + esc(p.user) + '</b><i aria-hidden="true">&rsaquo;</i></button>' : '') + '</div>' +
       '<button class="x" data-act="close" aria-label="Chiudi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
       '<div class="sheetmedia">' + mediaTag(p.media, 'media') + tagOnPhoto(p) + '</div>' +
       (!soc ? '' : '<div class="acts sheetacts" id="sheetacts">' + sheetActsHTML(p) + '</div>') +
@@ -5234,8 +5237,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 92; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611151030';
+  var VERSION = 93; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611151110';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
