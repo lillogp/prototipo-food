@@ -1041,7 +1041,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       '<label class="f" for="f-title">Nome del piatto<input id="f-title" type="text" placeholder="Es. Lasagne della domenica" maxlength="60"></label>' +
       '<div class="row2"><label class="f" for="f-time">Tempo (minuti)<input id="f-time" type="number" min="1" inputmode="numeric" placeholder="30"></label>' +
       '<label class="f" for="f-serv">Porzioni<input id="f-serv" type="number" min="1" inputmode="numeric" placeholder="4"></label></div>' +
-      '<label class="f" for="f-tag">Categoria<select id="f-tag"><option>Colazione</option><option>Primi</option><option>Secondi</option><option>Contorni</option><option>Dolci</option><option>Lievitati</option><option>Light</option><option>Spuntini</option><option>Aperitivi</option><option>Altro</option></select></label>' +
+      '<label class="f" for="f-tag">Categoria<select id="f-tag"><option>Colazione</option><option>Primi</option><option>Secondi</option><option>Contorni</option><option>Dolci</option><option>Lievitati</option><option>Light</option><option>Spuntini</option><option>Aperitivi</option><option>Salse</option><option>Altro</option></select></label>' +
       '<div class="fbox" id="ingbox">' + ingBox(d) + '</div>' +
       '<div class="fbox" id="stepbox">' + stepBox(d) + '</div>' +
       (liveMode() && !d.priv ? tagBoxHTML(d) : '') +
@@ -5275,8 +5275,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 101; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611150900';
+  var VERSION = 102; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611152330';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
