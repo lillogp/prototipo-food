@@ -606,14 +606,11 @@ details.more[open] > summary::after { content: ' ▴'; }
 .stats .statbtn { display: flex; align-items: baseline; gap: 4px; background: var(--soft); border-radius: 99px; padding: 7px 11px; font-size: 13px; }
 .grid3 button { position: relative; }
 .sheetmedia { position: relative; }
-.tgnames { position: absolute; left: 8px; bottom: 40px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
-.tgnames[hidden] { display: none; }
-.tgnames button { display: flex; align-items: center; gap: 8px; background: #fff; color: var(--fg); font-size: 14px; padding: 5px 12px 5px 5px; border-radius: 99px; box-shadow: 0 2px 10px rgba(0,0,0,.35); animation: tgin .16s ease-out; }
-.tgnames button b { font-weight: 600; } .tgnames button i { font-style: normal; font-size: 18px; line-height: 1; color: var(--muted); margin-left: 2px; }
-.tgnames .av { width: 26px; height: 26px; font-size: 12px; }
-.tgb[aria-expanded="true"] { background: #fff; color: var(--fg); }
-@keyframes tgin { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .tgnames button { animation: none; } }
+.tgl { display: flex; flex-direction: column; gap: 4px; padding-bottom: 8px; }
+.tgr { display: flex; align-items: center; gap: 10px; }
+.tgr .authbtn { flex: 1; min-width: 0; padding: 6px 0; }
+.tgr .av { width: 48px; height: 48px; font-size: 20px; }
+#tagsheet { position: fixed; inset: 0; z-index: 70; }
 .tgb { position: absolute; left: 8px; bottom: 8px; width: 28px; height: 28px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; display: grid; place-items: center; }
 .tgb svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; }
 .sbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-bottom: 1px solid var(--line); margin: 0 0 12px; }
@@ -837,8 +834,19 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
 
   function tagOnPhoto(p) {
-    var t = tagNames(p); if (!t.length) return '';
-    return '<button class="tgb" data-act="tagtoggle" aria-expanded="false" aria-label="Persone taggate">' + ICONS.tagp + '</button><div class="tgnames" hidden>' + t.map(function (x) { var rp = state.realP[x.id]; return '<button data-act="profile" data-h="u:' + esc(x.id) + '">' + avHTML(rp ? rp.avatar_url : null, x.nm) + '<b>' + esc(x.nm) + '</b><i aria-hidden="true">&rsaquo;</i></button>'; }).join('') + '</div>';
+    if (!(p.tags && p.tags.length)) return '';
+    return '<button class="tgb" data-act="tagsheet" data-id="' + p.id + '" aria-label="Persone in questa foto">' + ICONS.tagp + '</button>';
+  }
+  function drawTagSheet() {
+    var el = document.getElementById('tagsheet'), p = state.tagSheet ? byId(state.tagSheet) : null;
+    if (!p) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement('div'); el.id = 'tagsheet'; document.body.appendChild(el); }
+    var me = state.user && state.user.id;
+    el.innerHTML = '<div class="sheet-bg" data-act="tagclose"><div class="sheet" role="dialog" aria-modal="true" aria-label="In questa foto"><div class="sheet-top"><h2>In questa foto</h2><button class="x" data-act="tagclose" aria-label="Chiudi">' + XICON_X + '</button></div>' +
+      '<div class="tgl">' + tagNames(p).map(function (x) {
+        var rp = state.realP[x.id] || {}, h = 'u:' + x.id;
+        return '<div class="tgr"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '">' + avHTML(rp.avatar_url, x.nm) + '<div class="who"><b>' + esc(rp.handle ? rp.handle : x.nm) + '</b><span>' + (rp.handle && rp.display_name ? esc(rp.display_name) : '') + '</span></div></button>' + (x.id === me ? '' : followBtn(h)) + '</div>';
+      }).join('') + '</div></div></div>';
   }
   function card(p) {
     var liked = !!state.liked[p.id], saved = !!state.saved[p.id];
@@ -1460,7 +1468,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     }).join('');
     document.querySelector('nav.tabs').style.display = gate ? 'none' : ''; document.getElementById('pubtop').hidden = !!gate;
     if (gate && window.mountG) window.mountG();
-    updateBell(); updateDmBadge(); if (window.__navSync) window.__navSync(); if (window.__typEnsure) window.__typEnsure();
+    if (state.tagSheet) drawTagSheet(); updateBell(); updateDmBadge(); if (window.__navSync) window.__navSync(); if (window.__typEnsure) window.__typEnsure();
     if (state.tab === 'new' && !gate) bindForm();
     if (state.tab === 'search' && !gate) setupExplore();
     Array.prototype.forEach.call(document.querySelectorAll('.carousel'), function (c) {
@@ -4599,7 +4607,8 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (act === 'shownut') { keepFields(); state.draft.showN = state.draft.showN === false; render(); return true; }
     if (act === 'togglenut') { var tp = byId(id); if (tp) { tp.hideN = !tp.hideN; if (tp.real && liveMode()) sb.from('recipes').update({ hide_nutrition: tp.hideN }).eq('id', tp.dbId).then(function () {}); openSheet(id); render(); } return true; }
     if (act === 'htab') { state.homeTab = el.getAttribute('data-v'); render(); return true; }
-    if (act === 'tagtoggle') { var tn = el.parentNode.querySelector('.tgnames'); if (tn) { tn.hidden = !tn.hidden; el.setAttribute('aria-expanded', String(!tn.hidden)); } return true; }
+    if (act === 'tagsheet') { state.tagSheet = id; drawTagSheet(); return true; }
+    if (act === 'tagclose') { state.tagSheet = null; drawTagSheet(); return true; }
     if (act === 'fopen') { openFilters(); return true; }
     if (act === 'fmaxt') { state.maxT = parseInt(el.getAttribute('data-v'), 10); closeSheet(); render(); return true; }
     if (act === 'fpantry') { state.filter = state.filter === 'Dalla dispensa' ? 'Tutti' : 'Dalla dispensa'; closeSheet(); render(); return true; }
@@ -4928,7 +4937,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       toast(state.following[h] ? 'Ora segui @' + h : 'Non segui più @' + h); render();
     }
     else if (act === 'profile') {
-      var hh = el.getAttribute('data-h'); closeSheet();
+      var hh = el.getAttribute('data-h'); closeSheet(); state.tagSheet = null; drawTagSheet();
       if (hh === ME.handle) { state.tab = 'me'; } else { state.tab = 'user'; state.viewing = hh; }
       render(); window.scrollTo(0, 0);
     }
