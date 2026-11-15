@@ -3965,6 +3965,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   function tagNames(p) { return (p.tags || []).map(function (t) { var x = state.realP[t.u]; return { id: t.u, nm: (x && (x.display_name || ('@' + x.handle))) || 'Utente' }; }); }
   function tagsLineHTML(p) {
     var t = tagNames(p); if (!t.length) return '';
+    var ctx = state.tab === 'user' && state.viewing ? String(state.viewing).replace(/^u:/, '') : state.tab === 'me' && state.user ? state.user.id : null;
+    if (ctx) { t = (p.authorId ? [{ id: p.authorId, nm: p.user }] : []).concat(t).filter(function (x, i, a2) { return x.id !== ctx && a2.findIndex(function (y) { return y.id === x.id; }) === i; }); if (!t.length) return ''; }
     return '<p class="tagline">Con ' + t.map(function (x) { return '<button class="reset" data-act="profile" data-h="u:' + esc(x.id) + '">' + esc(x.nm) + '</button>'; }).join(', ') + '</p>';
   }
   function tagBanner(p) {
@@ -5237,8 +5239,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 94; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611151140';
+  var VERSION = 95; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611151200';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
