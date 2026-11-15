@@ -2412,7 +2412,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   function storiesHTML() {
     if (!liveMode()) return '';
     var by = storiesBy(), me = state.user.id, mine = by[me] || [], mp = state.profile || {};
-    var own = '<div class="stb"><button class="stb" style="width:66px" data-act="' + (mine.length ? 'stopen' : 'stnew') + '" data-u="' + esc(me) + '" aria-label="' + (mine.length ? 'Le tue storie' : 'Aggiungi una storia') + '"><span class="ring ' + (mine.length ? 'seen' : 'none') + '">' + avHTML(mp.avatar_url, mp.display_name || state.user.email) + '</span><small>La tua</small></button>' +
+    var own = '<div class="stb"><button class="stb" style="width:66px" data-act="' + (mine.length ? 'stopen' : 'stnew') + '" data-u="' + esc(me) + '" aria-label="' + (mine.length ? 'Le tue storie' : 'Aggiungi una storia') + '"><span class="ring ' + (mine.length ? (storyUnseen(mine) ? '' : 'seen') : 'none') + '">' + avHTML(mp.avatar_url, mp.display_name || state.user.email) + '</span><small>La tua</small></button>' +
       '<label class="stplus" for="stfile" aria-label="Nuova storia"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></label></div>';
     return '<div class="stbar" role="group" aria-label="Storie">' + own + storyOrder().map(function (u) {
       var x = state.realP[u] || {};
@@ -5261,8 +5261,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 98; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611151330';
+  var VERSION = 99; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611151345';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
