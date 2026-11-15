@@ -1086,7 +1086,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (liveMode() && state.profile) avh = '<label class="avpick" for="avfile" aria-label="Cambia la foto profilo">' + avh + '<span class="avcam" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></label><input type="file" id="avfile" accept="image/*" hidden>';
     return '<div class="prof">' + avh + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1>' + (ps ? '<div style="color:var(--muted)">' + esc(ps) + '</div>' : '') + '</div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
-      '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate</button></div>' +
+      '<div class="stats"><button class="statbtn" data-act="togrid"><b>' + mine.length + '</b>piatti</button><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate</button></div>' +
       bioOwnHTML() + profSeg() +
       (showClients ? viewProDash() : ((mine.length || DRAFTS.length) ? '<div class="grid3">' + DRAFTS.map(function (p) { return '<button class="draftc" data-act="open" data-id="' + p.id + '" aria-label="Bozza: ' + esc(p.title) + '"><span class="draftb">Bozza</span><span class="draftt">' + esc(p.title) + '</span></button>'; }).join('') + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
         phGrid(true) + '<p class="hint" style="text-align:center;margin:14px 0 0">Pubblica il primo piatto: comparirà qui.</p>'));
@@ -2260,6 +2260,11 @@ details.more[open] > summary::after { content: ' ▴'; }
       return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(h) + '" style="padding:6px 0">' + avHTML(x.avatar_url, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x.handle ? '@' + esc(x.handle) : '') + (x.is_private ? ' · Profilo privato' : '') + '</span></div></button>' + realBadge(x) + followBtn(h) + '</div>';
     }).join('');
   }
+  function statsOther(id, n) {
+    var f = (state.fl || {})[id], live = liveMode();
+    return '<div class="stats"><button class="statbtn" data-act="togrid"><b>' + n + '</b>' + (n === 1 ? 'piatto' : 'piatti') + '</button>' +
+      (live && (!f || f.ok) ? '<button class="statbtn" data-act="plist" data-k="followers" data-u="' + esc(id) + '"><b>' + (f ? f.followers.length : '…') + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" data-u="' + esc(id) + '"><b>' + (f ? f.following.length : '…') + '</b>seguiti</button>' : '') + '</div>';
+  }
   function viewRealUser(id) {
     var x = state.realP[id]; if (!x) return '<button class="ic" data-act="back" style="margin-left:-8px">&lsaquo; Indietro</button><div class="empty"><b>Profilo non trovato</b></div>';
     var nm = x.display_name || ('@' + x.handle), h = 'u:' + id;
@@ -2271,8 +2276,9 @@ details.more[open] > summary::after { content: ' ▴'; }
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
         : (function () {
           var ps = posts.filter(function (q) { return q.authorId === id || (q.repBy && q.repBy[id]); });
-          return ps.length ? '<div class="stats"><div><b>' + ps.length + '</b>' + (ps.length === 1 ? 'piatto' : 'piatti') + '</div></div><div class="grid3">' + ps.map(function (q) { return '<button data-act="open" data-id="' + q.id + '" aria-label="' + esc(q.title) + '">' + mediaTag(q.media, '') + '</button>'; }).join('') + '</div>'
-            : '<div class="stats"><div><b>0</b>piatti</div></div>' + phGrid(false) + '<p class="hint" style="text-align:center;margin:14px 0 0">Ancora nessun piatto: quando pubblicherà delle ricette le troverai qui.</p>';
+          if (liveMode() && !(state.fl || {})[id]) loadFL(id);
+          return statsOther(id, ps.length) + (ps.length ? '<div class="grid3">' + ps.map(function (q) { return '<button data-act="open" data-id="' + q.id + '" aria-label="' + esc(q.title) + '">' + mediaTag(q.media, '') + '</button>'; }).join('') + '</div>'
+            : phGrid(false) + '<p class="hint" style="text-align:center;margin:14px 0 0">Ancora nessun piatto: quando pubblicherà delle ricette le troverai qui.</p>');
         })());
   }
   function peopleHTML() {
@@ -3247,14 +3253,26 @@ details.more[open] > summary::after { content: ' ▴'; }
       return sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', ids).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); });
     });
   }
-  function openPList(k) {
-    var ids = k === 'followers' ? (state.followers || []).slice() : Object.keys(state.following).filter(function (h) { return state.following[h]; });
-    var rows = ids.map(function (h) {
-      var uid = h.indexOf('u:') === 0 ? h.slice(2) : (k === 'followers' ? h : null), x = uid ? state.realP[uid] : null, hh = uid ? 'u:' + uid : h;
-      var nm = x ? (x.display_name || ('@' + x.handle)) : (hnameOf(h));
-      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(hh) + '" style="padding:6px 0">' + avHTML(x ? x.avatar_url : null, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x && x.handle ? '@' + esc(x.handle) : '') + '</span></div></button>' + (k === 'following' ? followBtn(hh) : '') + '</div>';
+  function openPList(k, u) {
+    var ids = u ? (((state.fl || {})[u] || {})[k] || []).map(function (i) { return 'u:' + i; }) : (k === 'followers' ? (state.followers || []).map(function (i) { return 'u:' + i; }) : Object.keys(state.following).filter(function (h) { return state.following[h]; }));
+    var me = state.user && state.user.id;
+    var rows = ids.map(function (hh) {
+      var uid = hh.indexOf('u:') === 0 ? hh.slice(2) : null, x = uid ? state.realP[uid] : null;
+      var nm = x ? (x.display_name || ('@' + x.handle)) : hnameOf(hh);
+      return '<div class="rcard" style="align-items:center"><button class="authbtn" data-act="profile" data-h="' + esc(hh) + '" style="padding:6px 0">' + avHTML(x ? x.avatar_url : null, nm) + '<div class="who"><b>' + esc(nm) + '</b><span>' + (x && x.handle ? '@' + esc(x.handle) : '') + '</span></div></button>' + ((u || k === 'following') && uid !== me ? followBtn(hh) : '') + '</div>';
     }).join('');
-    sheetOpen('Persone', k === 'followers' ? 'Seguaci' : 'Seguiti', rows || '<div class="empty"><b>' + (k === 'followers' ? 'Ancora nessun seguace' : 'Non segui ancora nessuno') + '</b>' + (k === 'followers' ? 'Quando qualcuno ti segue, lo trovi qui.' : 'Cerca persone e tocca Segui.') + '</div>');
+    var own = !u;
+    sheetOpen('Persone', k === 'followers' ? 'Seguaci' : 'Seguiti', rows || '<div class="empty"><b>' + (k === 'followers' ? 'Ancora nessun seguace' : (own ? 'Non segui ancora nessuno' : 'Non segue ancora nessuno')) + '</b>' + (own ? (k === 'followers' ? 'Quando qualcuno ti segue, lo trovi qui.' : 'Cerca persone e tocca Segui.') : '') + '</div>');
+  }
+  function loadFL(uid) {
+    state.fl = state.fl || {}; state.flBusy = state.flBusy || {};
+    if (!liveMode() || state.flBusy[uid]) return; state.flBusy[uid] = 1;
+    Promise.all([sb.rpc('follow_list', { p_user: uid, p_kind: 'followers' }), sb.rpc('follow_list', { p_user: uid, p_kind: 'following' })]).then(function (r) {
+      var fo = ((r[0] && r[0].data) || []).map(function (x) { return x.uid || x; }), fi = ((r[1] && r[1].data) || []).map(function (x) { return x.uid || x; });
+      state.fl[uid] = { followers: fo, following: fi, ok: !(r[0] && r[0].error) };
+      var need = fo.concat(fi).filter(function (i, k, a) { return !state.realP[i] && a.indexOf(i) === k; });
+      return need.length ? sb.from('profiles').select('id,display_name,handle,account_type,pro_verified,is_private,avatar_url,read_receipts,bio').in('id', need).then(function (q) { (q.data || []).forEach(function (x) { state.realP[x.id] = x; }); }) : null;
+    }).catch(function () {}).then(function () { state.flBusy[uid] = 0; if (state.tab === 'user') render(); });
   }
   function hnameOf(h) { return h.charAt(0) === '@' ? h : '@' + h; }
   var TOUR = [
@@ -4892,7 +4910,8 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (act === 'tourstart') { state.tourI = 0; state.tab = 'home'; render(); tourShow(); return true; }
     if (act === 'tournext') { state.tourI++; tourShow(); return true; }
     if (act === 'tourskip') { tourEnd(); return true; }
-    if (act === 'plist') { openPList(el.getAttribute('data-k')); return true; }
+    if (act === 'plist') { openPList(el.getAttribute('data-k'), el.getAttribute('data-u')); return true; }
+    if (act === 'togrid') { var gg = document.querySelector('.grid3'); if (gg) gg.scrollIntoView({ behavior: 'smooth', block: 'start' }); return true; }
     if (act === 'gosaved') { state.savedTab = el.getAttribute('data-v'); state.tab = 'saved'; closeSheet(); render(); window.scrollTo(0, 0); return; }
     if (extraClick(act, el, id)) return;
     if (act === 'close') { if (el.classList.contains('sheet-bg') && e.target !== el) return; closeSheet(); if (state.tab !== 'new') render(); return; }
@@ -5240,8 +5259,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 96; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611151230';
+  var VERSION = 97; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611151300';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
