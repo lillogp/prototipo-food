@@ -592,6 +592,21 @@ details.more[open] > summary::after { content: ' ▴'; }
 .tfoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .tfoot .btn { width: auto; padding: 10px 20px; } .tdots { display: flex; gap: 5px; }
 .tdots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); } .tdots i.on { background: var(--fg); }
+.fbar { display: flex; align-items: flex-start; gap: 8px; }
+.fbar .fbtn { flex: none; position: relative; border: 1px solid var(--line); border-radius: 99px; width: 36px; height: 34px; display: grid; place-items: center; background: var(--surface); }
+.fbar .fbtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
+.fbar .fbtn i { position: absolute; top: 3px; right: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.fbar .filters { flex: 1; min-width: 0; }
+.feed > .post { margin-inline: -16px; border: 0; border-radius: 0; }
+.feed > .post .post-h { padding: 10px 16px; } .feed > .post .av { width: 32px; height: 32px; font-size: 14px; }
+.feed > .post .post-b { padding: 12px 16px 16px; }
+.stats { flex-wrap: wrap; align-items: center; gap: 6px; }
+.stats > div { display: flex; align-items: baseline; gap: 4px; padding: 7px 2px; }
+.stats b { display: inline; font-size: 17px; }
+.stats .statbtn { display: flex; align-items: baseline; gap: 4px; background: var(--soft); border-radius: 99px; padding: 7px 11px; font-size: 13px; }
+.grid3 button { position: relative; }
+.tgb { position: absolute; left: 6px; bottom: 6px; width: 24px; height: 24px; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; display: grid; place-items: center; pointer-events: none; }
+.tgb svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; }
 .sbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-bottom: 1px solid var(--line); margin: 0 0 12px; }
 .sbar button { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px 7px; font-size: 11px; font-weight: 600; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .sbar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -693,6 +708,8 @@ details.more[open] > summary::after { content: ' ▴'; }
     plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
     send: '<svg viewBox="0 0 24 24"><path d="M21 3L3 10.5l7 2.5 2.5 7z"/><path d="M10 13l11-10"/></svg>',
     save: '<svg viewBox="0 0 24 24"><path d="M6 3h12v18l-6-4-6 4z"/></svg>',
+    sliders: '<svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>',
+    tagp: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="12" cy="10" r="2.4"/><path d="M7.5 18c.6-2.4 2.3-3.6 4.5-3.6s3.9 1.2 4.5 3.6"/></svg>',
     book: '<svg viewBox="0 0 24 24"><path d="M5 4h11a3 3 0 013 3v13H8a3 3 0 01-3-3z"/><path d="M5 17a3 3 0 013-3h11"/><path d="M9 8h6"/></svg>',
     fork: '<svg viewBox="0 0 24 24"><path d="M6 3v7a2 2 0 004 0V3M8 12v9M17 21V3c-2.4 1.4-3.4 4-3.4 7.5H17"/></svg>',
     folder: '<svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>',
@@ -810,6 +827,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     return m.type === 'video' ? '<video class="' + cls + '" src="' + m.src + '" controls playsinline preload="metadata"></video>' : '<img class="' + cls + '" src="' + m.src + '" alt="">';
   }
 
+  function tagBadge(p) { return p.tags && p.tags.length ? '<span class="tgb" role="img" aria-label="Con altre persone">' + ICONS.tagp + '</span>' : ''; }
   function card(p) {
     var liked = !!state.liked[p.id], saved = !!state.saved[p.id];
     return '<article class="post">' + repLine(p) + '<div class="post-h"><button class="authbtn" data-act="profile" data-h="' + esc(p.handle) + '">' + avHTML(p.avatar, p.user) + '<div class="who"><b>' + esc(p.user) + '</b><span>' + esc(p.t) + '</span></div></button>' +
@@ -823,17 +841,20 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
 
   function viewHome() {
-    var seg = '<div class="seg" role="group" aria-label="Sezione"><button data-act="htab" data-v="dishes" aria-pressed="' + (state.homeTab !== 'rest') + '">Piatti</button><button data-act="htab" data-v="rest" aria-pressed="' + (state.homeTab === 'rest') + '">Ristoranti</button></div>';
+    state.homeTab = 'dishes';
     var note = state.note ? '<div class="note"><span>I piatti di questo prototipo sono esempi. Pubblica il tuo con il tasto +.</span><button data-act="hidenote">Ok</button></div>' : '';
-    if (state.homeTab === 'rest') return note + seg + viewRest();
-    var tags = ['Tutti', 'Seguiti', 'Dalla dispensa'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
-    var times = [[0, 'Tutti i tempi'], [20, 'Fino a 20 min'], [45, 'Fino a 45 min'], [60, 'Fino a 1 ora']];
-    return note + seg + '<div id="stwrap">' + storiesHTML() + '</div>' +
-      '<div class="filters" role="group" aria-label="Categorie">' + tags.map(function (t) { return '<button data-act="filter" data-v="' + esc(t) + '" aria-pressed="' + (state.filter === t) + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
-      '<div class="filters sub" role="group" aria-label="Tempo">' + times.map(function (t) { return '<button data-act="maxt" data-v="' + t[0] + '" aria-pressed="' + (state.maxT === t[0]) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+    var tags = ['Tutti', 'Seguiti'].concat(posts.map(function (p) { return p.tag; }).filter(function (t, i, a) { return a.indexOf(t) === i; }));
+    var act = state.maxT > 0 || state.filter === 'Dalla dispensa';
+    return note + '<div id="stwrap">' + storiesHTML() + '</div>' +
+      '<div class="fbar"><button class="fbtn" data-act="fopen" aria-label="Filtri">' + ICONS.sliders + (act ? '<i></i>' : '') + '</button><div class="filters" role="group" aria-label="Categorie">' + tags.map(function (t) { return '<button data-act="filter" data-v="' + esc(t) + '" aria-pressed="' + (state.filter === t) + '">' + esc(t) + '</button>'; }).join('') + '</div></div>' +
       '<div id="feedwrap">' + feedHTML() + '</div>';
   }
-
+  function openFilters() {
+    var times = [[0, 'Tutti i tempi'], [20, 'Fino a 20 min'], [45, 'Fino a 45 min'], [60, 'Fino a 1 ora']];
+    sheetOpen('Filtri', 'Filtra i piatti',
+      '<h3 class="shc" style="margin-top:0">Tempo</h3><div class="filters" style="flex-wrap:wrap">' + times.map(function (t) { return '<button data-act="fmaxt" data-v="' + t[0] + '" aria-pressed="' + (state.maxT === t[0] || (!state.maxT && !t[0])) + '">' + t[1] + '</button>'; }).join('') + '</div>' +
+      '<h3 class="shc">Dispensa</h3><div class="filters"><button data-act="fpantry" aria-pressed="' + (state.filter === 'Dalla dispensa') + '">Solo piatti che posso fare con la mia dispensa</button></div>');
+  }
   state.exN = 18; state.exOff = 80; state.exDone = false; state.exBusy = false; var EXSEED = Math.floor(Math.random() * 1e6);
   function exHash(id) { var h = (+id || 0) * 2654435761 + EXSEED; h = (h ^ (h >>> 15)) >>> 0; return h % 100000; }
   function exploreList() {
@@ -883,7 +904,7 @@ details.more[open] > summary::after { content: ' ▴'; }
     return '<div class="view-h"><h1>Cerca</h1></div><input type="search" id="q" class="search sbig" placeholder="Piatti, ingredienti, persone" value="' + esc(state.q) + '" aria-label="Cerca" autocomplete="off"><div id="feedwrap">' + searchBody() + '</div>';
   }
   function savedBar(st) {
-    var T = [['recipes', 'Salvate', ICONS.save], ['rest', 'Ristoranti', ICONS.fork]]; if (liveMode()) T.unshift(['book', 'Ricettario', ICONS.book]);
+    var T = [['recipes', 'Salvate', ICONS.save]]; if (liveMode()) T.unshift(['book', 'Ricettario', ICONS.book]);
     return '<div class="sbar" role="group" aria-label="Sezione" style="grid-template-columns:repeat(' + T.length + ',1fr)">' + T.map(function (t) {
       return '<button data-act="stab" data-v="' + t[0] + '" aria-pressed="' + (st === t[0]) + '" aria-label="' + t[1] + '">' + t[2] + '<span>' + t[1] + '</span></button>'; }).join('') + '</div>';
   }
@@ -904,7 +925,7 @@ details.more[open] > summary::after { content: ' ▴'; }
   }
   function viewSaved() {
     if (state.sel && (state.tab !== 'saved' || (state.sel.c ? state.savedTab !== 'book' : state.savedTab === 'book' || state.savedTab === 'rest'))) state.sel = null;
-    var st = state.savedTab === 'rest' ? 'rest' : state.savedTab === 'book' && liveMode() ? 'book' : 'recipes';
+    var st = state.savedTab === 'book' && liveMode() ? 'book' : 'recipes';
     var head = '<div class="view-h"><h1>Salvati</h1></div>' + savedBar(st);
     if (st === 'book') return head + folderView(true);
     if (st === 'rest') {
@@ -1041,9 +1062,9 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (liveMode() && state.profile) avh = '<label class="avpick" for="avfile" aria-label="Cambia la foto profilo">' + avh + '<span class="avcam" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></span></label><input type="file" id="avfile" accept="image/*" hidden>';
     return '<div class="prof">' + avh + '<div style="flex:1;min-width:0"><h1 style="font-size:26px">' + esc(pn) + '</h1>' + (ps ? '<div style="color:var(--muted)">' + esc(ps) + '</div>' : '') + '</div>' +
       '<button class="ic" data-act="tab" data-v="settings" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></button></div>' +
-      '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate &rsaquo;</button></div>' +
+      '<div class="stats"><div><b>' + mine.length + '</b>piatti</div><button class="statbtn" data-act="plist" data-k="followers" aria-label="Vedi i seguaci"><b>' + (state.followers || []).length + '</b>seguaci</button><button class="statbtn" data-act="plist" data-k="following" aria-label="Vedi chi segui"><b>' + nf + '</b>seguiti</button><button class="statbtn" data-act="gosaved" data-v="recipes" aria-label="Apri ricette salvate"><b>' + saved + '</b>salvate</button></div>' +
       bioOwnHTML() + profSeg() +
-      (showClients ? viewProDash() : ((mine.length || DRAFTS.length) ? '<div class="grid3">' + DRAFTS.map(function (p) { return '<button class="draftc" data-act="open" data-id="' + p.id + '" aria-label="Bozza: ' + esc(p.title) + '"><span class="draftb">Bozza</span><span class="draftt">' + esc(p.title) + '</span></button>'; }).join('') + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + '</button>'; }).join('') + '</div>' :
+      (showClients ? viewProDash() : ((mine.length || DRAFTS.length) ? '<div class="grid3">' + DRAFTS.map(function (p) { return '<button class="draftc" data-act="open" data-id="' + p.id + '" aria-label="Bozza: ' + esc(p.title) + '"><span class="draftb">Bozza</span><span class="draftt">' + esc(p.title) + '</span></button>'; }).join('') + mine.map(function (p) { return '<button data-act="open" data-id="' + p.id + '" aria-label="' + esc(p.title) + '">' + mediaTag(p.media, '') + tagBadge(p) + '</button>'; }).join('') + '</div>' :
         phGrid(true) + '<p class="hint" style="text-align:center;margin:14px 0 0">Pubblica il primo piatto: comparirà qui.</p>'));
   }
 
@@ -2226,7 +2247,7 @@ details.more[open] > summary::after { content: ' ▴'; }
       (x.is_private && !state.following[h] ? '<div class="empty" style="margin-top:18px"><b>Questo profilo è privato</b>' + (state.fstat[h] === 'pending' ? 'Hai inviato la richiesta: vedrai i suoi piatti quando la accetterà.' : 'Richiedi di seguirlo: vedrai i suoi piatti quando accetterà.') + '</div>'
         : (function () {
           var ps = posts.filter(function (q) { return q.authorId === id || (q.repBy && q.repBy[id]); });
-          return ps.length ? '<div class="stats"><div><b>' + ps.length + '</b>' + (ps.length === 1 ? 'piatto' : 'piatti') + '</div></div><div class="grid3">' + ps.map(function (q) { return '<button data-act="open" data-id="' + q.id + '" aria-label="' + esc(q.title) + '">' + mediaTag(q.media, '') + '</button>'; }).join('') + '</div>'
+          return ps.length ? '<div class="stats"><div><b>' + ps.length + '</b>' + (ps.length === 1 ? 'piatto' : 'piatti') + '</div></div><div class="grid3">' + ps.map(function (q) { return '<button data-act="open" data-id="' + q.id + '" aria-label="' + esc(q.title) + '">' + mediaTag(q.media, '') + tagBadge(q) + '</button>'; }).join('') + '</div>'
             : '<div class="stats"><div><b>0</b>piatti</div></div>' + phGrid(false) + '<p class="hint" style="text-align:center;margin:14px 0 0">Ancora nessun piatto: quando pubblicherà delle ricette le troverai qui.</p>';
         })());
   }
@@ -4566,6 +4587,9 @@ details.more[open] > summary::after { content: ' ▴'; }
     if (act === 'shownut') { keepFields(); state.draft.showN = state.draft.showN === false; render(); return true; }
     if (act === 'togglenut') { var tp = byId(id); if (tp) { tp.hideN = !tp.hideN; if (tp.real && liveMode()) sb.from('recipes').update({ hide_nutrition: tp.hideN }).eq('id', tp.dbId).then(function () {}); openSheet(id); render(); } return true; }
     if (act === 'htab') { state.homeTab = el.getAttribute('data-v'); render(); return true; }
+    if (act === 'fopen') { openFilters(); return true; }
+    if (act === 'fmaxt') { state.maxT = parseInt(el.getAttribute('data-v'), 10); closeSheet(); render(); return true; }
+    if (act === 'fpantry') { state.filter = state.filter === 'Dalla dispensa' ? 'Tutti' : 'Dalla dispensa'; closeSheet(); render(); return true; }
     if (act === 'maxt') { state.maxT = parseInt(el.getAttribute('data-v'), 10); render(); return true; }
     if (act === 'showhidden') { state.prefs.hide = false; persist(); render(); return true; }
     if (act === 'prefs') { openPrefs(); return true; }
@@ -5188,8 +5212,8 @@ details.more[open] > summary::after { content: ' ▴'; }
   };
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () {}); } catch (e) {}
   /* Aggiornamento automatico: se sul server c'e' una versione piu' nuova, ricarica una volta. */
-  var VERSION = 89; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
-  var BUILD = '202611150800';
+  var VERSION = 90; try { document.getElementById('ver').textContent = 'v' + VERSION; } catch (e) {}
+  var BUILD = '202611150930';
   try {
     fetch(location.pathname, { cache: 'no-cache' }).then(function (r) { return r.text(); }).then(function (t) {
       var m = /var BUILD = '(\d+)'/.exec(t), seen = ''; try { seen = sessionStorage.getItem('gusto-rl') || ''; } catch (e) {}
