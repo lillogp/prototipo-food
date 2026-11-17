@@ -1,0 +1,3 @@
+-- Scheda utente dell'admin: dispositivi dell'app nativa, ricette private e importate (solo conteggi).
+-- Applicata sul progetto il 2026-11-17 (funzione admin_user_detail aggiornata).
+-- Vedi la definizione completa in public.admin_user_detail: aggiunge 'recipes_private', 'recipes_imported', 'devices'.
