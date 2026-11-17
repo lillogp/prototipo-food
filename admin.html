@@ -207,7 +207,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 15;
+  var ADMIN_VERSION = 17;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -222,9 +222,9 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
     ['recipes', 'Piatti', 'M4 13h16a8 8 0 01-16 0zM12 5v4M8 6v3M16 6v3'], ['stories', 'Storie', 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v8M8 12h8'], ['comments', 'Commenti', 'M4 5h16v11H9l-5 4z'],
-    ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
+    ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['stats', 'Statistiche', 'M4 20V10M10 20V4M16 20v-7M22 20H2'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
   var FRESH = { user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
-    recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, owner: false, ownerIds: [], busy: false, msg: '' };
+    stats: null, sd: 7, recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, owner: false, ownerIds: [], busy: false, msg: '' };
   var S = JSON.parse(JSON.stringify(FRESH));
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
 
@@ -399,6 +399,23 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     altro: ['Avviso dall\'amministrazione', '']
   };
   var ACT = { warn: 'Avviso inviato', suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
+  var SCR = { '/': 'Home', '/plan': 'Planner', '/shop': 'Spesa', '/search': 'Cerca', '/me': 'Profilo', '/settings': 'Impostazioni', '/create': 'Crea piatto', '/messages': 'Messaggi', '/notifications': 'Notifiche', '/saved': 'Salvate e ricettario', '/fridge': 'Svuotafrigo', '/pantry': 'Dispensa', '/recipe/[id]': 'Scheda ricetta', '/cook/[id]': 'Modalità cucina', '/chat/[id]': 'Chat', '/user/[id]': 'Profilo di altri', '/story-new': 'Nuova storia', '/story/[id]': 'Storie', '/people/[id]': 'Elenco persone', '/plus': 'Tasto +' };
+  var FEAT = { mi_piace: 'Mi piace', commento: 'Commenti', salva_ricetta: 'Ricette salvate', messaggio: 'Messaggi inviati', planner: 'Planner (modifiche)', dispensa: 'Dispensa (modifiche)', storia_vista: 'Storie viste', pubblica_piatto: 'Piatti pubblicati', ricetta_privata: 'Ricette private salvate', bozza: 'Bozze', importa_link: 'Importazioni da link', scansione_ingrediente: 'Scansioni ingredienti' };
+  function dur(sec) { sec = Math.round(sec || 0); if (sec < 60) return sec + ' s'; var m = Math.floor(sec / 60); if (m < 60) return m + ' min ' + (sec % 60 ? (sec % 60) + ' s' : ''); return Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
+  function statsHTML() {
+    var st = S.stats, seg = '<div class="toolbar"><div class="pills">' + [7, 30, 90].map(function (d) { return '<button class="pill" data-act="sdays" data-v="' + d + '" aria-pressed="' + (S.sd === d) + '">' + d + ' giorni</button>'; }).join('') + '</div></div>';
+    if (!st) return seg + '<div class="skel"></div>';
+    if (st.err) return seg + '<div class="empty"><b>Statistiche non disponibili</b>Riprova tra poco.</div>';
+    var sess = 0, secs = 0; (st.daily || []).forEach(function (d) { sess += Number(d.sessions || 0); secs += Number(d.secs || 0); });
+    var items = st.items || [], scr = items.filter(function (x) { return x.kind === 'screen'; }).sort(function (a, b) { return b.secs - a.secs; }), fe = items.filter(function (x) { return x.kind === 'feature'; }).sort(function (a, b) { return b.n - a.n; });
+    var totScr = scr.reduce(function (a, x) { return a + Number(x.secs || 0); }, 0) || 1;
+    if (!sess && !items.length) return seg + '<div class="empty"><b>Ancora nessun dato</b>Le statistiche compaiono dopo che l’app aggiornata viene usata. Sono anonime: non si sa chi ha fatto cosa.</div>';
+    var head = '<div class="cards"><div class="card"><small>Sessioni</small><b style="font-size:26px;display:block">' + n(sess) + '</b></div><div class="card"><small>Tempo medio per sessione</small><b style="font-size:26px;display:block">' + (sess ? dur(secs / sess) : '–') + '</b></div><div class="card"><small>Tempo totale</small><b style="font-size:26px;display:block">' + dur(secs) + '</b></div></div>';
+    var sc = scr.length ? '<h3 style="margin:18px 0 8px">Dove si passa più tempo</h3><div class="kv">' + scr.slice(0, 15).map(function (x) { return row(esc(SCR[x.name] || x.name), dur(x.secs) + ' · ' + Math.round(100 * x.secs / totScr) + '%'); }).join('') + '</div>' : '';
+    var all = Object.keys(FEAT).map(function (k) { var f = fe.filter(function (x) { return x.name === k; })[0]; return { name: k, n: f ? Number(f.n) : 0 }; }).concat(fe.filter(function (x) { return !FEAT[x.name]; }).map(function (x) { return { name: x.name, n: Number(x.n) }; })).sort(function (a, b) { return b.n - a.n; });
+    var ft = '<h3 style="margin:18px 0 8px">Funzioni: dalla più usata alla meno usata</h3><div class="kv">' + all.map(function (x) { return row(esc(FEAT[x.name] || x.name), x.n ? n(x.n) : '<span style="color:var(--muted)">mai usata</span>'); }).join('') + '</div>';
+    return seg + head + sc + ft + '<p class="msg" style="margin-top:14px">Dati anonimi e aggregati: non è registrato né chi sei né da quale telefono. Mostrano solo l’uso complessivo dell’app.</p>';
+  }
   function logHTML() {
     if (!S.log.length) return '<div class="empty"><b>Registro vuoto</b>Qui compaiono le azioni di moderazione fatte dagli amministratori.</div>';
     return '<div class="panel"><div class="lst">' + S.log.map(function (x) { return '<div class="li"><span class="dot"></span><span class="t"><b>' + esc(ACT[x.action] || x.action) + '</b><span>' + esc(x.target || '') + '</span></span><span class="r">' + esc(x.admin_name || 'Admin') + ' · ' + fdt(x.created_at) + '</span></div>'; }).join('') + '</div></div>';
@@ -516,7 +533,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   window.addEventListener('appinstalled', function () { deferredInstall = null; toast('App installata'); render(); });
   function viewShell() {
     var oc = (S.ov && S.ov.reports_open) || 0, pc = S.pros.filter(function (x) { return x.status === 'pending' && !x.pro_verified; }).length, cur = S.tab, title = (TABS.filter(function (t) { return t[0] === cur; })[0] || TABS[0])[1];
-    var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : reportsHTML();
+    var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : cur === 'stats' ? statsHTML() : reportsHTML();
     return '<div class="shell"><aside class="side"><div class="logo"><span class="lt"><span class="wm">Fr<i class="ey"></i>g’s</span><small>Amministrazione</small></span></div><nav class="nav" aria-label="Sezioni">' + TABS.map(function (t) {
       return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + (t[0] === 'pros' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }).join('') +
       '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span>' + '<button class="btn sm ib" data-act="install" aria-label="' + (isStandalone() ? 'App installata' : 'Installa app') + '"><svg class="ico" viewBox="0 0 24 24"><path d="' + (isStandalone() ? 'M5 12.5l4.5 4.5L19 7.5' : 'M12 4v11m0 0l-4-4m4 4l4-4M5 20h14') + '"/></svg><span class="lbl">' + (isStandalone() ? 'App' : 'Installa app') + '</span></button><button class="btn ghost sm ib" data-act="logout" aria-label="Esci"><svg class="ico" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg><span class="lbl">Esci</span></button></div></aside>' +
@@ -538,6 +555,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     else if (t === 'recipes') { var ro = more ? S.recipes.length : 0; p = sb.rpc('admin_recipes', { lim: 48, off: ro }).then(function (r) { var d = r.data || []; S.recipes = more ? S.recipes.concat(d) : d; S.rend = d.length < 48; }); }
     else if (t === 'stories') p = sb.rpc('admin_stories').then(function (r) { S.stories = r.data || []; });
     else if (t === 'comments') p = sb.rpc('admin_comments', { lim: 100 }).then(function (r) { S.comments = r.data || []; });
+    else if (t === 'stats') p = sb.rpc('admin_stats', { days: S.sd }).then(function (r) { S.stats = r.error ? { err: 1 } : r.data; });
     else if (t === 'log') p = sb.rpc('admin_log_list', { lim: 100 }).then(function (r) { S.log = r.data || []; });
     else if (t === 'reports') p = sb.rpc('admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; });
     else return Promise.resolve();
@@ -642,6 +660,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     if (act === 'morerecipes') { loadTab(true); return; }
     if (act === 'csv') { csv(); return; }
     if (act === 'rtab') { S.rtab = v; loadTab(); return; }
+    if (act === 'sdays') { S.sd = parseInt(v, 10) || 7; loadTab(); return; }
     if (act === 'story') {
       var s = S.stories.filter(function (x) { return x.story_id === id; })[0]; if (!s) return;
       dlg('<h2>Storia di ' + esc(s.author_name || 'utente') + '</h2><img class="big" src="' + esc(s.media_url) + '" alt="">' + (s.caption ? '<p style="margin:0">«' + esc(s.caption) + '»</p>' : '') + '<p class="msg">Pubblicata ' + fdt(s.created_at) + '</p>' +
