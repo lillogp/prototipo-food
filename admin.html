@@ -499,7 +499,18 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     return '';
   }
   function wipeUserFiles(uid) {
-    var one = function (bucket) { return sb.storage.from(bucket).list(uid, { limit: 1000 }).then(function (r) { var p = ((r && r.data) || []).map(function (x) { return uid + '/' + x.name; }); return p.length ? sb.storage.from(bucket).remove(p) : null; }).catch(function () {}); };
+    // fino a 5 passate da 1000 file per cartella (5000 in tutto)
+    var one = function (bucket) {
+      var round = function (n) {
+        if (n >= 5) return Promise.resolve();
+        return sb.storage.from(bucket).list(uid, { limit: 1000 }).then(function (r) {
+          var p = ((r && r.data) || []).map(function (x) { return uid + '/' + x.name; });
+          if (!p.length) return null;
+          return sb.storage.from(bucket).remove(p).then(function () { return round(n + 1); });
+        });
+      };
+      return round(0).catch(function () {});
+    };
     return one('media').then(function () { return one('pro-docs'); });
   }
   function openDrawer(kind, id, k) {
