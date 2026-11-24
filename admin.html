@@ -208,7 +208,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 18;
+  var ADMIN_VERSION = 19;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -224,7 +224,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
     ['recipes', 'Piatti', 'M4 13h16a8 8 0 01-16 0zM12 5v4M8 6v3M16 6v3'], ['stories', 'Storie', 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v8M8 12h8'], ['comments', 'Commenti', 'M4 5h16v11H9l-5 4z'],
     ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['stats', 'Statistiche', 'M4 20V10M10 20V4M16 20v-7M22 20H2'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
-  var FRESH = { user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
+  var FRESH = { hist: {}, user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
     stats: null, sd: 7, recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, owner: false, ownerIds: [], busy: false, msg: '' };
   var S = JSON.parse(JSON.stringify(FRESH));
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
@@ -366,12 +366,20 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     return '<p class="note">Controlla il documento e il numero d\'iscrizione all\'albo, poi approva o rifiuta. Il documento approvato resta consultabile qui e nel profilo del nutrizionista (puoi eliminarlo); quello rifiutato viene cancellato. Solo i nutrizionisti verificati possono invitare clienti.</p>' +
       sec('Da esaminare', pend, '<div class="empty"><b>Nessun documento da esaminare</b>Quando un nutrizionista invia il documento compare qui.</div>') + sec('Senza documento o rifiutati', todo) + sec('Verificati', done);
   }
+  function histHTML(r) {
+    var h = S.hist && S.hist[r.reported_id]; if (!h) return '';
+    var motivi = Object.keys(h.by_reason || {}).map(function (k) { return h.by_reason[k] + ' ' + (REASON[k] || k).toLowerCase(); }).join(' · ');
+    var cls = h.total >= 3 ? 'bad' : h.total === 2 ? 'warn' : '';
+    var head = h.total === 1 ? 'Prima segnalazione per questo profilo' : h.total + ' segnalazioni totali su questo profilo';
+    return '<span><span class="chip ' + cls + '">' + head + '</span> ' + (h.total > 1 ? h.open + ' aperte · ' + h.closed + ' chiuse · ultima ' + fdt(h.last_at) : '') + '</span>' +
+      (h.total > 1 ? '<span>Motivi: ' + esc(motivi) + '</span>' : '') + '<span>' + (h.warnings > 0 ? 'Avvisi già inviati: ' + h.warnings : 'Nessun avviso inviato finora') + '</span>';
+  }
   function reportsHTML() {
     var seg = '<div class="toolbar"><div class="pills"><button class="pill" data-act="rtab" data-v="open" aria-pressed="' + (S.rtab === 'open') + '">Aperte</button><button class="pill" data-act="rtab" data-v="closed" aria-pressed="' + (S.rtab === 'closed') + '">Chiuse</button></div></div>';
     if (!S.reports.length) return seg + '<div class="empty"><b>' + (S.rtab === 'open' ? 'Nessuna segnalazione aperta' : 'Nessuna segnalazione chiusa') + '</b>Le segnalazioni degli utenti compaiono qui.</div>';
     return seg + '<div class="stack">' + S.reports.map(function (r) {
       return '<div class="rep"><div class="info"><b><button data-act="user" data-id="' + esc(r.reported_id) + '" style="font-weight:700;text-decoration:underline">' + esc(r.reported_name || 'Senza nome') + '</button> ' + (r.reported_suspended ? '<span class="chip bad">Sospeso</span>' : '') + '</b><span>' + esc(r.reported_email) + '</span>' +
-        '<span><span class="chip warn">' + esc(REASON[r.reason] || r.reason) + '</span> segnalato da ' + esc(r.reporter_name || 'utente') + ' · ' + fdt(r.created_at) + '</span>' + (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') +
+        '<span><span class="chip warn">' + esc(REASON[r.reason] || r.reason) + '</span> segnalato da ' + esc(r.reporter_name || 'utente') + ' · ' + fdt(r.created_at) + '</span>' + (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') + histHTML(r) +
         (r.content_type === 'recipe' ? '<button class="li" data-act="recipe" data-id="' + esc(r.content_id) + '" style="border:1px solid var(--line);margin-top:4px;background:var(--bg)">' + (r.content_media ? '<img class="thumb" src="' + esc(r.content_media) + '" alt="">' : '') + '<span class="t"><b>' + esc(r.content_title || 'Piatto già rimosso') + '</b><span>Piatto segnalato · apri</span></span></button>' : '') + '</div>' +
         '<div class="acts" style="align-content:flex-start">' + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">' + (r.content_type === 'message' ? 'Messaggio segnalato' : 'Chat segnalata') + '</button>' : '') +
         '<button class="btn sm" data-act="warn" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-r="' + esc(r.reason) + '">Avvisa</button>' +
@@ -561,6 +569,11 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 
   /* ---------- Dati ---------- */
   function setTab(t) { S.tab = t; try { history.replaceState(null, '', '#' + t); } catch (e) {} render(); loadTab(); }
+  function loadHist() {
+    var ids = []; S.reports.forEach(function (r) { if (ids.indexOf(r.reported_id) < 0) ids.push(r.reported_id); });
+    if (!ids.length) { S.hist = {}; return Promise.resolve(); }
+    return sb.rpc('admin_reports_history', { uids: ids }).then(function (r) { var m = {}; (r.data || []).forEach(function (x) { m[x.reported_id] = x; }); S.hist = m; }, function () {});
+  }
   function loadTab(more) {
     var t = S.tab, p;
     if (t === 'users') { var off = more ? S.users.length : 0; p = sb.rpc('admin_users', { q: S.uq, lim: 50, off: off }).then(function (r) { var d = r.data || []; S.users = more ? S.users.concat(d) : d; S.uend = d.length < 50; }); }
@@ -569,7 +582,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     else if (t === 'comments') p = sb.rpc('admin_comments', { lim: 100 }).then(function (r) { S.comments = r.data || []; });
     else if (t === 'stats') p = sb.rpc('admin_stats', { days: S.sd }).then(function (r) { S.stats = r.error ? { err: 1 } : r.data; });
     else if (t === 'log') p = sb.rpc('admin_log_list', { lim: 100 }).then(function (r) { S.log = r.data || []; });
-    else if (t === 'reports') p = sb.rpc('admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; });
+    else if (t === 'reports') p = sb.rpc('admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; return loadHist(); });
     else return Promise.resolve();
     return p.then(function () { S.updated = new Date(); render(); }, function () { toast('Connessione non riuscita'); });
   }
@@ -579,7 +592,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       S.loading = false; var ro = a[3] && a[3].data; S.owner = !!(ro && ro.me_owner); S.ownerIds = (ro && ro.owner_ids) || [];
       if (a[0].error && /non autorizzato/.test(a[0].error.message || '')) { err(a[0].error); render(); return; }
       S.ovErr = !!a[0].error; S.ov = a[0].error ? null : a[0].data; S.pros = a[1].data || []; S.reports = a[2].data || []; S.updated = new Date(); render();
-      return loadTab();
+      return loadHist().then(function () { render(); return loadTab(); });
     }, function () { S.loading = false; render(); toast('Connessione non riuscita'); });
   }
   function start(user) {

@@ -1,0 +1,2 @@
+-- Storico segnalazioni per profilo (totale, aperte/chiuse, motivi, avvisi inviati) per la scheda Segnalazioni dell'admin.
+-- Vedi la migrazione "admin_storico_segnalazioni" applicata su Supabase: funzione public.admin_reports_history(uids uuid[]).
