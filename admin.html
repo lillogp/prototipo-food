@@ -165,6 +165,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 .chat { display: flex; flex-direction: column; gap: 8px; }
 .m { max-width: 85%; border-radius: 14px; padding: 8px 12px; background: var(--soft); align-self: flex-start; }
 .m.rp { background: var(--badbg); align-self: flex-end; }
+.m.tg { background: var(--warnbg); border: 2px solid var(--warn); align-self: stretch; max-width: 100%; } .m.tg .tag { display: inline-block; font-size: 12px; font-weight: 700; color: var(--warn); margin-bottom: 2px; } .m.dim { opacity: .55; } .m.all { border-left: 4px solid var(--warn); }
 .m small { display: block; font-size: 12px; color: var(--muted); }
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 99px; font-size: 14px; z-index: 60; }
 .skel { background: linear-gradient(90deg, var(--soft), #F3F7E6, var(--soft)); background-size: 200% 100%; animation: sk 1.2s infinite; border-radius: 12px; height: 64px; }
@@ -207,7 +208,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 17;
+  var ADMIN_VERSION = 18;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -372,7 +373,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       return '<div class="rep"><div class="info"><b><button data-act="user" data-id="' + esc(r.reported_id) + '" style="font-weight:700;text-decoration:underline">' + esc(r.reported_name || 'Senza nome') + '</button> ' + (r.reported_suspended ? '<span class="chip bad">Sospeso</span>' : '') + '</b><span>' + esc(r.reported_email) + '</span>' +
         '<span><span class="chip warn">' + esc(REASON[r.reason] || r.reason) + '</span> segnalato da ' + esc(r.reporter_name || 'utente') + ' · ' + fdt(r.created_at) + '</span>' + (r.details ? '<span style="color:var(--fg)">«' + esc(r.details) + '»</span>' : '') +
         (r.content_type === 'recipe' ? '<button class="li" data-act="recipe" data-id="' + esc(r.content_id) + '" style="border:1px solid var(--line);margin-top:4px;background:var(--bg)">' + (r.content_media ? '<img class="thumb" src="' + esc(r.content_media) + '" alt="">' : '') + '<span class="t"><b>' + esc(r.content_title || 'Piatto già rimosso') + '</b><span>Piatto segnalato · apri</span></span></button>' : '') + '</div>' +
-        '<div class="acts" style="align-content:flex-start">' + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">Conversazione</button>' : '') +
+        '<div class="acts" style="align-content:flex-start">' + (r.conv_id ? '<button class="btn sm ghost" data-act="conv" data-id="' + r.report_id + '">' + (r.content_type === 'message' ? 'Messaggio segnalato' : 'Chat segnalata') + '</button>' : '') +
         '<button class="btn sm" data-act="warn" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-r="' + esc(r.reason) + '">Avvisa</button>' +
         '<button class="btn sm ' + (r.reported_suspended ? 'ghost' : 'danger') + '" data-act="susp" data-u="' + esc(r.reported_id) + '" data-n="' + esc(r.reported_name || r.reported_email) + '" data-v="' + (r.reported_suspended ? '0' : '1') + '">' + (r.reported_suspended ? 'Riattiva' : 'Sospendi') + '</button>' +
         '<button class="btn sm" data-act="rset" data-id="' + r.report_id + '" data-v="' + (S.rtab === 'open' ? 'closed' : 'open') + '">' + (S.rtab === 'open' ? 'Chiudi' : 'Riapri') + '</button></div></div>';
@@ -803,10 +804,16 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       return;
     }
     if (act === 'conv') {
-      sb.rpc('admin_report_messages', { rid: parseInt(id, 10) }).then(function (r) {
+      sb.rpc('admin_report_messages2', { rid: parseInt(id, 10) }).then(function (r) {
         if (r.error) { err(r.error); return; }
-        var m = r.data || [];
-        dlg('<h2>Conversazione segnalata</h2><p class="msg">Solo questa conversazione, indicata da chi ha segnalato. In rosso i messaggi della persona segnalata.</p><div class="chat">' + (m.length ? m.map(function (x) { return '<div class="m' + (x.from_reported ? ' rp' : '') + '"><small>' + esc(x.sender_name || 'Utente') + ' · ' + fdt(x.created_at) + '</small>' + msgBody(x.body) + '</div>'; }).join('') : '<p class="msg">Nessun messaggio disponibile.</p>') + '</div><button class="btn ghost" data-act="close">Chiudi</button>');
+        var m = r.data || [], one = m.length && m[0].scope === 'message';
+        var intro = one ? '<p class="msg">Messaggio segnalato evidenziato in giallo, con i messaggi vicini per il contesto. In rosso i messaggi della persona segnalata.</p>' : '<p class="msg"><b>Chat segnalata per intero.</b> Sono evidenziati tutti i messaggi (gli ultimi 200). In rosso i messaggi della persona segnalata.</p>';
+        var list = m.length ? m.map(function (x) {
+          var cls = 'm' + (x.from_reported ? ' rp' : '') + (one ? (x.is_target ? ' tg' : ' dim') : ' all');
+          return '<div class="' + cls + '"' + (x.is_target ? ' id="tgmsg"' : '') + '>' + (x.is_target ? '<span class="tag">⚑ Messaggio segnalato</span>' : '') + '<small>' + esc(x.sender_name || 'Utente') + ' · ' + fdt(x.created_at) + '</small>' + msgBody(x.body) + '</div>';
+        }).join('') : '<p class="msg">Nessun messaggio disponibile.</p>';
+        dlg('<h2>Conversazione segnalata</h2>' + intro + '<div class="chat">' + list + '</div><button class="btn ghost" data-act="close">Chiudi</button>');
+        var t = document.getElementById('tgmsg'); if (t && t.scrollIntoView) t.scrollIntoView({ block: 'center' });
       });
       return;
     }
