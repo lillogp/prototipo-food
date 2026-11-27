@@ -211,7 +211,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 20;
+  var ADMIN_VERSION = 21;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -615,11 +615,12 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 
   /* ---------- Botteghe (Abuela Frog) ---------- */
   var SHOPCAT = [['formaggi', 'Formaggi e salumi'], ['macelleria', 'Macelleria'], ['pescheria', 'Pescheria'], ['ortofrutta', 'Frutta e verdura'], ['forno', 'Forno e pasta'], ['uova', 'Uova e latticini'], ['vino', 'Vino e bevande'], ['dispensa', 'Dispensa e generi vari']];
+  var DAYS = [['lun', 'Lunedì'], ['mar', 'Martedì'], ['mer', 'Mercoledì'], ['gio', 'Giovedì'], ['ven', 'Venerdì'], ['sab', 'Sabato'], ['dom', 'Domenica']];
   function catName(id) { var c = SHOPCAT.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : id; }
   function euro(c) { return (Number(c || 0) / 100).toFixed(2).replace('.', ','); }
   function shopOwner(b) { var o = b.owner; return o ? (o.display_name || (o.handle ? '@' + o.handle : 'Senza nome')) : 'Profilo non trovato'; }
   function loadShops() {
-    return sb.from('botteghe').select('id,owner_id,nome,categoria,zona,descr,ritiro,spedizione,orari,indirizzo,telefono,spedizione_info,attiva,created_at,prodotti(count),owner:profiles!owner_id(display_name,handle)').order('created_at', { ascending: false })
+    return sb.from('botteghe').select('id,owner_id,nome,categoria,zona,descr,ritiro,spedizione,orari,indirizzo,telefono,spedizione_info,orari_sett,attiva,created_at,prodotti(count),owner:profiles!owner_id(display_name,handle)').order('created_at', { ascending: false })
       .then(function (r) { if (r.error) { S.shops = []; toast('Caricamento non riuscito'); } else S.shops = r.data || []; });
   }
   function shopCard(b) {
@@ -649,7 +650,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       '<label class="fld">Zona o città<input type="text" id="shz" maxlength="80" placeholder="Es. Forlì centro" value="' + esc(b.zona || '') + '"></label>' +
       '<label class="fld">Indirizzo<input type="text" id="sha" maxlength="160" placeholder="Via, numero, CAP, città" value="' + esc(b.indirizzo || '') + '"></label>' +
       '<label class="fld">Telefono<input type="tel" id="sht" maxlength="30" value="' + esc(b.telefono || '') + '"></label>' +
-      '<label class="fld">Orari<input type="text" id="sho" maxlength="120" placeholder="Es. Lun–Sab 7:30–13:00" value="' + esc(b.orari || '') + '"></label>' +
+      '<div class="fld">Orari di apertura (vuoto = chiuso)' + DAYS.map(function (d) { return '<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="width:92px;font-weight:600">' + d[1] + '</span><input type="text" id="sho_' + d[0] + '" maxlength="60" placeholder="Es. 7:30–13:00, 16:00–19:30" value="' + esc((b.orari_sett && b.orari_sett[d[0]]) || '') + '"></div>'; }).join('') + '</div>' +
       '<label class="fld">Descrizione (max 300)<textarea id="shd" rows="3" maxlength="300">' + esc(b.descr || '') + '</textarea></label>' +
       '<label class="chk"><input type="checkbox" id="shr"' + (b.ritiro === false ? '' : ' checked') + '> Ritiro in bottega</label>' +
       '<label class="chk"><input type="checkbox" id="shs"' + (b.spedizione ? ' checked' : '') + '> Spedizione a cura della bottega</label>' +
@@ -687,7 +688,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     if (act === 'shsave') {
       var v = function (i) { return (document.getElementById(i).value || '').trim(); }, nome = v('shn');
       if (nome.length < 2) { toast('Scrivi il nome della bottega'); return; }
-      var row = { nome: nome, categoria: document.getElementById('shc').value, zona: v('shz'), indirizzo: v('sha'), telefono: v('sht'), orari: v('sho'), descr: v('shd'), spedizione_info: v('shi'), ritiro: document.getElementById('shr').checked, spedizione: document.getElementById('shs').checked };
+      var row = { nome: nome, categoria: document.getElementById('shc').value, zona: v('shz'), indirizzo: v('sha'), telefono: v('sht'), orari_sett: (function () { var o = {}; DAYS.forEach(function (d) { var x = (document.getElementById('sho_' + d[0]).value || '').trim().slice(0, 60); if (x) o[d[0]] = x; }); return o; })(), descr: v('shd'), spedizione_info: v('shi'), ritiro: document.getElementById('shr').checked, spedizione: document.getElementById('shs').checked };
       var q = id ? sb.from('botteghe').update(row).eq('id', parseInt(id, 10)) : sb.from('botteghe').insert(Object.assign({ owner_id: el.getAttribute('data-u') }, row));
       q.then(function (r) {
         if (r.error) { toast(r.error.code === '23505' ? 'Questo profilo ha già una bottega' : 'Salvataggio non riuscito'); return; }
