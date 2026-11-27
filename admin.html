@@ -211,7 +211,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 22;
+  var ADMIN_VERSION = 23;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -226,8 +226,8 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
     ['recipes', 'Piatti', 'M4 13h16a8 8 0 01-16 0zM12 5v4M8 6v3M16 6v3'], ['stories', 'Storie', 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v8M8 12h8'], ['comments', 'Commenti', 'M4 5h16v11H9l-5 4z'],
-    ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['shops', 'Botteghe', 'M4 9l1-5h14l1 5M4 9v11h16V9M4 9c0 2 3 2 4 0 1 2 3 2 4 0 1 2 3 2 4 0 1 2 4 2 4 0M10 20v-6h4v6'], ['stats', 'Statistiche', 'M4 20V10M10 20V4M16 20v-7M22 20H2'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
-  var FRESH = { hist: {}, user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], shops: [], shq: '', prods: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
+    ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['shops', 'Botteghe', 'M4 9l1-5h14l1 5M4 9v11h16V9M4 9c0 2 3 2 4 0 1 2 3 2 4 0 1 2 3 2 4 0 1 2 4 2 4 0M10 20v-6h4v6'], ['richieste', 'Richieste', 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6'], ['stats', 'Statistiche', 'M4 20V10M10 20V4M16 20v-7M22 20H2'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
+  var FRESH = { hist: {}, user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], shops: [], richieste: [], rf: 'all', shq: '', prods: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
     stats: null, sd: 7, recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, owner: false, ownerIds: [], busy: false, msg: '' };
   var S = JSON.parse(JSON.stringify(FRESH));
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
@@ -557,7 +557,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   window.addEventListener('appinstalled', function () { deferredInstall = null; toast('App installata'); render(); });
   function viewShell() {
     var oc = (S.ov && S.ov.reports_open) || 0, pc = S.pros.filter(function (x) { return x.status === 'pending' && !x.pro_verified; }).length, cur = S.tab, title = (TABS.filter(function (t) { return t[0] === cur; })[0] || TABS[0])[1];
-    var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'shops' ? shopsHTML() : cur === 'log' ? logHTML() : cur === 'stats' ? statsHTML() : reportsHTML();
+    var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'shops' ? shopsHTML() : cur === 'richieste' ? richiesteHTML() : cur === 'log' ? logHTML() : cur === 'stats' ? statsHTML() : reportsHTML();
     return '<div class="shell"><aside class="side"><div class="logo"><span class="lt"><span class="wm">Fr<i class="ey"></i>g’s</span><small>Amministrazione</small></span></div><nav class="nav" aria-label="Sezioni">' + TABS.map(function (t) {
       return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + (t[0] === 'pros' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }).join('') +
       '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span>' + '<button class="btn sm ib" data-act="install" aria-label="' + (isStandalone() ? 'App installata' : 'Installa app') + '"><svg class="ico" viewBox="0 0 24 24"><path d="' + (isStandalone() ? 'M5 12.5l4.5 4.5L19 7.5' : 'M12 4v11m0 0l-4-4m4 4l4-4M5 20h14') + '"/></svg><span class="lbl">' + (isStandalone() ? 'App' : 'Installa app') + '</span></button><button class="btn ghost sm ib" data-act="logout" aria-label="Esci"><svg class="ico" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg><span class="lbl">Esci</span></button></div></aside>' +
@@ -586,6 +586,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     else if (t === 'comments') p = sb.rpc('admin_comments', { lim: 100 }).then(function (r) { S.comments = r.data || []; });
     else if (t === 'stats') p = sb.rpc('admin_stats', { days: S.sd }).then(function (r) { S.stats = r.error ? { err: 1 } : r.data; });
     else if (t === 'shops') p = loadShops();
+    else if (t === 'richieste') p = loadRichieste();
     else if (t === 'log') p = sb.rpc('admin_log_list', { lim: 100 }).then(function (r) { S.log = r.data || []; });
     else if (t === 'reports') p = sb.rpc('admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; return loadHist(); });
     else return Promise.resolve();
@@ -656,17 +657,32 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   function euro(c) { return (Number(c || 0) / 100).toFixed(2).replace('.', ','); }
   function shopOwner(b) { var o = b.owner; return o ? (o.display_name || (o.handle ? '@' + o.handle : 'Senza nome')) : 'Profilo non trovato'; }
   function loadShops() {
-    return sb.from('botteghe').select('id,owner_id,nome,categoria,categorie,lat,lon,zona,descr,ritiro,spedizione,orari,indirizzo,telefono,spedizione_info,orari_sett,attiva,created_at,prodotti(count),owner:profiles!owner_id(display_name,handle)').order('created_at', { ascending: false })
+    return sb.from('botteghe').select('id,owner_id,nome,categoria,categorie,lat,lon,zona,descr,ritiro,spedizione,orari,indirizzo,telefono,spedizione_info,orari_sett,attiva,created_at,prodotti(count),owner:profiles!owner_id(display_name,handle,account_type)').order('created_at', { ascending: false })
       .then(function (r) { if (r.error) { S.shops = []; toast('Caricamento non riuscito'); } else S.shops = r.data || []; });
+  }
+  var RST = { inviata: ['Inviata', 'warn'], vista: ['Vista', 'warn'], confermata: ['Confermata', 'ok'], rifiutata: ['Rifiutata', 'bad'], proposta: ['Altro orario', 'warn'], scaduta: ['Scaduta', 'bad'], annullata: ['Annullata', ''], ritirata: ['Ritirata', 'ok'], non_presentato: ['Non presentato', 'bad'] };
+  function loadRichieste() {
+    return sb.from('richieste_ritiro').select('id,stato,ritiro_at,created_at,bottega:botteghe(nome),cliente:profiles!cliente_id(id,display_name,handle),righe:richiesta_righe(nome,quantita)').order('created_at', { ascending: false }).limit(150)
+      .then(function (r) { if (r.error) { S.richieste = []; toast('Caricamento non riuscito'); } else S.richieste = r.data || []; });
+  }
+  function richiesteHTML() {
+    var cnt = {}; S.richieste.forEach(function (x) { cnt[x.stato] = (cnt[x.stato] || 0) + 1; });
+    var l = S.richieste.filter(function (x) { return S.rf === 'all' || x.stato === S.rf; });
+    var filt = '<div class="toolbar">' + [['all', 'Tutte (' + S.richieste.length + ')']].concat(Object.keys(RST).filter(function (k) { return cnt[k]; }).map(function (k) { return [k, RST[k][0] + ' (' + cnt[k] + ')']; })).map(function (f) { return '<button class="btn sm ' + (S.rf === f[0] ? '' : 'ghost') + '" data-act="rfilt" data-v="' + f[0] + '">' + f[1] + '</button>'; }).join('') + '</div>';
+    if (!S.richieste.length) return '<p class="note">Le richieste di ritiro dei clienti alle botteghe. Il commerciante risponde dall’app entro 30 minuti, poi la richiesta scade.</p><div class="empty"><b>Nessuna richiesta</b>Appariranno qui quando un cliente ne invia una.</div>';
+    return '<p class="note">Le richieste di ritiro dei clienti alle botteghe (ultime 150). Il commerciante risponde dall’app entro 30 minuti, poi la richiesta scade.</p>' + filt + '<div class="stack">' + l.map(function (x) {
+      var c = x.cliente, cn = c ? (c.display_name || (c.handle ? '@' + c.handle : 'Cliente')) : 'Cliente', st = RST[x.stato] || [x.stato, ''];
+      return '<div class="rep"><div class="info"><b>' + esc((x.bottega && x.bottega.nome) || 'Bottega') + ' <span class="chip ' + st[1] + '">' + st[0] + '</span></b><span>Cliente: ' + (c ? '<button data-act="user" data-id="' + esc(c.id) + '" style="text-decoration:underline">' + esc(cn) + '</button>' : esc(cn)) + ' · ritiro ' + fdt(x.ritiro_at) + ' · inviata ' + fdt(x.created_at) + '</span><span>' + esc((x.righe || []).map(function (r) { return String(r.quantita).replace('.', ',') + ' × ' + r.nome; }).join(', ')) + '</span></div></div>';
+    }).join('') + '</div>';
   }
   function shopCard(b) {
     var np = (b.prodotti && b.prodotti[0] && b.prodotti[0].count) || 0, mod = [b.ritiro ? 'ritiro' : '', b.spedizione ? 'spedizione' : ''].filter(Boolean).join(' + ') || 'nessuna modalità';
     return '<div class="rep"><div class="info"><b>' + esc(b.nome) + ' ' + (b.attiva ? '<span class="chip ok">Attiva</span>' : '<span class="chip bad">Disattivata</span>') + '</b>' +
       '<span>' + esc(shopCats(b).map(catName).join(', ')) + (b.zona ? ' · ' + esc(b.zona) : '') + '</span>' +
-      '<span>Profilo: <button data-act="user" data-id="' + esc(b.owner_id) + '" style="text-decoration:underline">' + esc(shopOwner(b)) + '</button> · ' + n(np) + ' prodotti</span>' +
+      '<span>Profilo: <button data-act="user" data-id="' + esc(b.owner_id) + '" style="text-decoration:underline">' + esc(shopOwner(b)) + '</button> ' + (b.owner && b.owner.account_type === 'commerciante' ? '<span class="chip ok">Commerciante</span>' : '<span class="chip warn">Utente normale</span>') + ' · ' + n(np) + ' prodotti</span>' +
       '<span>Consegna: ' + esc(mod) + (b.telefono ? ' · tel. ' + esc(b.telefono) : '') + '</span></div>' +
       '<div class="acts" style="align-content:flex-start"><button class="btn sm" data-act="shprods" data-id="' + b.id + '">Prodotti</button><button class="btn sm ghost" data-act="shedit" data-id="' + b.id + '">Dati</button>' +
-      '<button class="btn sm ghost" data-act="shtoggle" data-id="' + b.id + '" data-v="' + (b.attiva ? '0' : '1') + '">' + (b.attiva ? 'Disattiva' : 'Attiva') + '</button><button class="btn sm danger" data-act="shdel" data-id="' + b.id + '" data-n="' + esc(b.nome) + '">Elimina</button></div></div>';
+       (b.owner && b.owner.account_type !== 'pro' ? '<button class="btn sm ghost" data-act="settipo" data-u="' + esc(b.owner_id) + '" data-n="' + esc(shopOwner(b)) + '" data-v="' + (b.owner.account_type === 'commerciante' ? 'user' : 'commerciante') + '">' + (b.owner.account_type === 'commerciante' ? 'Riporta a utente' : 'Rendi commerciante') + '</button>' : '') + '<button class="btn sm ghost" data-act="shtoggle" data-id="' + b.id + '" data-v="' + (b.attiva ? '0' : '1') + '">' + (b.attiva ? 'Disattiva' : 'Attiva') + '</button><button class="btn sm danger" data-act="shdel" data-id="' + b.id + '" data-n="' + esc(b.nome) + '">Elimina</button></div></div>';
   }
   function shopsListHTML() {
     var q = (S.shq || '').toLowerCase(), l = S.shops.filter(function (b) { return !q || (b.nome + ' ' + (b.zona || '') + ' ' + shopOwner(b)).toLowerCase().indexOf(q) >= 0; });
@@ -916,6 +932,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       dlg('<h2>' + (av2 ? 'Nominare amministratore ' : 'Togliere il ruolo a ') + esc(an) + '?</h2><p class="msg">' + (av2 ? 'Potrà vedere il pannello admin, i dati di tutti gli utenti (email comprese), rimuovere contenuti e sospendere account. Non potrà nominare altri amministratori.' : 'Non potrà più accedere al pannello admin.') + '</p><div class="acts"><button class="btn' + (av2 ? '' : ' danger') + '" data-act="setadminyes" data-u="' + esc(au) + '" data-n="' + esc(an) + '" data-v="' + (av2 ? '1' : '0') + '">' + (av2 ? 'Sì, nomina' : 'Sì, togli il ruolo') + '</button><button class="btn ghost" data-act="close">Annulla</button></div>');
       return;
     }
+    if (act === 'rfilt') { S.rf = v; render(); return; }
     if (act === 'settipo') {
       var tu = el.getAttribute('data-u'), tn = el.getAttribute('data-n'), tv = el.getAttribute('data-v');
       dlg('<h2>' + (tv === 'commerciante' ? 'Impostare come commerciante ' : 'Riportare a utente normale ') + esc(tn) + '?</h2><p class="msg">' + (tv === 'commerciante' ? 'Vedrà la scheda Richieste al posto di Planner e Spesa. Fallo solo se l\'app con la scheda Richieste è già pubblicata.' : 'Tornerà a vedere Planner e Spesa.') + '</p><div class="acts"><button class="btn" data-act="settipoyes" data-u="' + esc(tu) + '" data-n="' + esc(tn) + '" data-v="' + esc(tv) + '">Sì, conferma</button><button class="btn ghost" data-act="close">Annulla</button></div>');
