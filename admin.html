@@ -161,6 +161,9 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 .dlg .fld { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 700; }
 .dlg .fld select, .dlg .fld textarea { font: inherit; font-weight: 400; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card, #fff); color: var(--fg); width: 100%; box-sizing: border-box; }
 .dlg .fld textarea { resize: vertical; line-height: 1.4; }
+.dlg .fld input[type=text], .dlg .fld input[type=tel], .dlg .fld input[type=search] { font: inherit; font-weight: 400; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--card, #fff); color: var(--fg); width: 100%; box-sizing: border-box; }
+.dlg .chk { display: flex; align-items: center; gap: 8px; font-size: 15px; margin: 8px 0; }
+.dlg .chk input { width: 18px; height: 18px; }
 .dlg img.big { width: 100%; max-height: 62vh; object-fit: contain; border-radius: 12px; background: #000; }
 .chat { display: flex; flex-direction: column; gap: 8px; }
 .m { max-width: 85%; border-radius: 14px; padding: 8px 12px; background: var(--soft); align-self: flex-start; }
@@ -208,7 +211,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 19;
+  var ADMIN_VERSION = 20;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -223,8 +226,8 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   var sb = null; try { sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { storageKey: 'gusto-admin-auth' } }); } catch (e) {}
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
     ['recipes', 'Piatti', 'M4 13h16a8 8 0 01-16 0zM12 5v4M8 6v3M16 6v3'], ['stories', 'Storie', 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v8M8 12h8'], ['comments', 'Commenti', 'M4 5h16v11H9l-5 4z'],
-    ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['stats', 'Statistiche', 'M4 20V10M10 20V4M16 20v-7M22 20H2'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
-  var FRESH = { hist: {}, user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
+    ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['shops', 'Botteghe', 'M4 9l1-5h14l1 5M4 9v11h16V9M4 9c0 2 3 2 4 0 1 2 3 2 4 0 1 2 3 2 4 0 1 2 4 2 4 0M10 20v-6h4v6'], ['stats', 'Statistiche', 'M4 20V10M10 20V4M16 20v-7M22 20H2'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
+  var FRESH = { hist: {}, user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], shops: [], shq: '', prods: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
     stats: null, sd: 7, recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, owner: false, ownerIds: [], busy: false, msg: '' };
   var S = JSON.parse(JSON.stringify(FRESH));
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
@@ -407,7 +410,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     falso: ['Profilo non conforme', 'Il tuo profilo non sembra corrispondere a quanto dichiarato. Ti chiediamo di correggere i dati. Se serve, scrivici.'],
     altro: ['Avviso dall\'amministrazione', '']
   };
-  var ACT = { warn: 'Avviso inviato', suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
+  var ACT = { shop_new: 'Bottega creata', shop_edit: 'Bottega modificata', shop_on: 'Bottega attivata', shop_off: 'Bottega disattivata', shop_del: 'Bottega eliminata', warn: 'Avviso inviato', suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta' };
   var SCR = { '/': 'Home', '/plan': 'Planner', '/shop': 'Spesa', '/search': 'Cerca', '/me': 'Profilo', '/settings': 'Impostazioni', '/create': 'Crea piatto', '/messages': 'Messaggi', '/notifications': 'Notifiche', '/saved': 'Salvate e ricettario', '/fridge': 'Svuotafrigo', '/pantry': 'Dispensa', '/recipe/[id]': 'Scheda ricetta', '/cook/[id]': 'Modalità cucina', '/chat/[id]': 'Chat', '/user/[id]': 'Profilo di altri', '/story-new': 'Nuova storia', '/story/[id]': 'Storie', '/people/[id]': 'Elenco persone', '/plus': 'Tasto +' };
   var FEAT = { mi_piace: 'Mi piace', commento: 'Commenti', salva_ricetta: 'Ricette salvate', messaggio: 'Messaggi inviati', planner: 'Planner (modifiche)', dispensa: 'Dispensa (modifiche)', storia_vista: 'Storie viste', pubblica_piatto: 'Piatti pubblicati', ricetta_privata: 'Ricette private salvate', bozza: 'Bozze', importa_link: 'Importazioni da link', scansione_ingrediente: 'Scansioni ingredienti' };
   function dur(sec) { sec = Math.round(sec || 0); if (sec < 60) return sec + ' s'; var m = Math.floor(sec / 60); if (m < 60) return m + ' min ' + (sec % 60 ? (sec % 60) + ' s' : ''); return Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
@@ -553,7 +556,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   window.addEventListener('appinstalled', function () { deferredInstall = null; toast('App installata'); render(); });
   function viewShell() {
     var oc = (S.ov && S.ov.reports_open) || 0, pc = S.pros.filter(function (x) { return x.status === 'pending' && !x.pro_verified; }).length, cur = S.tab, title = (TABS.filter(function (t) { return t[0] === cur; })[0] || TABS[0])[1];
-    var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'log' ? logHTML() : cur === 'stats' ? statsHTML() : reportsHTML();
+    var body = cur === 'overview' ? overviewHTML() + '<p class="ver">Admin v' + ADMIN_VERSION + '</p>' : cur === 'users' ? usersHTML() : cur === 'recipes' ? recipesHTML() : cur === 'stories' ? storiesHTML() : cur === 'comments' ? commentsHTML() : cur === 'pros' ? prosHTML() : cur === 'shops' ? shopsHTML() : cur === 'log' ? logHTML() : cur === 'stats' ? statsHTML() : reportsHTML();
     return '<div class="shell"><aside class="side"><div class="logo"><span class="lt"><span class="wm">Fr<i class="ey"></i>g’s</span><small>Amministrazione</small></span></div><nav class="nav" aria-label="Sezioni">' + TABS.map(function (t) {
       return '<button data-act="tab" data-v="' + t[0] + '"' + (cur === t[0] ? ' aria-current="page"' : '') + '>' + ic(t[2]) + t[1] + (t[0] === 'reports' && oc ? '<span class="badge">' + oc + '</span>' : '') + (t[0] === 'pros' && pc ? '<span class="badge">' + pc + '</span>' : '') + '</button>'; }).join('') +
       '</nav><div class="me"><span class="em">' + esc(S.user.email) + '</span>' + '<button class="btn sm ib" data-act="install" aria-label="' + (isStandalone() ? 'App installata' : 'Installa app') + '"><svg class="ico" viewBox="0 0 24 24"><path d="' + (isStandalone() ? 'M5 12.5l4.5 4.5L19 7.5' : 'M12 4v11m0 0l-4-4m4 4l4-4M5 20h14') + '"/></svg><span class="lbl">' + (isStandalone() ? 'App' : 'Installa app') + '</span></button><button class="btn ghost sm ib" data-act="logout" aria-label="Esci"><svg class="ico" viewBox="0 0 24 24"><path d="M10 4H5v16h5M15 8l4 4-4 4M19 12H9"/></svg><span class="lbl">Esci</span></button></div></aside>' +
@@ -581,6 +584,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     else if (t === 'stories') p = sb.rpc('admin_stories').then(function (r) { S.stories = r.data || []; });
     else if (t === 'comments') p = sb.rpc('admin_comments', { lim: 100 }).then(function (r) { S.comments = r.data || []; });
     else if (t === 'stats') p = sb.rpc('admin_stats', { days: S.sd }).then(function (r) { S.stats = r.error ? { err: 1 } : r.data; });
+    else if (t === 'shops') p = loadShops();
     else if (t === 'log') p = sb.rpc('admin_log_list', { lim: 100 }).then(function (r) { S.log = r.data || []; });
     else if (t === 'reports') p = sb.rpc('admin_reports2', { st: S.rtab }).then(function (r) { S.reports = r.data || []; return loadHist(); });
     else return Promise.resolve();
@@ -608,6 +612,137 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     var rows = [['Nome', 'Handle', 'Email', 'Tipo', 'Verificato', 'Sospeso', 'Piatti', 'Iscritto', 'Termini']].concat(filteredUsers().map(function (u) { return [u.name, u.handle, u.email, u.account_type, u.pro_verified ? 'sì' : 'no', u.suspended ? 'sì' : 'no', u.recipes, u.created_at, u.terms_version]; }));
     var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + rows.map(function (r) { return r.map(q).join(';'); }).join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = 'utenti-gusto.csv'; document.body.appendChild(a); a.click(); a.remove(); toast('File scaricato');
   }
+
+  /* ---------- Botteghe (Abuela Frog) ---------- */
+  var SHOPCAT = [['formaggi', 'Formaggi e salumi'], ['macelleria', 'Macelleria'], ['pescheria', 'Pescheria'], ['ortofrutta', 'Frutta e verdura'], ['forno', 'Forno e pasta'], ['uova', 'Uova e latticini'], ['vino', 'Vino e bevande'], ['dispensa', 'Dispensa e generi vari']];
+  function catName(id) { var c = SHOPCAT.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : id; }
+  function euro(c) { return (Number(c || 0) / 100).toFixed(2).replace('.', ','); }
+  function shopOwner(b) { var o = b.owner; return o ? (o.display_name || (o.handle ? '@' + o.handle : 'Senza nome')) : 'Profilo non trovato'; }
+  function loadShops() {
+    return sb.from('botteghe').select('id,owner_id,nome,categoria,zona,descr,ritiro,spedizione,orari,indirizzo,telefono,spedizione_info,attiva,created_at,prodotti(count),owner:profiles!owner_id(display_name,handle)').order('created_at', { ascending: false })
+      .then(function (r) { if (r.error) { S.shops = []; toast('Caricamento non riuscito'); } else S.shops = r.data || []; });
+  }
+  function shopCard(b) {
+    var np = (b.prodotti && b.prodotti[0] && b.prodotti[0].count) || 0, mod = [b.ritiro ? 'ritiro' : '', b.spedizione ? 'spedizione' : ''].filter(Boolean).join(' + ') || 'nessuna modalità';
+    return '<div class="rep"><div class="info"><b>' + esc(b.nome) + ' ' + (b.attiva ? '<span class="chip ok">Attiva</span>' : '<span class="chip bad">Disattivata</span>') + '</b>' +
+      '<span>' + esc(catName(b.categoria)) + (b.zona ? ' · ' + esc(b.zona) : '') + '</span>' +
+      '<span>Profilo: <button data-act="user" data-id="' + esc(b.owner_id) + '" style="text-decoration:underline">' + esc(shopOwner(b)) + '</button> · ' + n(np) + ' prodotti</span>' +
+      '<span>Consegna: ' + esc(mod) + (b.telefono ? ' · tel. ' + esc(b.telefono) : '') + '</span></div>' +
+      '<div class="acts" style="align-content:flex-start"><button class="btn sm" data-act="shprods" data-id="' + b.id + '">Prodotti</button><button class="btn sm ghost" data-act="shedit" data-id="' + b.id + '">Dati</button>' +
+      '<button class="btn sm ghost" data-act="shtoggle" data-id="' + b.id + '" data-v="' + (b.attiva ? '0' : '1') + '">' + (b.attiva ? 'Disattiva' : 'Attiva') + '</button><button class="btn sm danger" data-act="shdel" data-id="' + b.id + '" data-n="' + esc(b.nome) + '">Elimina</button></div></div>';
+  }
+  function shopsListHTML() {
+    var q = (S.shq || '').toLowerCase(), l = S.shops.filter(function (b) { return !q || (b.nome + ' ' + (b.zona || '') + ' ' + shopOwner(b)).toLowerCase().indexOf(q) >= 0; });
+    if (!S.shops.length) return '<div class="empty"><b>Nessuna bottega</b>Aggiungi il primo commerciante con il pulsante qui sopra.</div>';
+    if (!l.length) return '<div class="empty"><b>Nessun risultato</b>Prova con un altro nome.</div>';
+    return '<div class="stack">' + l.map(shopCard).join('') + '</div>';
+  }
+  function shopsHTML() {
+    return '<p class="note">Il commerciante si registra in Frog’s come utente normale: poi lo colleghi qui al suo profilo. La bottega compare in Abuela Frog e nel suo profilo (sezione «Bottega»). Il commerciante gestisce da solo prodotti e dati dall’app; tu puoi attivare, disattivare o eliminare la bottega. Per ora la vedono solo gli utenti con il permesso Abuela.</p>' +
+      '<div class="toolbar"><input class="grow" type="search" id="shq" placeholder="Cerca per nome, zona o profilo" value="' + esc(S.shq) + '" autocomplete="off"><button class="btn" data-act="shnew">Aggiungi un commerciante</button></div><div id="shlist">' + shopsListHTML() + '</div>';
+  }
+  function shopForm(b, ownerId, ownerName) {
+    b = b || {}; var cats = SHOPCAT.map(function (c) { return '<option value="' + c[0] + '"' + (b.categoria === c[0] ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('');
+    dlg('<h2>' + (b.id ? 'Dati della bottega' : 'Nuova bottega') + '</h2>' + (ownerName ? '<p class="msg">Profilo collegato: <b>' + esc(ownerName) + '</b></p>' : '') +
+      '<label class="fld">Nome della bottega<input type="text" id="shn" maxlength="80" value="' + esc(b.nome || '') + '"></label>' +
+      '<label class="fld">Categoria<select id="shc">' + cats + '</select></label>' +
+      '<label class="fld">Zona o città<input type="text" id="shz" maxlength="80" placeholder="Es. Forlì centro" value="' + esc(b.zona || '') + '"></label>' +
+      '<label class="fld">Indirizzo<input type="text" id="sha" maxlength="160" placeholder="Via, numero, CAP, città" value="' + esc(b.indirizzo || '') + '"></label>' +
+      '<label class="fld">Telefono<input type="tel" id="sht" maxlength="30" value="' + esc(b.telefono || '') + '"></label>' +
+      '<label class="fld">Orari<input type="text" id="sho" maxlength="120" placeholder="Es. Lun–Sab 7:30–13:00" value="' + esc(b.orari || '') + '"></label>' +
+      '<label class="fld">Descrizione (max 300)<textarea id="shd" rows="3" maxlength="300">' + esc(b.descr || '') + '</textarea></label>' +
+      '<label class="chk"><input type="checkbox" id="shr"' + (b.ritiro === false ? '' : ' checked') + '> Ritiro in bottega</label>' +
+      '<label class="chk"><input type="checkbox" id="shs"' + (b.spedizione ? ' checked' : '') + '> Spedizione a cura della bottega</label>' +
+      '<label class="fld">Info sulla spedizione (costi, zone, tempi)<input type="text" id="shi" maxlength="200" value="' + esc(b.spedizione_info || '') + '"></label>' +
+      '<div class="acts"><button class="btn" data-act="shsave" data-id="' + (b.id || '') + '" data-u="' + esc(ownerId || b.owner_id || '') + '">Salva</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+  }
+  function prodsDialog(bid) {
+    var b = S.shops.filter(function (x) { return x.id === bid; })[0]; if (!b) return;
+    sb.from('prodotti').select('id,nome,prezzo_cent,unita,disponibile').eq('bottega_id', bid).order('pos').order('id').then(function (r) {
+      if (r.error) { toast('Caricamento non riuscito'); return; }
+      var l = r.data || []; S.prods = l;
+      dlg('<h2>Prodotti · ' + esc(b.nome) + '</h2>' + (l.length ? '<div class="lst">' + l.map(function (p) {
+        return '<div class="li"><span class="t"><b>' + esc(p.nome) + (p.disponibile ? '' : ' <span class="chip">Non disponibile</span>') + '</b><span>€ ' + euro(p.prezzo_cent) + (p.unita ? ' / ' + esc(p.unita) : '') + '</span></span><span class="r"><button class="btn sm ghost" data-act="prodedit" data-id="' + p.id + '" data-b="' + bid + '">Modifica</button> <button class="btn sm danger" data-act="proddel" data-id="' + p.id + '" data-b="' + bid + '" data-n="' + esc(p.nome) + '">Elimina</button></span></div>';
+      }).join('') + '</div>' : '<p class="msg">Ancora nessun prodotto.</p>') +
+        '<div class="acts"><button class="btn" data-act="prodnew" data-b="' + bid + '">Aggiungi un prodotto</button><button class="btn ghost" data-act="close">Chiudi</button></div>');
+    });
+  }
+  function prodForm(p, bid) {
+    p = p || {};
+    dlg('<h2>' + (p.id ? 'Modifica il prodotto' : 'Nuovo prodotto') + '</h2>' +
+      '<label class="fld">Nome<input type="text" id="prn" maxlength="80" value="' + esc(p.nome || '') + '"></label>' +
+      '<label class="fld">Prezzo in euro<input type="text" id="prp" inputmode="decimal" placeholder="Es. 11,50" value="' + (p.id ? euro(p.prezzo_cent) : '') + '"></label>' +
+      '<label class="fld">Unità (kg, 300 g, pezzo…)<input type="text" id="pru" maxlength="30" value="' + esc(p.unita || '') + '"></label>' +
+      '<label class="chk"><input type="checkbox" id="prd"' + (p.disponibile === false ? '' : ' checked') + '> Disponibile</label>' +
+      '<div class="acts"><button class="btn" data-act="prodsave" data-id="' + (p.id || '') + '" data-b="' + bid + '">Salva</button><button class="btn ghost" data-act="shprods" data-id="' + bid + '">Indietro</button></div>');
+  }
+  function shopAct(act, el, id) {
+    var bid = parseInt(el.getAttribute('data-b') || id, 10), sh = S.shops.filter(function (x) { return String(x.id) === String(id); })[0];
+    if (act === 'shnew') {
+      dlg('<h2>Aggiungi un commerciante</h2><p class="msg">Il commerciante deve prima registrarsi in Frog’s come utente normale. Cerca il suo profilo per nome o @handle.</p><label class="fld">Profilo<input type="search" id="shpq" placeholder="Nome o @handle" autocomplete="off"></label><div id="shres" class="lst"></div><div class="acts"><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'shpick') { shopForm(null, el.getAttribute('data-u'), el.getAttribute('data-n')); return; }
+    if (act === 'shedit') { if (sh) shopForm(sh, sh.owner_id, shopOwner(sh)); return; }
+    if (act === 'shsave') {
+      var v = function (i) { return (document.getElementById(i).value || '').trim(); }, nome = v('shn');
+      if (nome.length < 2) { toast('Scrivi il nome della bottega'); return; }
+      var row = { nome: nome, categoria: document.getElementById('shc').value, zona: v('shz'), indirizzo: v('sha'), telefono: v('sht'), orari: v('sho'), descr: v('shd'), spedizione_info: v('shi'), ritiro: document.getElementById('shr').checked, spedizione: document.getElementById('shs').checked };
+      var q = id ? sb.from('botteghe').update(row).eq('id', parseInt(id, 10)) : sb.from('botteghe').insert(Object.assign({ owner_id: el.getAttribute('data-u') }, row));
+      q.then(function (r) {
+        if (r.error) { toast(r.error.code === '23505' ? 'Questo profilo ha già una bottega' : 'Salvataggio non riuscito'); return; }
+        closeDlg(); toast('Bottega salvata'); logAct(id ? 'shop_edit' : 'shop_new', nome); loadTab();
+      });
+      return;
+    }
+    if (act === 'shtoggle') {
+      if (!sh) return; var on = v1(el);
+      sb.from('botteghe').update({ attiva: on }).eq('id', sh.id).then(function (r) { if (r.error) { err(r.error); return; } toast(on ? 'Bottega attivata' : 'Bottega disattivata'); logAct(on ? 'shop_on' : 'shop_off', sh.nome); loadTab(); });
+      return;
+    }
+    if (act === 'shdel') {
+      dlg('<h2>Eliminare la bottega «' + esc(el.getAttribute('data-n') || '') + '»?</h2><p class="msg">La bottega e tutti i suoi prodotti vengono cancellati. Il profilo del commerciante e i suoi piatti restano. Non si può annullare: se vuoi solo nasconderla, usa «Disattiva».</p><div class="acts"><button class="btn danger" data-act="shdelyes" data-id="' + esc(id) + '" data-n="' + esc(el.getAttribute('data-n') || '') + '">Sì, elimina</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'shdelyes') {
+      sb.from('botteghe').delete().eq('id', parseInt(id, 10)).then(function (r) { if (r.error) { err(r.error); return; } closeDlg(); toast('Bottega eliminata'); logAct('shop_del', el.getAttribute('data-n') || ''); loadTab(); });
+      return;
+    }
+    if (act === 'shprods') { prodsDialog(bid); return; }
+    if (act === 'prodnew') { prodForm(null, bid); return; }
+    if (act === 'prodedit') { var p = (S.prods || []).filter(function (x) { return String(x.id) === String(id); })[0]; if (p) prodForm(p, bid); return; }
+    if (act === 'prodsave') {
+      var nm = (document.getElementById('prn').value || '').trim(), pr = parseFloat((document.getElementById('prp').value || '').replace(',', '.'));
+      if (nm.length < 2) { toast('Scrivi il nome del prodotto'); return; }
+      if (!isFinite(pr) || pr < 0 || pr >= 100000) { toast('Prezzo non valido'); return; }
+      var prow = { nome: nm, prezzo_cent: Math.round(pr * 100), unita: (document.getElementById('pru').value || '').trim(), disponibile: document.getElementById('prd').checked };
+      var pq = id ? sb.from('prodotti').update(prow).eq('id', parseInt(id, 10)) : sb.from('prodotti').insert(Object.assign({ bottega_id: bid }, prow));
+      pq.then(function (r) { if (r.error) { toast(/Troppi prodotti/.test(r.error.message || '') ? 'Troppi prodotti in questa bottega' : 'Salvataggio non riuscito'); return; } toast('Prodotto salvato'); prodsDialog(bid); loadShops().then(function () { render(); }); });
+      return;
+    }
+    if (act === 'proddel') {
+      sb.from('prodotti').delete().eq('id', parseInt(id, 10)).then(function (r) { if (r.error) { err(r.error); return; } toast('Prodotto eliminato'); prodsDialog(bid); loadShops().then(function () { render(); }); });
+      return;
+    }
+  }
+  function v1(el) { return el.getAttribute('data-v') === '1'; }
+  var shTimer = null;
+  document.addEventListener('input', function (e) {
+    var id = e.target.id;
+    if (id === 'shq') { S.shq = e.target.value.trim(); var l = document.getElementById('shlist'); if (l) l.innerHTML = shopsListHTML(); }
+    else if (id === 'shpq') {
+      clearTimeout(shTimer); var t = e.target.value.trim().replace(/[%,()*]/g, '').replace(/^@/, '');
+      shTimer = setTimeout(function () {
+        var box = document.getElementById('shres'); if (!box) return;
+        if (t.length < 2) { box.innerHTML = ''; return; }
+        sb.from('profiles').select('id,display_name,handle').or('display_name.ilike.%' + t + '%,handle.ilike.%' + t + '%').limit(10).then(function (r) {
+          box = document.getElementById('shres'); if (!box) return;
+          var taken = S.shops.map(function (b) { return b.owner_id; }), l = (r.data || []).filter(function (p) { return taken.indexOf(p.id) < 0; });
+          box.innerHTML = l.length ? l.map(function (p) { var nm = p.display_name || (p.handle ? '@' + p.handle : 'Senza nome'); return '<button class="li" data-act="shpick" data-u="' + esc(p.id) + '" data-n="' + esc(nm) + '"><span class="t"><b>' + esc(nm) + '</b>' + (p.handle ? '<span>@' + esc(p.handle) + '</span>' : '') + '</span></button>'; }).join('') : '<p class="msg">Nessun profilo trovato (o ha già una bottega).</p>';
+        });
+      }, 300);
+    }
+  });
 
   /* ---------- Eventi ---------- */
   var uTimer = null;
@@ -654,6 +789,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     var act = el.getAttribute('data-act'), id = el.getAttribute('data-id'), v = el.getAttribute('data-v');
     if (act === 'close') { if (el.classList.contains('bg') && e.target !== el) return; closeDlg(); return; }
     if (act === 'dclose') { if (el.classList.contains('dov') && e.target !== el) return; S.dr = null; renderDrawer(); return; }
+    if (/^(shnew|shpick|shedit|shsave|shtoggle|shdel|shdelyes|shprods|prodnew|prodedit|prodsave|proddel)$/.test(act)) { shopAct(act, el, id); return; }
     if (act === 'forgot') { S.forgot = true; S.msg = ''; render(); return; }
     if (act === 'backlogin') { S.forgot = false; S.msg = ''; render(); return; }
     if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = JSON.parse(JSON.stringify(FRESH)); closeDlg(); renderDrawer(); render(); }); return; }
