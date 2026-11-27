@@ -2,6 +2,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 
 // Suggerimenti di indirizzi e località (Google Places). La chiave resta qui, nel segreto GOOGLE_PLACES_KEY: non finisce mai nell'app.
 // Possono usarla solo gli amministratori e i commercianti (chi ha una bottega), con un limite di richieste al minuto.
+// Tetto globale: 300 suggerimenti al giorno (poi 503 e app/pannello passano a Photon).
 // Già pubblicata su Supabase (verify_jwt = true). Senza chiave risponde 503 e app e pannello usano Photon.
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type', 'Access-Control-Allow-Methods': 'POST, OPTIONS' };
 const recenti = new Map<string, number[]>();
@@ -43,6 +44,8 @@ Deno.serve(async (req: Request) => {
     if (b?.azione === 'suggerisci') {
       const q = String(b.q || '').trim().slice(0, 100);
       if (q.length < 3) return j({ risultati: [] });
+      const { data: ok, error: eL } = await sb.rpc('luoghi_conta', { p_limite: 300 });
+      if (eL || ok !== true) return j({ errore: 'limite_giornaliero' }, 503);
       const corpo: Record<string, unknown> = {
         input: q, languageCode: 'it', regionCode: 'IT', includedRegionCodes: ['it'], sessionToken: sessione,
         locationBias: { circle: { center: { latitude: 44.22, longitude: 12.04 }, radius: 50000 } },
