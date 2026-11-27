@@ -211,7 +211,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 23;
+  var ADMIN_VERSION = 24;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -227,7 +227,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   var TABS = [['overview', 'Panoramica', 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10'], ['reports', 'Segnalazioni', 'M5 21V4m0 0h11l-2 4 2 4H5'], ['users', 'Utenti', 'M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 21c0-4 4-6 8-6s8 2 8 6'],
     ['recipes', 'Piatti', 'M4 13h16a8 8 0 01-16 0zM12 5v4M8 6v3M16 6v3'], ['stories', 'Storie', 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 8v8M8 12h8'], ['comments', 'Commenti', 'M4 5h16v11H9l-5 4z'],
     ['pros', 'Nutrizionisti', 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM9 12l2 2 4-4'], ['shops', 'Botteghe', 'M4 9l1-5h14l1 5M4 9v11h16V9M4 9c0 2 3 2 4 0 1 2 3 2 4 0 1 2 3 2 4 0 1 2 4 2 4 0M10 20v-6h4v6'], ['richieste', 'Richieste', 'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6'], ['stats', 'Statistiche', 'M4 20V10M10 20V4M16 20v-7M22 20H2'], ['log', 'Registro', 'M6 3h9l4 4v14H6zM9 12h7M9 16h7M9 8h3']];
-  var FRESH = { hist: {}, user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], shops: [], richieste: [], rf: 'all', shq: '', prods: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
+  var FRESH = { hist: {}, user: null, admin: null, tab: 'overview', rtab: 'open', ov: null, ovErr: false, pros: [], shops: [], richieste: [], segn: [], segnst: 'aperta', rf: 'all', shq: '', prods: [], reports: [], users: [], uq: '', uf: 'all', us: 'new', uend: false,
     stats: null, sd: 7, recipes: [], rq: '', rf: 'all', rend: false, stories: [], comments: [], cq: '', log: [], chart: 'u', dr: null, loading: false, updated: null, owner: false, ownerIds: [], busy: false, msg: '' };
   var S = JSON.parse(JSON.stringify(FRESH));
   var REASON = { spam: 'Spam o pubblicità', molestie: 'Molestie o comportamento offensivo', contenuto: 'Contenuto inappropriato', falso: 'Profilo falso o finto nutrizionista', altro: 'Altro' };
@@ -410,7 +410,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     falso: ['Profilo non conforme', 'Il tuo profilo non sembra corrispondere a quanto dichiarato. Ti chiediamo di correggere i dati. Se serve, scrivici.'],
     altro: ['Avviso dall\'amministrazione', '']
   };
-  var ACT = { shop_new: 'Bottega creata', shop_edit: 'Bottega modificata', shop_on: 'Bottega attivata', shop_off: 'Bottega disattivata', shop_del: 'Bottega eliminata', warn: 'Avviso inviato', suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta', set_tipo: 'Tipo di account cambiato' };
+  var ACT = { abuela_avvertimento: 'Abuela: avvertimento', abuela_blocco_store: 'Abuela: store bloccato', abuela_bottega_nascosta: 'Abuela: bottega nascosta', abuela_bottega_eliminata: 'Abuela: bottega eliminata', abuela_valutazione_rimossa: 'Abuela: valutazione rimossa', abuela_revoca: 'Abuela: restrizioni tolte', abuela_archivia: 'Abuela: segnalazione archiviata', shop_new: 'Bottega creata', shop_edit: 'Bottega modificata', shop_on: 'Bottega attivata', shop_off: 'Bottega disattivata', shop_del: 'Bottega eliminata', warn: 'Avviso inviato', suspend: 'Account sospeso', unsuspend: 'Account riattivato', verify: 'Nutrizionista verificato', unverify: 'Verifica revocata', delete_user: 'Account eliminato', delete_recipe: 'Piatto rimosso', delete_story: 'Storia rimossa', delete_comment: 'Commento eliminato', make_admin: 'Nominato amministratore', remove_admin: 'Tolto il ruolo di amministratore', reject_pro: 'Verifica nutrizionista rifiutata', delete_pro_doc: 'Documento nutrizionista eliminato', report_close: 'Segnalazione chiusa', report_reopen: 'Segnalazione riaperta', set_tipo: 'Tipo di account cambiato' };
   var SCR = { '/': 'Home', '/plan': 'Planner', '/shop': 'Spesa', '/search': 'Cerca', '/me': 'Profilo', '/settings': 'Impostazioni', '/create': 'Crea piatto', '/messages': 'Messaggi', '/notifications': 'Notifiche', '/saved': 'Salvate e ricettario', '/fridge': 'Svuotafrigo', '/pantry': 'Dispensa', '/recipe/[id]': 'Scheda ricetta', '/cook/[id]': 'Modalità cucina', '/chat/[id]': 'Chat', '/user/[id]': 'Profilo di altri', '/story-new': 'Nuova storia', '/story/[id]': 'Storie', '/people/[id]': 'Elenco persone', '/plus': 'Tasto +' };
   var FEAT = { mi_piace: 'Mi piace', commento: 'Commenti', salva_ricetta: 'Ricette salvate', messaggio: 'Messaggi inviati', planner: 'Planner (modifiche)', dispensa: 'Dispensa (modifiche)', storia_vista: 'Storie viste', pubblica_piatto: 'Piatti pubblicati', ricetta_privata: 'Ricette private salvate', bozza: 'Bozze', importa_link: 'Importazioni da link', scansione_ingrediente: 'Scansioni ingredienti' };
   function dur(sec) { sec = Math.round(sec || 0); if (sec < 60) return sec + ' s'; var m = Math.floor(sec / 60); if (m < 60) return m + ' min ' + (sec % 60 ? (sec % 60) + ' s' : ''); return Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; }
@@ -662,10 +662,34 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   }
   var RST = { inviata: ['Inviata', 'warn'], vista: ['Vista', 'warn'], confermata: ['Confermata', 'ok'], rifiutata: ['Rifiutata', 'bad'], proposta: ['Altro orario', 'warn'], scaduta: ['Scaduta', 'bad'], annullata: ['Annullata', ''], ritirata: ['Ritirata', 'ok'], non_presentato: ['Non presentato', 'bad'] };
   function loadRichieste() {
+    sb.rpc('admin_abuela_segnalazioni', { p_stato: S.segnst }).then(function (r) { S.segn = r.error ? [] : (r.data || []); render(); });
     return sb.from('richieste_ritiro').select('id,stato,ritiro_at,created_at,bottega:botteghe(nome),cliente:profiles!cliente_id(id,display_name,handle),righe:richiesta_righe(nome,quantita)').order('created_at', { ascending: false }).limit(150)
       .then(function (r) { if (r.error) { S.richieste = []; toast('Caricamento non riuscito'); } else S.richieste = r.data || []; });
   }
+  var SEGM = { non_presentato: 'Non si è presentato', ritardo: 'Ritardo', prodotto_scadente: 'Prodotto scadente', comportamento: 'Comportamento', falso: 'Valutazione falsa', altro: 'Altro' };
+  var SEGT = { utente: 'Cliente segnalato', bottega: 'Bottega segnalata', valutazione: 'Valutazione segnalata' };
+  function segnHTML() {
+    var tb = '<div class="toolbar">' + [['aperta', 'Da gestire'], ['chiusa', 'Chiuse']].map(function (f) { return '<button class="btn sm ' + (S.segnst === f[0] ? '' : 'ghost') + '" data-act="segnst" data-v="' + f[0] + '">' + f[1] + '</button>'; }).join('') + '</div>';
+    var l = S.segn.length ? '<div class="stack">' + S.segn.map(function (x) {
+      var prov = S.segnst === 'aperta' ? '<div class="acts" style="margin-top:8px;flex-wrap:wrap">' +
+        '<button class="btn sm" data-act="provv" data-t="avvertimento" data-id="' + x.id + '">Avvertimento</button>' +
+        (x.tipo === 'utente' || x.tipo === 'valutazione' ? '<button class="btn sm ghost" data-act="provv" data-t="blocco_store" data-id="' + x.id + '">Blocca store</button>' : '') +
+        (x.tipo === 'bottega' ? '<button class="btn sm ghost" data-act="provv" data-t="bottega_nascosta" data-id="' + x.id + '">Nascondi bottega</button><button class="btn sm danger" data-act="provv" data-t="bottega_eliminata" data-id="' + x.id + '">Elimina bottega</button>' : '') +
+        (x.tipo === 'valutazione' ? '<button class="btn sm ghost" data-act="provv" data-t="valutazione_rimossa" data-id="' + x.id + '">Rimuovi valutazione</button>' : '') +
+        '<button class="btn sm ghost" data-act="segnchiudi" data-id="' + x.id + '">Archivia senza provvedimento</button></div>' : '<span>Esito: ' + esc(x.esito || '—') + '</span>';
+      return '<div class="rep"><div class="info"><b>' + SEGT[x.tipo] + ': ' + esc(x.tipo === 'bottega' ? (x.bottega_nome || 'Bottega') : x.target_nome) + ' <span class="chip warn">' + esc(SEGM[x.motivo] || x.motivo) + '</span></b>' +
+        '<span>Segnalata da ' + esc(x.reporter_nome) + ' · ' + fdt(x.created_at) + (x.altre_segnalazioni ? ' · altre segnalazioni su di lui: ' + x.altre_segnalazioni : '') + '</span>' +
+        (x.tipo === 'valutazione' ? '<span>Voto ' + esc(x.val_voto) + '/10' + (x.val_commento ? ': “' + esc(x.val_commento) + '”' : '') + '</span>' : '') +
+        (x.testo ? '<span>“' + esc(x.testo) + '”</span>' : '') +
+        (x.target_blocco && new Date(x.target_blocco) > new Date() ? '<span>Store bloccato fino al ' + fdt(x.target_blocco) + ' <button class="btn sm ghost" data-act="provv" data-t="revoca" data-id="' + x.id + '">Togli blocco</button></span>' : '') +
+        (x.bottega_nascosta_fino && new Date(x.bottega_nascosta_fino) > new Date() ? '<span>Bottega nascosta fino al ' + fdt(x.bottega_nascosta_fino) + '</span>' : '') + prov + '</div></div>';
+    }).join('') + '</div>' : '<div class="empty"><b>' + (S.segnst === 'aperta' ? 'Nessuna segnalazione da gestire' : 'Nessuna segnalazione chiusa') + '</b>Le segnalazioni di Abuela Frog arrivano qui.</div>';
+    return '<h3 style="margin:0 0 8px">Segnalazioni Abuela</h3>' + tb + l + '<h3 style="margin:22px 0 8px">Richieste di ritiro</h3>';
+  }
   function richiesteHTML() {
+    return segnHTML() + richiesteHTML2();
+  }
+  function richiesteHTML2() {
     var cnt = {}; S.richieste.forEach(function (x) { cnt[x.stato] = (cnt[x.stato] || 0) + 1; });
     var l = S.richieste.filter(function (x) { return S.rf === 'all' || x.stato === S.rf; });
     var filt = '<div class="toolbar">' + [['all', 'Tutte (' + S.richieste.length + ')']].concat(Object.keys(RST).filter(function (k) { return cnt[k]; }).map(function (k) { return [k, RST[k][0] + ' (' + cnt[k] + ')']; })).map(function (f) { return '<button class="btn sm ' + (S.rf === f[0] ? '' : 'ghost') + '" data-act="rfilt" data-v="' + f[0] + '">' + f[1] + '</button>'; }).join('') + '</div>';
@@ -933,6 +957,35 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       return;
     }
     if (act === 'rfilt') { S.rf = v; render(); return; }
+    if (act === 'segnst') { S.segnst = v; loadRichieste().then(render); return; }
+    if (act === 'segnchiudi') {
+      sb.rpc('admin_abuela_chiudi_segnalazione', { p_id: Number(el.getAttribute('data-id')), p_esito: 'nessun_provvedimento' }).then(function (r) { if (r.error) { err(r.error); return; } logAct('abuela_archivia', '#' + el.getAttribute('data-id')); toast('Segnalazione archiviata'); loadRichieste().then(render); });
+      return;
+    }
+    if (act === 'provv') {
+      var pt = el.getAttribute('data-t'), pid = el.getAttribute('data-id'), sg = S.segn.filter(function (z) { return String(z.id) === pid; })[0];
+      if (!sg) return;
+      var tit = { avvertimento: 'Mandare un avvertimento', blocco_store: 'Bloccare la vista delle botteghe', bottega_nascosta: 'Nascondere la bottega', bottega_eliminata: 'Eliminare la bottega', valutazione_rimossa: 'Rimuovere la valutazione', revoca: 'Togliere le restrizioni' }[pt];
+      var giorni = pt === 'blocco_store' || pt === 'bottega_nascosta';
+      dlg('<h2>' + tit + '</h2><p class="msg">' + (pt === 'bottega_eliminata' ? 'La bottega e i suoi prodotti verranno cancellati. ' : '') + 'L’interessato riceve un avviso con il motivo che scrivi qui sotto, e il provvedimento resta nel registro.</p>' +
+        (giorni ? '<label class="fld">Durata (giorni, 1–365)<input id="pvg" type="number" min="1" max="365" value="7"></label>' : '') +
+        '<label class="fld">Motivo (visibile all’interessato, 3–250 caratteri)<textarea id="pvm" rows="3" maxlength="250"></textarea></label>' +
+        '<div class="acts"><button class="btn' + (pt === 'bottega_eliminata' ? ' danger' : '') + '" data-act="provvyes" data-t="' + pt + '" data-id="' + pid + '">Conferma</button><button class="btn ghost" data-act="close">Annulla</button></div>');
+      return;
+    }
+    if (act === 'provvyes') {
+      var qt = el.getAttribute('data-t'), qid = el.getAttribute('data-id'), sq = S.segn.filter(function (z) { return String(z.id) === qid; })[0];
+      var mot = (document.getElementById('pvm') || {}).value || '', gg = document.getElementById('pvg') ? Number(document.getElementById('pvg').value) : null;
+      if (!sq) return;
+      var args = { p_tipo: qt, p_user: sq.target_user, p_bottega: sq.bottega_id, p_valutazione: qt === 'valutazione_rimossa' ? sq.valutazione_id : null, p_giorni: gg, p_motivo: mot, p_segnalazione: sq.id };
+      if (qt !== 'bottega_nascosta' && qt !== 'bottega_eliminata' && qt !== 'revoca') args.p_bottega = null;
+      if (qt === 'revoca' && sq.tipo !== 'bottega') args.p_bottega = null;
+      sb.rpc('admin_abuela_provvedimento', args).then(function (r) {
+        if (r.error) { toast(/motivo_non_valido/.test(r.error.message) ? 'Scrivi un motivo (almeno 3 caratteri)' : /durata_non_valida/.test(r.error.message) ? 'Durata non valida (1–365 giorni)' : 'Operazione non riuscita'); return; }
+        closeDlg(); logAct('abuela_' + qt, (sq.tipo === 'bottega' ? sq.bottega_nome : sq.target_nome) + ': ' + mot.slice(0, 80)); toast('Provvedimento applicato'); loadRichieste().then(render);
+      });
+      return;
+    }
     if (act === 'settipo') {
       var tu = el.getAttribute('data-u'), tn = el.getAttribute('data-n'), tv = el.getAttribute('data-v');
       dlg('<h2>' + (tv === 'commerciante' ? 'Impostare come commerciante ' : 'Riportare a utente normale ') + esc(tn) + '?</h2><p class="msg">' + (tv === 'commerciante' ? 'Vedrà la scheda Richieste al posto di Planner e Spesa. Fallo solo se l\'app con la scheda Richieste è già pubblicata.' : 'Tornerà a vedere Planner e Spesa.') + '</p><div class="acts"><button class="btn" data-act="settipoyes" data-u="' + esc(tu) + '" data-n="' + esc(tn) + '" data-v="' + esc(tv) + '">Sì, conferma</button><button class="btn ghost" data-act="close">Annulla</button></div>');
