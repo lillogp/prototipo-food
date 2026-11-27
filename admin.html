@@ -211,7 +211,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
 <script>
 (function () {
   'use strict';
-  var ADMIN_VERSION = 21;
+  var ADMIN_VERSION = 22;
   var SB_URL = 'https://qukvhsbaubithfabcfms.supabase.co', SB_KEY = 'sb_publishable_BBOCopEAtmdVRQatTWI9HQ_2kSVsrDx';
   var MEDIA = SB_URL + '/storage/v1/object/public/media/';
   function msgBody(b) {
@@ -617,16 +617,43 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   var SHOPCAT = [['formaggi', 'Formaggi e salumi'], ['macelleria', 'Macelleria'], ['pescheria', 'Pescheria'], ['ortofrutta', 'Frutta e verdura'], ['forno', 'Forno e pasta'], ['uova', 'Uova e latticini'], ['vino', 'Vino e bevande'], ['dispensa', 'Dispensa e generi vari']];
   var DAYS = [['lun', 'Lunedì'], ['mar', 'Martedì'], ['mer', 'Mercoledì'], ['gio', 'Giovedì'], ['ven', 'Venerdì'], ['sab', 'Sabato'], ['dom', 'Domenica']];
   function catName(id) { var c = SHOPCAT.filter(function (x) { return x[0] === id; })[0]; return c ? c[1] : id; }
+  function shopCats(b) { return (b.categorie && b.categorie.length) ? b.categorie : [b.categoria]; }
+  var shGeo = { lat: null, lon: null }, shSug = [];
+  function photon(q, tipo) {
+    var u = 'https://photon.komoot.io/api/?limit=8&lat=44.22&lon=12.04&location_bias_scale=0.3&bbox=6.6,35.4,18.8,47.1&q=' + encodeURIComponent(q) + (tipo === 'zona' ? '&osm_tag=place' : '');
+    return fetch(u + '&lang=it').then(function (r) { return r.ok ? r : fetch(u); }).then(function (r) { return r.json(); }).then(function (j) {
+      var seen = {}, out = [];
+      (j.features || []).forEach(function (f) {
+        var p = f.properties || {}, c = f.geometry && f.geometry.coordinates, citta = p.city || p.town || p.village || p.district || p.county || '', txt;
+        if (!c) return;
+        if (tipo === 'zona') { if (!p.name) return; txt = p.name + (citta && citta !== p.name ? ', ' + citta : '') + (p.county && p.county !== p.name && p.county !== citta ? ' (' + p.county + ')' : ''); }
+        else { var base = p.street ? p.street + (p.housenumber ? ' ' + p.housenumber : '') : p.name; if (!base) return; var coda = [p.postcode, citta].filter(Boolean).join(' '); txt = base + (coda ? ', ' + coda : ''); }
+        if (seen[txt]) return; seen[txt] = 1; out.push({ t: txt, citta: citta, lat: c[1], lon: c[0] });
+      });
+      return out;
+    });
+  }
+  var shTimer = null;
+  function shSuggest(inp, tipo) {
+    var box = document.getElementById(inp.id + '_s'), q = inp.value.trim(); if (!box) return;
+    clearTimeout(shTimer); if (q.length < 3) { box.innerHTML = ''; return; }
+    shTimer = setTimeout(function () {
+      photon(q, tipo).then(function (l) {
+        if (inp.value.trim() !== q) return; shSug = l;
+        box.innerHTML = l.map(function (x, i) { return '<button type="button" class="btn sm ghost" style="display:block;width:100%;text-align:left;margin-top:4px" data-act="shsug" data-i="' + i + '" data-f="' + inp.id + '">' + esc(x.t) + '</button>'; }).join('');
+      }, function () { box.innerHTML = '<span class="note">Suggerimenti non disponibili: scrivi a mano.</span>'; });
+    }, 400);
+  }
   function euro(c) { return (Number(c || 0) / 100).toFixed(2).replace('.', ','); }
   function shopOwner(b) { var o = b.owner; return o ? (o.display_name || (o.handle ? '@' + o.handle : 'Senza nome')) : 'Profilo non trovato'; }
   function loadShops() {
-    return sb.from('botteghe').select('id,owner_id,nome,categoria,zona,descr,ritiro,spedizione,orari,indirizzo,telefono,spedizione_info,orari_sett,attiva,created_at,prodotti(count),owner:profiles!owner_id(display_name,handle)').order('created_at', { ascending: false })
+    return sb.from('botteghe').select('id,owner_id,nome,categoria,categorie,lat,lon,zona,descr,ritiro,spedizione,orari,indirizzo,telefono,spedizione_info,orari_sett,attiva,created_at,prodotti(count),owner:profiles!owner_id(display_name,handle)').order('created_at', { ascending: false })
       .then(function (r) { if (r.error) { S.shops = []; toast('Caricamento non riuscito'); } else S.shops = r.data || []; });
   }
   function shopCard(b) {
     var np = (b.prodotti && b.prodotti[0] && b.prodotti[0].count) || 0, mod = [b.ritiro ? 'ritiro' : '', b.spedizione ? 'spedizione' : ''].filter(Boolean).join(' + ') || 'nessuna modalità';
     return '<div class="rep"><div class="info"><b>' + esc(b.nome) + ' ' + (b.attiva ? '<span class="chip ok">Attiva</span>' : '<span class="chip bad">Disattivata</span>') + '</b>' +
-      '<span>' + esc(catName(b.categoria)) + (b.zona ? ' · ' + esc(b.zona) : '') + '</span>' +
+      '<span>' + esc(shopCats(b).map(catName).join(', ')) + (b.zona ? ' · ' + esc(b.zona) : '') + '</span>' +
       '<span>Profilo: <button data-act="user" data-id="' + esc(b.owner_id) + '" style="text-decoration:underline">' + esc(shopOwner(b)) + '</button> · ' + n(np) + ' prodotti</span>' +
       '<span>Consegna: ' + esc(mod) + (b.telefono ? ' · tel. ' + esc(b.telefono) : '') + '</span></div>' +
       '<div class="acts" style="align-content:flex-start"><button class="btn sm" data-act="shprods" data-id="' + b.id + '">Prodotti</button><button class="btn sm ghost" data-act="shedit" data-id="' + b.id + '">Dati</button>' +
@@ -643,14 +670,15 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       '<div class="toolbar"><input class="grow" type="search" id="shq" placeholder="Cerca per nome, zona o profilo" value="' + esc(S.shq) + '" autocomplete="off"><button class="btn" data-act="shnew">Aggiungi un commerciante</button></div><div id="shlist">' + shopsListHTML() + '</div>';
   }
   function shopForm(b, ownerId, ownerName) {
-    b = b || {}; var cats = SHOPCAT.map(function (c) { return '<option value="' + c[0] + '"' + (b.categoria === c[0] ? ' selected' : '') + '>' + c[1] + '</option>'; }).join('');
+    b = b || {}; shGeo = { lat: b.lat == null ? null : b.lat, lon: b.lon == null ? null : b.lon }; shSug = [];
+    var sel = b.id ? shopCats(b) : [], cats = SHOPCAT.map(function (c) { return '<label class="chk" style="display:inline-flex;margin-right:12px"><input type="checkbox" id="shc_' + c[0] + '"' + (sel.indexOf(c[0]) >= 0 ? ' checked' : '') + '> ' + c[1] + '</label>'; }).join('');
     dlg('<h2>' + (b.id ? 'Dati della bottega' : 'Nuova bottega') + '</h2>' + (ownerName ? '<p class="msg">Profilo collegato: <b>' + esc(ownerName) + '</b></p>' : '') +
       '<label class="fld">Nome della bottega<input type="text" id="shn" maxlength="80" value="' + esc(b.nome || '') + '"></label>' +
-      '<label class="fld">Categoria<select id="shc">' + cats + '</select></label>' +
-      '<label class="fld">Zona o città<input type="text" id="shz" maxlength="80" placeholder="Es. Forlì centro" value="' + esc(b.zona || '') + '"></label>' +
-      '<label class="fld">Indirizzo<input type="text" id="sha" maxlength="160" placeholder="Via, numero, CAP, città" value="' + esc(b.indirizzo || '') + '"></label>' +
+      '<div class="fld">Categorie (una o più)<div>' + cats + '</div></div>' +
+      '<label class="fld">Zona o città<input type="text" id="shz" maxlength="80" autocomplete="off" placeholder="Scrivi e scegli, es. Forlì" value="' + esc(b.zona || '') + '"></label><div id="shz_s"></div>' +
+      '<label class="fld">Indirizzo<input type="text" id="sha" maxlength="160" autocomplete="off" placeholder="Scrivi e scegli, es. Via della Lama 8" value="' + esc(b.indirizzo || '') + '"></label><div id="sha_s"></div><p class="note" id="sha_g">' + (shGeo.lat != null ? '✓ Posizione precisa salvata.' : 'Scegli un suggerimento per la posizione precisa.') + '</p>' +
       '<label class="fld">Telefono<input type="tel" id="sht" maxlength="30" value="' + esc(b.telefono || '') + '"></label>' +
-      '<div class="fld">Orari di apertura (vuoto = chiuso)' + DAYS.map(function (d) { return '<div style="display:flex;align-items:center;gap:8px;margin-top:6px"><span style="width:92px;font-weight:600">' + d[1] + '</span><input type="text" id="sho_' + d[0] + '" maxlength="60" placeholder="Es. 7:30–13:00, 16:00–19:30" value="' + esc((b.orari_sett && b.orari_sett[d[0]]) || '') + '"></div>'; }).join('') + '</div>' +
+      '<div class="fld">Orari di apertura' + DAYS.map(function (d) { var f = String((b.orari_sett && b.orari_sett[d[0]]) || '').split(',').map(function (x) { return x.split(/[–-]/).map(function (y) { var m = /^\s*(\d{1,2}):(\d{2})\s*$/.exec(y); return m ? ('0' + m[1]).slice(-2) + ':' + m[2] : ''; }); }), on = f[0] && f[0][0] && f[0][1], ti = function (n, v) { return '<input type="time" id="sho_' + d[0] + '_' + n + '" value="' + (v || '') + '" style="width:auto">'; }; return '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px"><label class="chk" style="width:130px;margin:0"><input type="checkbox" id="sho_' + d[0] + '_on"' + (on ? ' checked' : '') + '> ' + d[1] + '</label>' + ti('a1', f[0] && f[0][0]) + '–' + ti('c1', f[0] && f[0][1]) + '<span class="note">e</span>' + ti('a2', f[1] && f[1][0]) + '–' + ti('c2', f[1] && f[1][1]) + '</div>'; }).join('') + '<p class="note">Spunta il giorno se è aperto, poi inserisci apertura e chiusura. La seconda fascia (pomeriggio) è facoltativa. Giorno senza spunta = chiuso.</p></div>' +
       '<label class="fld">Descrizione (max 300)<textarea id="shd" rows="3" maxlength="300">' + esc(b.descr || '') + '</textarea></label>' +
       '<label class="chk"><input type="checkbox" id="shr"' + (b.ritiro === false ? '' : ' checked') + '> Ritiro in bottega</label>' +
       '<label class="chk"><input type="checkbox" id="shs"' + (b.spedizione ? ' checked' : '') + '> Spedizione a cura della bottega</label>' +
@@ -684,11 +712,28 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       return;
     }
     if (act === 'shpick') { shopForm(null, el.getAttribute('data-u'), el.getAttribute('data-n')); return; }
+    if (act === 'shsug') {
+      var x = shSug[parseInt(el.getAttribute('data-i'), 10)], fid = el.getAttribute('data-f'); if (!x) return;
+      document.getElementById(fid).value = x.t; document.getElementById(fid + '_s').innerHTML = '';
+      if (fid === 'sha') { shGeo = { lat: x.lat, lon: x.lon }; document.getElementById('sha_g').textContent = '✓ Posizione precisa: il navigatore ti trova al punto giusto.'; var z = document.getElementById('shz'); if (z && !z.value.trim()) z.value = x.citta; }
+      return;
+    }
     if (act === 'shedit') { if (sh) shopForm(sh, sh.owner_id, shopOwner(sh)); return; }
     if (act === 'shsave') {
       var v = function (i) { return (document.getElementById(i).value || '').trim(); }, nome = v('shn');
       if (nome.length < 2) { toast('Scrivi il nome della bottega'); return; }
-      var row = { nome: nome, categoria: document.getElementById('shc').value, zona: v('shz'), indirizzo: v('sha'), telefono: v('sht'), orari_sett: (function () { var o = {}; DAYS.forEach(function (d) { var x = (document.getElementById('sho_' + d[0]).value || '').trim().slice(0, 60); if (x) o[d[0]] = x; }); return o; })(), descr: v('shd'), spedizione_info: v('shi'), ritiro: document.getElementById('shr').checked, spedizione: document.getElementById('shs').checked };
+      var cs = SHOPCAT.map(function (c) { return c[0]; }).filter(function (c) { return document.getElementById('shc_' + c).checked; });
+      if (!cs.length) { toast('Scegli almeno una categoria'); return; }
+      var ori = {}, bad = '';
+      DAYS.forEach(function (d) {
+        if (bad || !document.getElementById('sho_' + d[0] + '_on').checked) return;
+        var g = function (n) { return document.getElementById('sho_' + d[0] + '_' + n).value; }, f = [[g('a1'), g('c1')]];
+        if (g('a2') || g('c2')) f.push([g('a2'), g('c2')]);
+        for (var i = 0; i < f.length; i++) { if (!f[i][0] || !f[i][1] || f[i][0] >= f[i][1] || (i && f[i][0] < f[0][1])) { bad = d[1] + ': controlla gli orari'; return; } }
+        ori[d[0]] = f.map(function (x) { return x[0] + '–' + x[1]; }).join(', ');
+      });
+      if (bad) { toast(bad); return; }
+      var row = { nome: nome, categorie: cs, categoria: cs[0], zona: v('shz'), indirizzo: v('sha'), lat: shGeo.lat, lon: shGeo.lon, telefono: v('sht'), orari_sett: ori, descr: v('shd'), spedizione_info: v('shi'), ritiro: document.getElementById('shr').checked, spedizione: document.getElementById('shs').checked };
       var q = id ? sb.from('botteghe').update(row).eq('id', parseInt(id, 10)) : sb.from('botteghe').insert(Object.assign({ owner_id: el.getAttribute('data-u') }, row));
       q.then(function (r) {
         if (r.error) { toast(r.error.code === '23505' ? 'Questo profilo ha già una bottega' : 'Salvataggio non riuscito'); return; }
@@ -730,7 +775,8 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
   var shTimer = null;
   document.addEventListener('input', function (e) {
     var id = e.target.id;
-    if (id === 'shq') { S.shq = e.target.value.trim(); var l = document.getElementById('shlist'); if (l) l.innerHTML = shopsListHTML(); }
+    if (id === 'shz' || id === 'sha') { if (id === 'sha') { shGeo = { lat: null, lon: null }; var g = document.getElementById('sha_g'); if (g) g.textContent = 'Scegli un suggerimento per la posizione precisa.'; } shSuggest(e.target, id === 'sha' ? 'indirizzo' : 'zona'); }
+    else if (id === 'shq') { S.shq = e.target.value.trim(); var l = document.getElementById('shlist'); if (l) l.innerHTML = shopsListHTML(); }
     else if (id === 'shpq') {
       clearTimeout(shTimer); var t = e.target.value.trim().replace(/[%,()*]/g, '').replace(/^@/, '');
       shTimer = setTimeout(function () {
@@ -790,7 +836,7 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     var act = el.getAttribute('data-act'), id = el.getAttribute('data-id'), v = el.getAttribute('data-v');
     if (act === 'close') { if (el.classList.contains('bg') && e.target !== el) return; closeDlg(); return; }
     if (act === 'dclose') { if (el.classList.contains('dov') && e.target !== el) return; S.dr = null; renderDrawer(); return; }
-    if (/^(shnew|shpick|shedit|shsave|shtoggle|shdel|shdelyes|shprods|prodnew|prodedit|prodsave|proddel)$/.test(act)) { shopAct(act, el, id); return; }
+    if (/^(shnew|shpick|shedit|shsave|shsug|shtoggle|shdel|shdelyes|shprods|prodnew|prodedit|prodsave|proddel)$/.test(act)) { shopAct(act, el, id); return; }
     if (act === 'forgot') { S.forgot = true; S.msg = ''; render(); return; }
     if (act === 'backlogin') { S.forgot = false; S.msg = ''; render(); return; }
     if (act === 'logout') { sb.auth.signOut({ scope: 'local' }).then(function () { S = JSON.parse(JSON.stringify(FRESH)); closeDlg(); renderDrawer(); render(); }); return; }
