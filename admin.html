@@ -633,12 +633,20 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
       return out;
     });
   }
+  var gOff = 0, shSess = 's' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  function luoghi(q, tipo) {
+    if (Date.now() < gOff) return photon(q, tipo);
+    return sb.functions.invoke('luoghi', { body: { azione: 'suggerisci', q: q, tipo: tipo, sessione: shSess } }).then(function (r) {
+      if (r.error || !r.data || !r.data.risultati) throw 0;
+      return r.data.risultati.map(function (x) { return { t: x.testo, id: x.id, citta: '' }; });
+    }).catch(function () { gOff = Date.now() + 600000; return photon(q, tipo); });
+  }
   var shTimer = null;
   function shSuggest(inp, tipo) {
     var box = document.getElementById(inp.id + '_s'), q = inp.value.trim(); if (!box) return;
     clearTimeout(shTimer); if (q.length < 3) { box.innerHTML = ''; return; }
     shTimer = setTimeout(function () {
-      photon(q, tipo).then(function (l) {
+      luoghi(q, tipo).then(function (l) {
         if (inp.value.trim() !== q) return; shSug = l;
         box.innerHTML = l.map(function (x, i) { return '<button type="button" class="btn sm ghost" style="display:block;width:100%;text-align:left;margin-top:4px" data-act="shsug" data-i="' + i + '" data-f="' + inp.id + '">' + esc(x.t) + '</button>'; }).join('');
       }, function () { box.innerHTML = '<span class="note">Suggerimenti non disponibili: scrivi a mano.</span>'; });
@@ -715,7 +723,14 @@ ol.steps, ul.ings { margin: 0; padding-left: 20px; display: flex; flex-direction
     if (act === 'shsug') {
       var x = shSug[parseInt(el.getAttribute('data-i'), 10)], fid = el.getAttribute('data-f'); if (!x) return;
       document.getElementById(fid).value = x.t; document.getElementById(fid + '_s').innerHTML = '';
-      if (fid === 'sha') { shGeo = { lat: x.lat, lon: x.lon }; document.getElementById('sha_g').textContent = '✓ Posizione precisa: il navigatore ti trova al punto giusto.'; var z = document.getElementById('shz'); if (z && !z.value.trim()) z.value = x.citta; }
+      if (fid === 'sha') {
+        var fine = function (lat, lon, citta) {
+          if (lat == null) return; shGeo = { lat: lat, lon: lon }; document.getElementById('sha_g').textContent = '✓ Posizione precisa: il navigatore ti trova al punto giusto.';
+          var z = document.getElementById('shz'); if (z && !z.value.trim() && citta) z.value = citta;
+        };
+        if (x.id && x.lat == null) { var s = shSess; shSess = 's' + Math.random().toString(36).slice(2) + Date.now().toString(36); sb.functions.invoke('luoghi', { body: { azione: 'dettaglio', id: x.id, sessione: s } }).then(function (r) { if (!r.error && r.data) fine(r.data.lat, r.data.lon, r.data.citta); }); }
+        else fine(x.lat, x.lon, x.citta);
+      }
       return;
     }
     if (act === 'shedit') { if (sh) shopForm(sh, sh.owner_id, shopOwner(sh)); return; }
